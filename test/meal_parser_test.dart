@@ -195,4 +195,20 @@ void main() {
     expect(extractJson('<think>hmm</think>```json\n{"a":1}\n```')['a'], 1);
     expect(() => extractJson('nope'), throwsA(isA<AiException>()));
   });
+
+  test('a vague amount comes back as one question with options', () async {
+    final ai = FakeAi([
+      {
+        'title': 'Rice and rajma',
+        'items': [
+          {'name': 'Rajma', 'qty': 1, 'unit': 'bowl', 'grams': 200, 'search': 'rajma',
+           'kcal': 250, 'protein': 13, 'carbs': 32, 'fat': 8},
+        ],
+        'ask': {'question': 'How much rice?', 'options': ['Small bowl', '1 cup', 'Full plate', '']},
+      },
+    ]);
+    final meal = await MealParser(ai, country: 'IN', recall: (_) => null).parse('rice and rajma');
+    expect(meal.question, 'How much rice?');
+    expect(meal.options, ['Small bowl', '1 cup', 'Full plate']);
+  });
 }

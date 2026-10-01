@@ -44,7 +44,8 @@ void main() {
       recall: (_) => null,
       packaged: (t, c) => OpenFoodFacts.search(t, country: c),
     );
-    final list = only == null ? sentences : [sentences[only]];
+    final text = Platform.environment['TEXT'];
+    final list = text != null ? [text] : (only == null ? sentences : [sentences[only]]);
     for (final s in list) {
       final sw = Stopwatch()..start();
       try {
@@ -63,6 +64,7 @@ void main() {
           );
         }
         stdout.writeln('  TOTAL ${total.kcal.round()} kcal · note: ${meal.note}');
+        if (meal.question != null) stdout.writeln('  ASK ${meal.question} ${meal.options}');
       } on AiException catch (e) {
         stdout.writeln('\n“$s”  →  ERROR ${e.message}');
       }

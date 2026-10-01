@@ -19,7 +19,14 @@ class ParsedItem {
 }
 
 class ParsedMeal {
-  ParsedMeal({required this.title, required this.meal, required this.items, this.note});
+  ParsedMeal({
+    required this.title,
+    required this.meal,
+    required this.items,
+    this.note,
+    this.question,
+    this.options = const [],
+  });
 
   final String title;
   final Meal? meal;
@@ -27,6 +34,10 @@ class ParsedMeal {
 
   /// One helpful line about the plate, from the model.
   final String? note;
+
+  /// Asked only when a missing amount would swing the numbers a lot.
+  final String? question;
+  final List<String> options;
 }
 
 /// Text → items in two steps. The model reads the sentence; the numbers come
@@ -100,7 +111,12 @@ class MealParser {
               )).take(6),
               ...local.take(4),
             ];
-      final obvious = brand.isEmpty ? _obviousDish(estimate.name, local) : null;
+      final obvious = brand.isEmpty
+          ? _obviousDish(estimate.name, [
+              ...FoodDb.i.search(estimate.name, country: country, limit: 3),
+              ...local,
+            ])
+          : null;
       parsed.add(
         ParsedItem(
           item: obvious == null ? estimate : fromDb(obvious, estimate),
@@ -121,6 +137,11 @@ class MealParser {
     }
 
     final title = (raw['title'] as String?)?.trim();
+    final ask = raw['ask'] is Map ? raw['ask'] as Map : null;
+    final options = [
+      for (final o in (ask?['options'] as List? ?? const []))
+        if (o is String && o.trim().isNotEmpty) o.trim(),
+    ].take(4).toList();
     return ParsedMeal(
       title: (title == null || title.isEmpty) ? _fallbackTitle(parsed) : title,
       meal: raw['meal'] == null
@@ -128,6 +149,8 @@ class MealParser {
           : Meal.values.where((m) => m.name == raw['meal']).firstOrNull,
       items: parsed,
       note: (raw['note'] as String?)?.trim().nullIfEmpty,
+      question: options.length >= 2 ? (ask?['question'] as String?)?.trim().nullIfEmpty : null,
+      options: options,
     );
   }
 
@@ -333,7 +356,7 @@ Reply with JSON only, shaped like:
    "kcal": 198, "protein": 37, "carbs": 0, "fat": 4.3, "fiber": 0,
    "sugar_g": 0, "sat_fat_g": 1.2, "sodium_mg": 90, "potassium_mg": 300, "calcium_mg": 18,
    "iron_mg": 1.2, "vitamin_c_mg": 0, "vitamin_b12_mcg": 0.4}
-], "note": "<one sentence about this plate>"}
+], "note": "<one sentence about this plate>", "ask": null}
 
 Fields:
 - title: short summary of the plate, at most 40 characters.
@@ -346,6 +369,7 @@ Fields:
 - kcal, protein, carbs, fat, fiber: your best estimate for the whole amount, in kcal and grams.
 - sugar_g, sat_fat_g, sodium_mg, potassium_mg, calcium_mg, iron_mg, vitamin_c_mg, vitamin_b12_mcg: estimates for the whole amount, including salt and sugar normally used in the dish.
 - note: one short, specific, friendly sentence about the plate's nutrition. No moralising.
+- ask: usually null. Only when the text gives no amount for a food whose typical portion varies a lot in calories (rice, curry, pasta, biryani, "some", "a lot"), return {"question": "How much rice?", "options": ["Small bowl", "1 cup", "Full plate"]}: one short question, 2 to 4 short options in everyday portion words. Still fill items with your best guess.
 
 Rules:
 - One item per distinct food. Split combinations ("dal rice" is dal and rice). Keep a single named dish as one item ("chicken biryani", "masala dosa").

@@ -44,6 +44,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
   List<ParsedItem>? _items;
   String _title = '';
   String? _note;
+  String? _question;
+  List<String> _options = const [];
+
+  /// Extra detail from answering the follow-up question.
+  String? _answer;
   late Meal _meal;
   late DateTime _at;
   String? _error;
@@ -51,7 +56,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
   bool _saving = false;
 
   bool get _editing => widget.entry != null;
-  String get _text => widget.entry?.text ?? widget.text!;
+  String get _text {
+    final base = widget.entry?.text ?? widget.text!;
+    return _answer == null ? base : '$base ($_answer)';
+  }
 
   @override
   void initState() {
@@ -83,6 +91,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
         _items = meal.items;
         _title = meal.title;
         _note = meal.note;
+        _question = _answer == null ? meal.question : null;
+        _options = meal.options;
         if (meal.meal != null) _meal = meal.meal!;
       });
     } on AiException catch (e) {
@@ -250,6 +260,21 @@ class _ReviewScreenState extends State<ReviewScreen> {
                         height: 1.25,
                         color: C.ink2,
                       ),
+                    ),
+                  ],
+                  if (_question != null && items != null && _error == null) ...[
+                    const SizedBox(height: 16),
+                    _AskCard(
+                      question: _question!,
+                      options: _options,
+                      onAnswer: (a) {
+                        setState(() {
+                          _answer = a;
+                          _question = null;
+                        });
+                        _run();
+                      },
+                      onSkip: () => setState(() => _question = null),
                     ),
                   ],
                   const SizedBox(height: 18),
@@ -518,4 +543,59 @@ class _ErrorBlock extends StatelessWidget {
       ),
     );
   }
+}
+
+/// One quick question when an amount was missing, answered with a tap.
+class _AskCard extends StatelessWidget {
+  const _AskCard({
+    required this.question,
+    required this.options,
+    required this.onAnswer,
+    required this.onSkip,
+  });
+
+  final String question;
+  final List<String> options;
+  final ValueChanged<String> onAnswer;
+  final VoidCallback onSkip;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+    decoration: BoxDecoration(
+      color: C.card,
+      borderRadius: BorderRadius.circular(S.radius),
+      border: Border.all(color: C.lineStrong),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(child: Text(question, style: T.heading.copyWith(fontSize: 22))),
+            TextLink(label: 'Skip', color: C.ink2, onTap: onSkip),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final o in options)
+              Pressable(
+                onTap: () => onAnswer(o),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: C.ink),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(o, style: T.body),
+                ),
+              ),
+          ],
+        ),
+      ],
+    ),
+  );
 }

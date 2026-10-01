@@ -29,8 +29,12 @@ class Store extends ChangeNotifier {
   final List<Favourite> _favList = [];
   final List<WeightEntry> _weightList = [];
 
-  Future<void> init() async {
-    await Hive.initFlutter('nomnom');
+  Future<void> init({String? path}) async {
+    if (path != null) {
+      Hive.init(path);
+    } else {
+      await Hive.initFlutter('nomnom');
+    }
     _settings = await Hive.openBox<String>('settings');
     _entries = await Hive.openBox<String>('entries');
     _favs = await Hive.openBox<String>('favourites');

@@ -203,7 +203,7 @@ Map<String, dynamic> _decode(http.Response res) {
 String _short(String s) => s.length > 160 ? '${s.substring(0, 160)}…' : s;
 
 /// Pulls the first JSON object out of a model reply, tolerating code fences
-/// and <think> blocks.
+/// and `<think>` blocks.
 Map<String, dynamic> extractJson(String? text) {
   if (text == null || text.trim().isEmpty) {
     throw const AiException('The model sent an empty reply. Try again.');

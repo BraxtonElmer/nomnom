@@ -2,6 +2,22 @@ import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
 
+/// Small colour dot for legends (Clash has no bullet glyph).
+class Dot extends StatelessWidget {
+  const Dot(this.color, {super.key, this.size = 7});
+
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: size,
+        height: size,
+        margin: const EdgeInsets.only(right: 5),
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      );
+}
+
 class MacroValue {
   const MacroValue(this.label, this.eaten, this.target, this.color);
 
@@ -47,7 +63,7 @@ class MacroSplit extends StatelessWidget {
         for (final v in values)
           Text.rich(
             TextSpan(children: [
-              TextSpan(text: '● ', style: TextStyle(color: v.color, fontSize: 10)),
+              WidgetSpan(alignment: PlaceholderAlignment.middle, child: Dot(v.color)),
               TextSpan(text: '${v.label} '),
               TextSpan(
                   text: v.eaten.round().toString(),

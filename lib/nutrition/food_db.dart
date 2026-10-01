@@ -53,8 +53,12 @@ class FoodDb {
   @visibleForTesting
   static void use(FoodDb db) => _instance = db;
 
-  static Future<FoodDb> load() async {
-    if (_instance != null) return _instance!;
+  static Future<FoodDb>? _loading;
+
+  /// Safe to call repeatedly; every caller shares one load.
+  static Future<FoodDb> load() => _loading ??= _load();
+
+  static Future<FoodDb> _load() async {
     final usda = await rootBundle.loadString('assets/data/usda.json');
     final dishes = await rootBundle.loadString('assets/data/dishes_in.json');
     final foods = await compute(_parse, (usda, dishes));

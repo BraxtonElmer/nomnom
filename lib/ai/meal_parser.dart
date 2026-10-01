@@ -39,6 +39,7 @@ class MealParser {
 
   static Future<MealParser> fromSettings() async {
     final s = Store.i;
+    await FoodDb.load();
     final key = await KeyVault.read(s.ai.provider);
     if (!s.ai.ready || (key.isEmpty && s.ai.provider != Provider.custom)) {
       throw const AiException('Connect an AI model in You → AI model first.');

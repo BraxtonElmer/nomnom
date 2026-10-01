@@ -5,6 +5,7 @@ import '../../ai/meal_parser.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../nutrition/countries.dart';
+import '../../nutrition/plate_note.dart';
 import '../../theme/tokens.dart';
 import '../../ui/buttons.dart';
 import '../../ui/controls.dart';
@@ -43,7 +44,6 @@ class ReviewScreen extends StatefulWidget {
 class _ReviewScreenState extends State<ReviewScreen> {
   List<ParsedItem>? _items;
   String _title = '';
-  String? _note;
   String? _question;
   List<String> _options = const [];
 
@@ -73,7 +73,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
       _at = e.at;
       _meal = e.meal;
       _title = e.title;
-      _note = e.note;
       _items = [for (final i in e.items) ParsedItem(item: i, estimate: i, candidates: const [])];
     } else {
       _at = widget.at!;
@@ -96,7 +95,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
         _local = meal.local;
         _items = meal.items;
         _title = meal.title;
-        _note = meal.note;
         _question = _answer == null ? meal.question : null;
         _options = meal.options;
         if (meal.meal != null) _meal = meal.meal!;
@@ -113,6 +111,17 @@ class _ReviewScreenState extends State<ReviewScreen> {
     }
   }
 
+  /// What this plate means for the rest of today, from the user's numbers.
+  String get _plateNote => plateNote(
+    plate: _total,
+    restOfDay: Store.i
+        .entriesOn(_at)
+        .where((e) => e.id != widget.entry?.id)
+        .fold(Nutrients.zero, (s, e) => s + e.total),
+    targets: Store.i.targets,
+    meal: _meal,
+  );
+
   Nutrients get _total => (_items ?? const []).fold(Nutrients.zero, (s, p) => s + p.item.total);
 
   Future<void> _save() async {
@@ -126,7 +135,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
       title: _title.isEmpty ? items.map((p) => p.item.name).take(3).join(', ') : _title,
       text: _text,
       items: [for (final p in items) p.item.copyWith(flagged: false)],
-      note: _note,
     );
     await Store.i.putEntry(entry);
     if (widget.pendingId != null) await Store.i.removePending(widget.pendingId!);
@@ -261,10 +269,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     const SizedBox(height: 6),
                     Text('$_asked $_answer', style: T.small.copyWith(color: C.ink)),
                   ],
-                  if (_note != null && items != null) ...[
+                  if (items != null && items.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     Text(
-                      _note!,
+                      _plateNote,
                       style: TextStyle(
                         fontFamily: F.serif,
                         fontStyle: FontStyle.italic,

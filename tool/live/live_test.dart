@@ -59,7 +59,7 @@ void main() {
             '(AI said ${p.estimate.total.kcal.round()})',
           );
         }
-        stdout.writeln('  TOTAL ${total.kcal.round()} kcal · note: ${meal.note}');
+        stdout.writeln('  TOTAL ${total.kcal.round()} kcal');
         if (meal.question != null) stdout.writeln('  ASK ${meal.question} ${meal.options}');
       } on AiException catch (e) {
         stdout.writeln('\n“$s”  →  ERROR ${e.message}');

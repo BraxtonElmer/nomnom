@@ -29,7 +29,6 @@ class LogQueue {
               title: meal.title,
               text: p.text,
               items: [for (final i in meal.items) i.item],
-              note: meal.note,
             ),
           );
           await Store.i.removePending(p.id);

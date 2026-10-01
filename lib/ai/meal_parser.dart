@@ -24,7 +24,6 @@ class ParsedMeal {
     required this.title,
     required this.meal,
     required this.items,
-    this.note,
     this.question,
     this.options = const [],
     this.local = false,
@@ -33,9 +32,6 @@ class ParsedMeal {
   final String title;
   final Meal? meal;
   final List<ParsedItem> items;
-
-  /// One helpful line about the plate, from the model.
-  final String? note;
 
   /// Asked only when a missing amount would swing the numbers a lot.
   final String? question;
@@ -191,7 +187,6 @@ class MealParser {
           ? null
           : Meal.values.where((m) => m.name == raw['meal']).firstOrNull,
       items: parsed,
-      note: (raw['note'] as String?)?.trim().nullIfEmpty,
       question: options.length >= 2 ? (ask?['question'] as String?)?.trim().nullIfEmpty : null,
       options: options,
     );
@@ -401,7 +396,7 @@ Reply with JSON only, shaped like:
    "kcal": 198, "protein": 37, "carbs": 0, "fat": 4.3, "fiber": 0,
    "sugar_g": 0, "sat_fat_g": 1.2, "sodium_mg": 90, "potassium_mg": 300, "calcium_mg": 18,
    "iron_mg": 1.2, "vitamin_c_mg": 0, "vitamin_b12_mcg": 0.4}
-], "note": "<one sentence about this plate>", "ask": null}
+], "ask": null}
 
 Fields:
 - title: short summary of the plate, at most 40 characters.
@@ -413,7 +408,6 @@ Fields:
 - search: plain generic English words to find the food in a nutrition database like USDA, including the cooking method or state (cooked, raw, fried, boiled). Use the local dish name for regional dishes.
 - kcal, protein, carbs, fat, fiber: your best estimate for the whole amount, in kcal and grams.
 - sugar_g, sat_fat_g, sodium_mg, potassium_mg, calcium_mg, iron_mg, vitamin_c_mg, vitamin_b12_mcg: estimates for the whole amount, including salt and sugar normally used in the dish.
-- note: one short, specific, friendly sentence about the plate's nutrition. No moralising.
 - ask: usually null. Only when the text gives no amount for a food whose typical portion varies a lot in calories (rice, curry, pasta, biryani, "some", "a lot"), return {"question": "How much rice?", "options": ["Small bowl", "1 cup", "Full plate"]}: one short question, 2 to 4 short options in everyday portion words. Still fill items with your best guess.
 
 Rules:

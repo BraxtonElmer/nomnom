@@ -382,7 +382,12 @@ class Store extends ChangeNotifier {
 
   void remember(FoodItem item) {
     if (item.source == Source.ai) return;
-    _memory.put(memoryKey(item.name), jsonEncode(item.copyWith(qty: 1).toJson()));
+    // Weighed foods keep their amount, so "rice" next time is the usual
+    // portion rather than 1 g; counted ones are stored per unit.
+    _memory.put(
+      memoryKey(item.name),
+      jsonEncode((item.byWeight ? item : item.copyWith(qty: 1)).toJson()),
+    );
   }
 
   // Backup
@@ -437,7 +442,8 @@ class Store extends ChangeNotifier {
     await _entries.putAll({for (final e in entries) e.id: jsonEncode(e.toJson())});
     await _favs.putAll({for (final f in favs) f.id: jsonEncode(f.toJson())});
     await _weights.putAll({
-      for (final w in weights) dayOf(w.day).millisecondsSinceEpoch.toString(): jsonEncode(w.toJson()),
+      for (final w in weights)
+        dayOf(w.day).millisecondsSinceEpoch.toString(): jsonEncode(w.toJson()),
     });
     await _memory.putAll(mem.map((k, v) => MapEntry(k, jsonEncode(v))));
     if (j['profile'] != null) {

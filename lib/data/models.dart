@@ -150,6 +150,7 @@ class FoodItem {
     this.flagged = false,
     this.ai,
     this.richness = 0,
+    this.size = 1,
   });
 
   final String name;
@@ -173,9 +174,14 @@ class FoodItem {
   /// Home cooking varies mostly in fat, so this moves fat by about a third.
   final int richness;
 
-  /// [per100] with the oil and ghee adjustment applied.
+  /// Size word applied to each unit: 0.75 small, 1 regular, 1.5 large,
+  /// 2 extra large. Kept apart from [qty] so "2 large eggs" stays 2 eggs.
+  final double size;
+
+  /// [per100] with the oil and ghee adjustment applied. Only dish tables
+  /// are typical recipes; anything else is taken as measured.
   Nutrients get eff100 {
-    if (richness == 0) return per100;
+    if (richness == 0 || source != Source.dish) return per100;
     final dFat = per100.fat * 0.35 * richness;
     return Nutrients(
       kcal: per100.kcal + dFat * 9,
@@ -195,7 +201,13 @@ class FoodItem {
   Nutrients get total => eff100.scale(grams / 100);
   bool get byWeight => unit == 'g' || unit == 'ml';
 
-  String get qtyLabel => formatQty(qty, unit);
+  String get qtyLabel {
+    final label = formatQty(qty, unit);
+    final word = sizeWord(size);
+    if (byWeight || word == null) return label;
+    final i = label.indexOf(' ');
+    return i < 0 ? '$label $word' : '${label.substring(0, i)} $word${label.substring(i)}';
+  }
 
   FoodItem copyWith({
     String? name,
@@ -209,6 +221,7 @@ class FoodItem {
     bool? flagged,
     Nutrients? ai,
     int? richness,
+    double? size,
   }) => FoodItem(
     name: name ?? this.name,
     qty: qty ?? this.qty,
@@ -221,18 +234,20 @@ class FoodItem {
     flagged: flagged ?? this.flagged,
     ai: ai ?? this.ai,
     richness: richness ?? this.richness,
+    size: size ?? this.size,
   );
 
   /// One stepper notch. Small for single pieces, 10% for weights.
   FoodItem step(int dir) {
     if (byWeight) {
       final s = grams < 50 ? 5.0 : (grams < 200 ? 10.0 : 25.0);
-      final next = math.max(s, (qty / s).round() * s + dir * s);
-      return copyWith(qty: next);
+      final next = dir > 0 ? ((qty + 1e-9) / s).floor() * s + s : ((qty - 1e-9) / s).ceil() * s - s;
+      return copyWith(qty: math.max(s, next));
     }
     final s = qty <= 1 ? 0.5 : 1.0;
-    final next = math.max(0.5, ((qty / s).round() * s) + dir * s);
-    return copyWith(qty: next);
+    // Step to the next notch in that direction; 1.5 + 1 is 2, not 3.
+    final next = dir > 0 ? ((qty + 1e-9) / s).floor() * s + s : ((qty - 1e-9) / s).ceil() * s - s;
+    return copyWith(qty: math.max(0.5, next));
   }
 
   Map<String, dynamic> toJson() => {
@@ -247,6 +262,7 @@ class FoodItem {
     if (flagged) 'f': true,
     if (ai != null && source != Source.ai) 'a': ai!.toJson(),
     if (richness != 0) 'rv': richness,
+    if (size != 1) 'sz': size,
   };
 
   factory FoodItem.fromJson(Map<String, dynamic> j) => FoodItem(
@@ -261,7 +277,33 @@ class FoodItem {
     flagged: j['f'] == true,
     ai: j['a'] == null ? null : Nutrients.fromJson(j['a'] as List),
     richness: (j['rv'] as int?) ?? 0,
+    size: j['sz'] == null ? 1 : _d(j['sz']),
   );
+}
+
+/// The word for a [FoodItem.size] factor, or null for a regular size.
+String? sizeWord(double size) => switch (size) {
+  <= 0.8 => 'small',
+  >= 1.9 => 'extra large',
+  >= 1.3 => 'large',
+  _ => null,
+};
+
+/// Factor for a size word ("small", "large", "extra large", "big").
+double sizeFactor(String? word) => switch (word?.toLowerCase().trim()) {
+  'small' || 'little' || 'mini' => 0.75,
+  'large' || 'big' => 1.5,
+  'extra large' || 'xl' || 'jumbo' || 'huge' => 2,
+  _ => 1,
+};
+
+/// Grams per ml for liquids that aren't water-like.
+double mlDensity(String name) {
+  final n = name.toLowerCase();
+  if (RegExp(r'\bhoney\b').hasMatch(n)) return 1.42;
+  if (RegExp(r'\b(syrup|molasses)\b').hasMatch(n)) return 1.33;
+  if (RegExp(r'\b(oil|ghee)\b').hasMatch(n)) return 0.92;
+  return 1;
 }
 
 String formatNum(double v) {
@@ -461,7 +503,12 @@ class Profile {
 
   /// Age, height and weight are within sensible ranges.
   bool get bodyValid =>
-      age >= 13 && age <= 120 && heightCm >= 100 && heightCm <= 250 && weightKg >= 30 && weightKg <= 300;
+      age >= 13 &&
+      age <= 120 &&
+      heightCm >= 100 &&
+      heightCm <= 250 &&
+      weightKg >= 30 &&
+      weightKg <= 300;
 
   Profile copyWith({
     String? country,

@@ -145,19 +145,19 @@ class MealParser {
         parsed.add(ParsedItem(item: estimate, estimate: estimate, candidates: const []));
         continue;
       }
-      final remembered = recall(estimate.name);
-      if (remembered != null) {
+      final brand = (r['brand'] as String?)?.trim() ?? '';
+      final query = (r['search'] as String?)?.trim();
+      final remembered = brand.isEmpty ? recall(estimate.name) : null;
+      if (remembered != null && _sameState(remembered, '${estimate.name} ${query ?? ''}')) {
         parsed.add(
           ParsedItem(item: _adopt(remembered, estimate), estimate: estimate, candidates: const []),
         );
         continue;
       }
-      final query = (r['search'] as String?)?.trim();
       final local = FoodDb.i.search(
         (query == null || query.isEmpty) ? estimate.name : query,
         country: country,
       );
-      final brand = (r['brand'] as String?)?.trim() ?? '';
       final candidates = brand.isEmpty
           ? local
           : [
@@ -169,8 +169,8 @@ class MealParser {
               )).take(6),
               ...local.take(4),
             ];
-      final obvious = brand.isEmpty
-          ? _obviousDish(estimate.name, [
+      final obvious = brand.isEmpty && _state('${estimate.name} ${query ?? ''}') != 'raw'
+          ? _obviousDish(estimate, [
               ...FoodDb.i.search(estimate.name, country: country, limit: 3),
               ...local,
             ])
@@ -243,13 +243,18 @@ class MealParser {
 
   /// A dish-table entry that is plainly what the user wrote ("poha", "dal
   /// tadka", "white rice") needs no second request to confirm. Saves quota.
-  static DbFood? _obviousDish(String name, List<DbFood> local) {
-    final want = tokenize(name);
+  static DbFood? _obviousDish(FoodItem estimate, List<DbFood> local) {
+    final want = tokenize(estimate.name);
     for (final f in local.take(3)) {
       // Its core name is in what was typed, and every typed word is one of
       // its names: "white rice" is Rice, but "egg" is not Egg curry.
       final words = want.difference(_modifiers);
       if (f.source == Source.dish && words.containsAll(f.head) && f.tokens.containsAll(words)) {
+        // A very different energy density means it isn't the same thing
+        // (dry dal vs cooked dal); let the matching request decide.
+        final a = estimate.per100.kcal;
+        final b = f.per100.kcal;
+        if (a > 0 && b > 0 && (a / b > 2 || b / a > 2)) return null;
         return f;
       }
     }
@@ -264,6 +269,7 @@ class MealParser {
     final rawUnit = (r['unit'] as String? ?? '').toLowerCase().trim();
     if (const {'kg', 'l', 'litre', 'liter'}.contains(rawUnit)) qty *= 1000;
     final unit = _unit(r['unit'] as String?);
+    final size = (unit == 'g' || unit == 'ml') ? 1.0 : sizeFactor(r['size'] as String?);
     var grams = n('grams');
     if (unit == 'g' || unit == 'ml') grams = qty;
     if (grams <= 0) grams = qty * 100;
@@ -285,6 +291,7 @@ class MealParser {
         },
       ),
       source: Source.ai,
+      size: size,
     );
   }
 
@@ -292,15 +299,25 @@ class MealParser {
   /// own portion weight when it has one, else the model's gram estimate.
   static FoodItem fromDb(DbFood food, FoodItem estimate) {
     var unitGrams = estimate.unitGrams;
-    if (!estimate.byWeight) {
-      final portion = portionGrams(food, estimate.unit, servingFallback: false);
+    if (estimate.unit == 'ml') {
+      unitGrams = mlDensity(food.name);
+    } else if (!estimate.byWeight) {
+      final portion = portionGrams(
+        food,
+        estimate.unit,
+        servingFallback: false,
+        size: estimate.size,
+      );
       if (portion != null) {
         unitGrams = portion;
-      } else if (estimate.unit == 'serving' && food.portions.isNotEmpty) {
+      } else if (estimate.unit == 'serving') {
         // "A serving" is vague both ways: trust the model's grams, which know
-        // the context (takeaway, country), but keep them near the table's.
-        final std = food.portions.first.$2;
-        unitGrams = estimate.unitGrams.clamp(std * 0.6, std * 1.25);
+        // the context (takeaway, country), but keep them near a real serving:
+        // a dish table's portion, or a USDA label that is one serving.
+        final std = food.source == Source.dish
+            ? portionGrams(food, 'serving', size: estimate.size)
+            : _servingLabel(food);
+        if (std != null) unitGrams = estimate.unitGrams.clamp(std * 0.6, std * 1.25);
       }
     }
     final item = estimate.copyWith(
@@ -320,7 +337,13 @@ class MealParser {
 
   /// Applies a remembered food to a new amount.
   static FoodItem _adopt(FoodItem remembered, FoodItem estimate) {
-    if (remembered.unit == estimate.unit) return remembered.copyWith(qty: estimate.qty);
+    if (remembered.unit == estimate.unit) {
+      return remembered.copyWith(
+        qty: estimate.qty,
+        size: estimate.size,
+        unitGrams: remembered.unitGrams / remembered.size * estimate.size,
+      );
+    }
     if (estimate.byWeight) {
       return remembered.copyWith(qty: estimate.qty, unit: estimate.unit, unitGrams: 1);
     }
@@ -329,6 +352,41 @@ class MealParser {
       unit: estimate.unit,
       unitGrams: estimate.unitGrams,
     );
+  }
+
+  /// Grams in one USDA serving, from a label that says so.
+  static double? _servingLabel(DbFood food) {
+    for (final (label, grams) in food.portions) {
+      final m = RegExp(r'^([\d.]+)\s+(.*)$').firstMatch(label.toLowerCase());
+      if (m != null && RegExp(r'^(serving|nlea serving)').hasMatch(m.group(2)!)) {
+        return grams / (double.tryParse(m.group(1)!) ?? 1);
+      }
+    }
+    return null;
+  }
+
+  /// 'raw' for raw, uncooked or dry foods, 'cooked' for prepared ones, else
+  /// null when the words don't say.
+  static String? _state(String text) {
+    final t = text.toLowerCase();
+    if (RegExp(r'\b(raw|uncooked|dry|dried|unprepared)\b').hasMatch(t)) return 'raw';
+    if (RegExp(
+      r'\b(cooked|boiled|fried|roasted|grilled|baked|steamed|stewed|prepared)\b',
+    ).hasMatch(t)) {
+      return 'cooked';
+    }
+    return null;
+  }
+
+  /// A remembered food fits this one unless they plainly differ in state
+  /// (a remembered cooked rice for "100 g uncooked rice").
+  static bool _sameState(FoodItem remembered, String text) {
+    final want = _state(text);
+    if (want == null) return true;
+    final have = remembered.source == Source.dish
+        ? 'cooked'
+        : _state('${remembered.refName ?? ''} ${remembered.name}');
+    return have == null || have == want;
   }
 
   static String _unit(String? u) {
@@ -423,6 +481,7 @@ Fields:
 - name: short natural name, singular, capitalised.
 - qty and unit: the amount as the user said it. unit is one of g, ml, piece, slice, cup, bowl, katori, plate, glass, tbsp, tsp, scoop, serving.
 - grams: total edible grams for that amount (ml counts as grams for drinks).
+- size: "small", "large" or "extra large" when the user said a size word, else null.
 - brand: the brand if the user named a packaged product ("Amul", "Maggi", "Coca-Cola", "Quest"), else null.
 - search: plain generic English words to find the food in a nutrition database like USDA, including the cooking method or state (cooked, raw, fried, boiled). Use the local dish name for regional dishes.
 - kcal, protein, carbs, fat, fiber: your best estimate for the whole amount, in kcal and grams.
@@ -431,8 +490,9 @@ Fields:
 
 Rules:
 - One item per distinct food. Split combinations ("dal rice" is dal and rice). Keep a single named dish as one item ("chicken biryani", "masala dosa").
+- When the user gives a home dish by its ingredients and amounts ("3 egg omelette with 1 tsp butter", "40 g oats cooked in 200 ml milk"), list those ingredients as items (3 eggs, 1 tsp butter) instead of the dish: their numbers are exact, a recipe's are not. Search for each ingredient as it was before cooking ("egg whole raw"), since the fat is its own item; keep the name plain ("Egg").
 - "a", "an", "one" mean 1; "a couple" means 2; "half" means 0.5. With no amount, assume one typical serving.
-- Size words change qty, never the unit: small means 0.75, medium 1, large 1.5, extra large 2 of the standard unit (a "large bowl" of dal is qty 1.5, unit bowl).
+- Size words never change qty or unit: put them in "size" ("small", "large" or "extra large"; null otherwise). "2 large eggs" is qty 2, unit piece, size "large". grams is still the total for that size.
 - A line starting "Portion answer:" is the user answering a question about amounts. Apply it to the foods it names, then return "ask": null.
 - Don't add oil, ghee, sugar or sides the user didn't mention, beyond what the dish normally contains.
 - If there's no food in the text, return "items": [].''';

@@ -10,7 +10,7 @@ const _plain = <String, (String, String, Map<String, double>)>{
   'mango': ('usda:169910', 'piece', {'piece': 200}),
   'pear': ('usda:169118', 'piece', {'piece': 178}),
   'guava': ('usda:173044', 'piece', {'piece': 55}),
-  'grape': ('usda:174683', 'cup', {'cup': 151, 'bowl': 151}),
+  'grape': ('usda:174683', 'cup', {'cup': 151, 'bowl': 151, 'piece': 4.9}),
   'papaya': ('usda:169926', 'cup', {'cup': 145, 'bowl': 145}),
   'watermelon': ('usda:167765', 'cup', {'cup': 152, 'bowl': 152, 'slice': 280}),
   'pineapple': ('usda:169124', 'cup', {'cup': 165, 'bowl': 165, 'slice': 84}),
@@ -41,7 +41,7 @@ const _plain = <String, (String, String, Map<String, double>)>{
   'olive oil': ('usda:171413', 'tbsp', {'tbsp': 13.5, 'tsp': 4.5}),
   'almond': ('usda:170567', 'handful', {'handful': 28, 'piece': 1.2}),
   'cashew': ('usda:170162', 'handful', {'handful': 28, 'piece': 1.6}),
-  'peanut': ('usda:174262', 'handful', {'handful': 28}),
+  'peanut': ('usda:174262', 'handful', {'handful': 28, 'piece': 1}),
   'walnut': ('usda:170187', 'handful', {'handful': 28, 'piece': 4}),
   'cheese': ('usda:173414', 'slice', {'slice': 21}),
   'cheddar': ('usda:173414', 'slice', {'slice': 21}),
@@ -173,6 +173,9 @@ class LocalParser {
   FoodItem? _chunk(String c) {
     final words = c.split(' ');
     if (words.any(_vague.contains)) return null;
+    final size = words.contains('extra')
+        ? sizeFactor('extra large')
+        : words.map(sizeFactor).firstWhere((f) => f != 1, orElse: () => 1);
 
     // Amount may lead ("2 bowls dal", "200g rice") or trail ("dal 1 bowl").
     double? qty;
@@ -200,6 +203,8 @@ class LocalParser {
       }
     }
     if (rest.isEmpty) return null;
+    // "10 almonds" counts almonds, not handfuls.
+    final counted = qty != null && unit == null;
     qty ??= 1;
     if (unit == 'kg') {
       qty *= 1000;
@@ -209,33 +214,58 @@ class LocalParser {
       unit = 'ml';
     }
     final name = rest.join(' ');
-    return _known(name, qty, unit) ?? _plainFood(name, qty, unit) ?? _dish(name, qty, unit);
+    return _known(name, qty, unit, counted: counted, size: size) ??
+        _plainFood(name, qty, unit, counted: counted, size: size) ??
+        _dish(name, qty, unit, size: size);
   }
 
   /// A food the user has confirmed before.
-  FoodItem? _known(String name, double qty, String? unit) {
+  FoodItem? _known(
+    String name,
+    double qty,
+    String? unit, {
+    required bool counted,
+    required double size,
+  }) {
     final m = recall(name);
-    if (m == null || m.source == Source.ai) return null;
+    if (m == null || m.source == Source.ai || size != 1 || m.size != 1) return null;
+    if (unit == 'g' || unit == 'ml') {
+      return m.copyWith(qty: qty, unit: unit, unitGrams: unit == 'ml' ? mlDensity(m.name) : 1);
+    }
+    if (m.byWeight) {
+      // Remembered by weight: with no amount, the amount last used; a count
+      // ("2 bananas") can't be turned into grams here.
+      return unit == null && !counted && m.qty > 1 ? m : null;
+    }
     if (unit == null || unit == m.unit) return m.copyWith(qty: qty);
-    if (unit == 'g' || unit == 'ml') return m.copyWith(qty: qty, unit: unit, unitGrams: 1);
     return null;
   }
 
-  FoodItem? _plainFood(String name, double qty, String? unit) {
+  FoodItem? _plainFood(
+    String name,
+    double qty,
+    String? unit, {
+    required bool counted,
+    required double size,
+  }) {
     final key = tokenize(name).difference(_modifiers);
     for (final MapEntry(key: label, value: (id, defUnit, grams)) in _plain.entries) {
       if (tokenize(label).length != key.length || !tokenize(label).containsAll(key)) continue;
       final food = db.get(id);
       if (food == null) return null;
-      final u = unit ?? defUnit;
-      final g = (u == 'g' || u == 'ml') ? 1.0 : grams[u];
+      final u = unit ?? (counted ? 'piece' : defUnit);
+      final byWeight = u == 'g' || u == 'ml';
+      final g = byWeight
+          ? (u == 'ml' ? mlDensity(label) : 1.0)
+          : (u == 'piece' && size != 1 ? portionGrams(food, u, size: size) : null) ??
+                (grams[u] == null ? null : grams[u]! * size);
       if (g == null) return null;
-      return _item(food, _title(label), qty, u, g);
+      return _item(food, _title(label), qty, u, g, size: byWeight ? 1 : size);
     }
     return null;
   }
 
-  FoodItem? _dish(String name, double qty, String? unit) {
+  FoodItem? _dish(String name, double qty, String? unit, {required double size}) {
     final want = tokenize(name).difference(_modifiers);
     if (want.isEmpty) return null;
     final hits = db
@@ -246,11 +276,13 @@ class LocalParser {
         .toList();
     if (hits.isEmpty) return null;
     final food = hits.first;
-    if (unit == 'g' || unit == 'ml') return _item(food, food.name, qty, unit!, 1);
+    if (unit == 'g' || unit == 'ml') {
+      return _item(food, food.name, qty, unit!, unit == 'ml' ? mlDensity(food.name) : 1);
+    }
     final u = unit ?? _defaultUnit(food);
-    final g = portionGrams(food, u);
+    final g = portionGrams(food, u, size: size);
     if (g == null) return null;
-    return _item(food, food.name, qty, u, g);
+    return _item(food, food.name, qty, u, g, size: size);
   }
 
   static String _defaultUnit(DbFood food) {
@@ -273,7 +305,14 @@ class LocalParser {
     return 'serving';
   }
 
-  FoodItem _item(DbFood f, String name, double qty, String unit, double unitGrams) => FoodItem(
+  FoodItem _item(
+    DbFood f,
+    String name,
+    double qty,
+    String unit,
+    double unitGrams, {
+    double size = 1,
+  }) => FoodItem(
     name: name,
     qty: qty,
     unit: unit,
@@ -282,15 +321,59 @@ class LocalParser {
     source: f.source,
     ref: f.id,
     refName: f.name,
+    size: size,
   );
 
   static String _title(String s) => s[0].toUpperCase() + s.substring(1);
 }
 
-/// Grams in one [unit] of [food], from its own portion list.
-double? portionGrams(DbFood food, String unit, {bool servingFallback = true}) {
+/// Grams in one [unit] of [food], from its own portion list. [size] is a
+/// size factor (see [FoodItem.size]): a matching size label is used when the
+/// table has one ("1 large" egg), otherwise the regular portion is scaled.
+double? portionGrams(DbFood food, String unit, {bool servingFallback = true, double size = 1}) {
+  final labels = [
+    for (final (label, grams) in food.portions)
+      if (RegExp(r'^([\d.]+)\s+(.*)$').firstMatch(label.toLowerCase()) case final m?)
+        if ((double.tryParse(m.group(1)!) ?? 0) > 0)
+          (m.group(2)!, grams / double.parse(m.group(1)!)),
+  ];
+  double? find(bool Function(String rest) test) {
+    for (final (rest, g) in labels) {
+      if (test(rest)) return g;
+    }
+    return null;
+  }
+
+  if (unit == 'piece') {
+    // Never a cup or an ounce: "1 cup, whole" almonds is not one almond.
+    final measure = RegExp(
+      r'^(cups?|tbsps?|tablespoons?|tsps?|teaspoons?|oz|ounces?|lbs?|pounds?|g|grams?|fl|ml|'
+      r'packages?|containers?|pints?|quarts?|liters?|servings?|nlea|sticks?|pats?)\b',
+    );
+    bool counted(String rest) => !measure.hasMatch(rest);
+    bool starts(String rest, String word) => RegExp('^$word' r'\b').hasMatch(rest);
+    // A label naming the food itself: "1 almond", "10 grapes".
+    final own = find((r) {
+      final t = tokenize(r.split(RegExp(r'[\s,(]')).first);
+      return counted(r) && t.isNotEmpty && food.tokens.containsAll(t);
+    });
+    final word = sizeWord(size);
+    if (word != null) {
+      final sized = find((r) => starts(r, word));
+      if (sized != null) return sized;
+    }
+    // USDA's standard egg is large; for everything else, medium.
+    final isEgg = food.tokens.contains('egg');
+    final base =
+        (isEgg ? find((r) => starts(r, 'large')) : null) ??
+        own ??
+        find((r) => starts(r, 'medium')) ??
+        find((r) => counted(r) && RegExp(r'\b(piece|whole|unit|item|roll|egg)').hasMatch(r)) ??
+        find((r) => starts(r, '(small|large)'));
+    return base == null ? null : base * size;
+  }
+
   const words = {
-    'piece': ['piece', 'medium', 'whole', 'small', 'large', 'unit', 'item', 'roll', 'egg'],
     'slice': ['slice'],
     'cup': ['cup'],
     'bowl': ['bowl', 'katori', 'cup'],
@@ -302,15 +385,11 @@ double? portionGrams(DbFood food, String unit, {bool servingFallback = true}) {
     'serving': ['serving', 'plate'],
   };
   for (final w in words[unit] ?? [unit]) {
-    for (final (label, grams) in food.portions) {
-      final m = RegExp(r'^([\d.]+)\s+(.*)$').firstMatch(label.toLowerCase());
-      if (m == null) continue;
-      final amount = double.tryParse(m.group(1)!) ?? 1;
-      if (RegExp('\\b$w').hasMatch(m.group(2)!) && amount > 0) return grams / amount;
-    }
+    final g = find((r) => RegExp(r'\b' '$w').hasMatch(r));
+    if (g != null) return g * size;
   }
-  if (servingFallback && unit == 'serving' && food.portions.isNotEmpty) {
-    return food.portions.first.$2;
+  if (servingFallback && unit == 'serving' && labels.isNotEmpty) {
+    return labels.first.$2 * size;
   }
   return null;
 }

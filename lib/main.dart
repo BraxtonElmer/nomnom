@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'data/inbox.dart';
 import 'data/reminders.dart';
 import 'data/store.dart';
+import 'data/today_widget.dart';
 import 'nutrition/food_db.dart';
 import 'screens/setup/onboarding.dart';
 import 'screens/shell.dart';
@@ -19,6 +20,7 @@ Future<void> main() async {
   FoodDb.load();
   runApp(const NomnomApp());
   Reminders.init();
+  TodayWidget.start();
 }
 
 class NomnomApp extends StatefulWidget {

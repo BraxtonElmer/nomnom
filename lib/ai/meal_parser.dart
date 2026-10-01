@@ -3,6 +3,7 @@ import '../data/models.dart';
 import '../data/store.dart';
 import '../nutrition/countries.dart';
 import '../nutrition/food_db.dart';
+import '../nutrition/local_parser.dart';
 import '../nutrition/open_food_facts.dart';
 import 'client.dart';
 
@@ -26,6 +27,7 @@ class ParsedMeal {
     this.note,
     this.question,
     this.options = const [],
+    this.local = false,
   });
 
   final String title;
@@ -38,6 +40,9 @@ class ParsedMeal {
   /// Asked only when a missing amount would swing the numbers a lot.
   final String? question;
   final List<String> options;
+
+  /// Read on the phone without the AI.
+  final bool local;
 }
 
 /// Text → items in two steps. The model reads the sentence; the numbers come
@@ -63,6 +68,32 @@ class MealParser {
 
   /// Live packaged-food search, used when the text names a brand.
   final Future<List<DbFood>> Function(String terms, String country) packaged;
+
+  /// Simple meals read on the phone: no request, works offline. Null when
+  /// any part needs the AI. Off in AI-only mode.
+  static Future<ParsedMeal?> readLocally(String text) async {
+    final s = Store.i;
+    if (s.aiOnly) return null;
+    final db = await FoodDb.load();
+    final items = LocalParser(db, country: s.profile.country, recall: s.recall).parse(text);
+    if (items == null) return null;
+    return ParsedMeal(
+      title: items.map((i) => i.qtyLabel == '1 serving' ? i.name : _short(i)).take(3).join(', '),
+      meal: null,
+      local: true,
+      items: [
+        for (final i in items)
+          ParsedItem(
+            item: i,
+            estimate: i,
+            candidates: db.search(i.name, country: s.profile.country),
+          ),
+      ],
+    );
+  }
+
+  static String _short(FoodItem i) =>
+      i.byWeight || i.qty == 1 ? i.name : '${formatNum(i.qty)} ${i.name.toLowerCase()}';
 
   static Future<MealParser> fromSettings() async {
     final s = Store.i;
@@ -244,7 +275,7 @@ class MealParser {
   static FoodItem fromDb(DbFood food, FoodItem estimate) {
     var unitGrams = estimate.unitGrams;
     if (!estimate.byWeight) {
-      final portion = _portionFor(food, estimate.unit);
+      final portion = portionGrams(food, estimate.unit, servingFallback: false);
       if (portion != null) {
         unitGrams = portion;
       } else if (estimate.unit == 'serving' && food.portions.isNotEmpty) {
@@ -281,35 +312,6 @@ class MealParser {
       unitGrams: estimate.unitGrams,
     );
   }
-
-  static double? _portionFor(DbFood food, String unit) {
-    final words = _unitWords[unit] ?? [unit];
-    for (final w in words) {
-      for (final (label, grams) in food.portions) {
-        final l = label.toLowerCase();
-        final m = RegExp(r'^([\d.]+)\s+(.*)$').firstMatch(l);
-        if (m == null) continue;
-        final amount = double.tryParse(m.group(1)!) ?? 1;
-        final rest = m.group(2)!;
-        if (RegExp('\\b$w').hasMatch(rest) && amount > 0) return grams / amount;
-      }
-    }
-    // "A serving" of a table dish means its standard portion.
-    return null;
-  }
-
-  static const _unitWords = {
-    'piece': ['piece', 'medium', 'whole', 'small', 'large', 'unit', 'item', 'roll', 'egg'],
-    'slice': ['slice'],
-    'cup': ['cup'],
-    'bowl': ['bowl', 'katori', 'cup'],
-    'katori': ['katori', 'bowl', 'cup'],
-    'plate': ['plate', 'serving'],
-    'glass': ['glass', 'cup'],
-    'tbsp': ['tbsp', 'tablespoon'],
-    'tsp': ['tsp', 'teaspoon'],
-    'serving': ['serving', 'plate'],
-  };
 
   static String _unit(String? u) {
     final s = (u ?? '').toLowerCase().trim();

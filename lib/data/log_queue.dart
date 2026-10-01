@@ -15,10 +15,12 @@ class LogQueue {
     _busy = true;
     var done = 0;
     try {
-      final parser = await MealParser.fromSettings();
+      MealParser? parser;
       for (final p in Store.i.pending) {
         try {
-          final meal = await parser.parse(p.text);
+          final meal =
+              await MealParser.readLocally(p.text) ??
+              await (parser ??= await MealParser.fromSettings()).parse(p.text);
           await Store.i.putEntry(
             Entry(
               id: Store.newId(),

@@ -141,6 +141,7 @@ class FoodItem {
     this.refName,
     this.flagged = false,
     this.ai,
+    this.richness = 0,
   });
 
   final String name;
@@ -160,12 +161,30 @@ class FoodItem {
   /// The model's own estimate per 100 g, kept for comparison and switching.
   final Nutrients? ai;
 
+  /// For home-style dishes: -1 light on oil and ghee, 0 typical, 1 rich.
+  /// Home cooking varies mostly in fat, so this moves fat by about a third.
+  final int richness;
+
+  /// [per100] with the oil and ghee adjustment applied.
+  Nutrients get eff100 {
+    if (richness == 0) return per100;
+    final dFat = per100.fat * 0.35 * richness;
+    return Nutrients(
+      kcal: per100.kcal + dFat * 9,
+      protein: per100.protein,
+      carbs: per100.carbs,
+      fat: per100.fat + dFat,
+      fiber: per100.fiber,
+      micros: per100.micros,
+    );
+  }
+
   /// AI estimate for this amount, when it exists and the numbers came from
   /// somewhere else.
   Nutrients? get aiTotal => (ai == null || source == Source.ai) ? null : ai!.scale(grams / 100);
 
   double get grams => qty * unitGrams;
-  Nutrients get total => per100.scale(grams / 100);
+  Nutrients get total => eff100.scale(grams / 100);
   bool get byWeight => unit == 'g' || unit == 'ml';
 
   String get qtyLabel => formatQty(qty, unit);
@@ -181,6 +200,7 @@ class FoodItem {
     String? refName,
     bool? flagged,
     Nutrients? ai,
+    int? richness,
   }) => FoodItem(
     name: name ?? this.name,
     qty: qty ?? this.qty,
@@ -192,6 +212,7 @@ class FoodItem {
     refName: refName ?? this.refName,
     flagged: flagged ?? this.flagged,
     ai: ai ?? this.ai,
+    richness: richness ?? this.richness,
   );
 
   /// One stepper notch. Small for single pieces, 10% for weights.
@@ -217,6 +238,7 @@ class FoodItem {
     if (refName != null) 'rn': refName,
     if (flagged) 'f': true,
     if (ai != null && source != Source.ai) 'a': ai!.toJson(),
+    if (richness != 0) 'rv': richness,
   };
 
   factory FoodItem.fromJson(Map<String, dynamic> j) => FoodItem(
@@ -230,6 +252,7 @@ class FoodItem {
     refName: j['rn'] as String?,
     flagged: j['f'] == true,
     ai: j['a'] == null ? null : Nutrients.fromJson(j['a'] as List),
+    richness: (j['rv'] as int?) ?? 0,
   );
 }
 

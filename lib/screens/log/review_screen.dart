@@ -54,6 +54,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
   late DateTime _at;
   String? _error;
   bool _errorLater = false;
+  bool _local = false;
   bool _saving = false;
 
   bool get _editing => widget.entry != null;
@@ -87,10 +88,12 @@ class _ReviewScreenState extends State<ReviewScreen> {
       _items = null;
     });
     try {
-      final parser = await MealParser.fromSettings();
-      final meal = await parser.parse(_prompt);
+      final meal =
+          (_answer == null ? await MealParser.readLocally(_text) : null) ??
+          await (await MealParser.fromSettings()).parse(_prompt);
       if (!mounted) return;
       setState(() {
+        _local = meal.local;
         _items = meal.items;
         _title = meal.title;
         _note = meal.note;
@@ -249,6 +252,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   Text(
                     items == null && _error == null
                         ? 'Reading your plate…'
+                        : _local
+                        ? 'Read on your phone, no AI needed · tap an item to adjust'
                         : 'Estimated for ${countryName(Store.i.profile.country)} · tap an item to adjust',
                     style: T.small,
                   ),
@@ -436,6 +441,8 @@ class SourceTag extends StatelessWidget {
         ? 'Check this one · ${item.source.label}'
         : item.source == Source.ai
         ? 'AI estimate'
+        : item.source == Source.dish
+        ? 'Typical recipe (average)${const {-1: ' · light', 1: ' · rich'}[item.richness] ?? ''}'
         : item.source.label;
     final label = ai == null ? base : '$base · AI says ${kcal(ai.kcal)}';
     return Row(

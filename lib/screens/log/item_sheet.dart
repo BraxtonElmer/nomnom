@@ -193,6 +193,24 @@ class _ItemSheetState extends State<_ItemSheet> {
                       _num('fat', item.total.fat, C.fat),
                     ],
                   ),
+                  if (item.source == Source.dish) ...[
+                    const SizedBox(height: 22),
+                    Text('OIL AND GHEE', style: T.caps),
+                    const SizedBox(height: 10),
+                    Segmented<int>(
+                      values: const [-1, 0, 1],
+                      labels: const ['Light', 'Typical', 'Rich'],
+                      value: item.richness,
+                      onChanged: (r) => setState(() => _item = item.copyWith(richness: r)),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'This is an average home recipe. Home versions differ mostly in oil and '
+                      'ghee, often by 20% or more in calories, so pick what matches your kitchen. '
+                      'nomnom remembers it next time.',
+                      style: T.small.copyWith(fontSize: 12),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Align(
                     alignment: Alignment.centerLeft,

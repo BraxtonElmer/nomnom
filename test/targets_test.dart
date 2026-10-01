@@ -56,4 +56,15 @@ void main() {
     expect(bmiBand(23.9, 'US'), 'Healthy range');
     expect(bmiBand(17, 'GB'), 'Underweight');
   });
+
+  test('richer home cooking adds fat and its calories', () {
+    const dal = FoodItem(name: 'Dal', qty: 1, unit: 'bowl', unitGrams: 200,
+        per100: Nutrients(kcal: 110, protein: 6, carbs: 15, fat: 3), source: Source.dish);
+    expect(dal.total.kcal, 220);
+    final rich = dal.copyWith(richness: 1);
+    expect(rich.total.fat, closeTo(6 * 1.35, 0.001));
+    expect(rich.total.kcal, closeTo(220 + 6 * 0.35 * 9, 0.001));
+    expect(FoodItem.fromJson(rich.toJson()).richness, 1);
+    expect(dal.copyWith(richness: -1).total.kcal, lessThan(220));
+  });
 }

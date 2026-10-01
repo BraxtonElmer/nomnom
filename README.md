@@ -54,7 +54,7 @@ Pick one during setup, or later under **You → AI model**.
 | Provider | Key | Notes |
 | --- | --- | --- |
 | Groq | Free at [console.groq.com/keys](https://console.groq.com/keys) | Fastest. Defaults to `llama-3.3-70b-versatile`. |
-| Gemini | Free at [aistudio.google.com/apikey](https://aistudio.google.com/apikey) | Defaults to `gemini-2.5-flash`. |
+| Gemini | Free at [aistudio.google.com/apikey](https://aistudio.google.com/apikey) | Defaults to `gemini-3.5-flash-lite`. The free tier can be as low as 20 requests a day per model, so it suits trying things out more than daily use. |
 | Custom | Optional | Any OpenAI-compatible server: Ollama, LM Studio, OpenRouter, vLLM… |
 
 The app lists the models your key can use, and you can switch at any time. Bigger models read meals more accurately.
@@ -92,6 +92,13 @@ Screenshots of every screen at phone size, rendered with the real fonts into `bu
 
 ```bash
 flutter test tool/shots --update-goldens
+```
+
+Run real sentences through a live model (spends free-tier requests) and probe food search:
+
+```bash
+GEMINI_KEY=... MODEL=gemini-3.5-flash-lite flutter test tool/live/live_test.dart
+Q='whole milk|poha' flutter test tool/live/search_probe_test.dart
 ```
 
 Rebuild the USDA table from the [SR Legacy CSV download](https://fdc.nal.usda.gov/download-datasets):

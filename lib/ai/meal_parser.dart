@@ -100,8 +100,15 @@ class MealParser {
               )).take(6),
               ...local.take(4),
             ];
-      parsed.add(ParsedItem(item: estimate, estimate: estimate, candidates: candidates));
-      if (candidates.isNotEmpty) unresolved.add(parsed.length - 1);
+      final obvious = brand.isEmpty ? _obviousDish(estimate.name, local) : null;
+      parsed.add(
+        ParsedItem(
+          item: obvious == null ? estimate : fromDb(obvious, estimate),
+          estimate: estimate,
+          candidates: candidates,
+        ),
+      );
+      if (obvious == null && candidates.isNotEmpty) unresolved.add(parsed.length - 1);
     }
 
     if (unresolved.isNotEmpty) {
@@ -140,7 +147,7 @@ class MealParser {
       }
     }
     try {
-      final res = await client.json(_resolveSystem, b.toString());
+      final res = await client.json(_resolveSystem(countryName(country)), b.toString());
       final out = <int, String?>{};
       for (final m in (res['matches'] as List? ?? const [])) {
         if (m is! Map) continue;
@@ -152,6 +159,18 @@ class MealParser {
       // Matching is a refinement; if it fails the estimates still stand.
       return {};
     }
+  }
+
+  /// A dish-table entry whose name is exactly what the user wrote ("poha",
+  /// "dal tadka") needs no second request to confirm. Saves free-tier quota.
+  static DbFood? _obviousDish(String name, List<DbFood> local) {
+    final want = tokenize(name);
+    for (final f in local.take(3)) {
+      if (f.source == Source.dish && f.head.length == want.length && f.head.containsAll(want)) {
+        return f;
+      }
+    }
+    return null;
   }
 
   /// The model's estimate as an item, normalised to per-100 g.
@@ -233,6 +252,10 @@ class MealParser {
         if (RegExp('\\b$w').hasMatch(rest) && amount > 0) return grams / amount;
       }
     }
+    // "A serving" of a table dish means its standard portion.
+    if (unit == 'serving' && food.source == Source.dish && food.portions.isNotEmpty) {
+      return food.portions.first.$2;
+    }
     return null;
   }
 
@@ -310,7 +333,7 @@ Reply with JSON only, shaped like:
    "kcal": 198, "protein": 37, "carbs": 0, "fat": 4.3, "fiber": 0,
    "sugar_g": 0, "sat_fat_g": 1.2, "sodium_mg": 90, "potassium_mg": 300, "calcium_mg": 18,
    "iron_mg": 1.2, "vitamin_c_mg": 0, "vitamin_b12_mcg": 0.4}
-], "note": "Lean protein with fibre-rich dal; a balanced plate."}
+], "note": "<one sentence about this plate>"}
 
 Fields:
 - title: short summary of the plate, at most 40 characters.
@@ -330,10 +353,16 @@ Rules:
 - Don't add oil, ghee, sugar or sides the user didn't mention, beyond what the dish normally contains.
 - If there's no food in the text, return "items": [].''';
 
-const _resolveSystem = '''
-You match foods to nutrition database entries.
-For each numbered food, pick the candidate id that is the same food in the same state: cooked vs raw, with or without skin, sweetened or not, homemade vs restaurant. Prefer plain generic entries over branded ones, unless the user named that brand.
-If no candidate is a reasonable match, use null. Never invent ids.
+String _resolveSystem(String country) =>
+    '''
+You match foods to nutrition database entries for someone in $country.
+For each numbered food, pick the candidate id that best matches the food as eaten: same food, same state (cooked vs raw, with or without skin, sweetened or not).
+- Ids starting with "in-" are an Indian home-style dish table. For Indian dishes cooked at home, prefer them over commercial or frozen USDA products.
+- Regional names: full cream milk is whole milk, toned milk is 2% milk, curd is plain yogurt, brown bread is whole-wheat bread.
+- Close variants are fine when nothing is exact: plain "dal" can match dal tadka or dal fry; "curd" can match plain yogurt.
+- Ids starting with "off:" are packaged products; pick one only when the user named that brand or product.
+- Prefer plain generic entries over branded ones otherwise.
+- If no candidate is a reasonable match, use null. Never invent ids.
 Reply with JSON only: {"matches": [{"item": 0, "id": "usda:171477"}, {"item": 1, "id": null}]}''';
 
 extension on String {

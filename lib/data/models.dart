@@ -446,8 +446,8 @@ class Profile {
 }
 
 enum Provider {
-  groq('Groq', 'Free tier · fastest'),
-  gemini('Gemini', 'Free tier · Google'),
+  groq('Groq', 'Recommended · generous free tier'),
+  gemini('Gemini', 'Free tier is small'),
   custom('Custom', 'Ollama, LM Studio, OpenRouter');
 
   const Provider(this.label, this.blurb);

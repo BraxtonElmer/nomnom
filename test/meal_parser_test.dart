@@ -127,6 +127,8 @@ void main() {
     // candidates were offered to the matcher, the junk item wasn't
     expect(ai.prompts[1], contains('usda:171477'));
     expect(ai.prompts[1], isNot(contains('3. Mystery')));
+    // Exact dish-table names skip the matching request entirely.
+    expect(ai.prompts[1], isNot(contains('2. Dal tadka')));
   });
 
   test('remembered foods skip matching', () async {

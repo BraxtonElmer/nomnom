@@ -110,6 +110,7 @@ class Gemini extends AiClient {
         'responseMimeType': 'application/json',
         // Thinking adds seconds and little for this task on Flash.
         if (model.contains('2.5-flash')) 'thinkingConfig': {'thinkingBudget': 0},
+        if (RegExp(r'gemini-[3-9]').hasMatch(model)) 'thinkingConfig': {'thinkingLevel': 'low'},
       },
     };
     final res = await _send(
@@ -158,6 +159,11 @@ bool _isChatModel(String id) {
     'aqa',
     'compound',
     'distil',
+    'robotics',
+    'computer-use',
+    'transcribe',
+    'customtools',
+    'omni',
   ];
   final l = id.toLowerCase();
   return !skip.any(l.contains);
@@ -173,7 +179,12 @@ String pickModel(Provider p, List<String> available) {
       'meta-llama/llama-4-maverick-17b-128e-instruct',
       'openai/gpt-oss-20b',
     ],
-    Provider.gemini: ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash-lite'],
+    Provider.gemini: [
+      'gemini-3.5-flash-lite',
+      'gemini-flash-lite-latest',
+      'gemini-2.5-flash',
+      'gemini-flash-latest',
+    ],
     Provider.custom: <String>[],
   };
   for (final m in prefs[p]!) {
@@ -182,14 +193,23 @@ String pickModel(Provider p, List<String> available) {
   return available.isEmpty ? '' : available.first;
 }
 
+/// Sends once, and once more after a short pause if the provider says it's
+/// busy or rate limited; free tiers often clear within a couple of seconds.
 Future<http.Response> _send(Future<http.Response> Function() req) async {
-  try {
-    return await req().timeout(AiClient.timeout);
-  } on TimeoutException {
-    throw const AiException('The model took too long. Try again, or pick a faster model.');
-  } catch (e) {
-    if (e is AiException) rethrow;
-    throw const AiException("Couldn't reach the AI. Check your connection or endpoint.");
+  for (var attempt = 0; ; attempt++) {
+    final http.Response res;
+    try {
+      res = await req().timeout(AiClient.timeout);
+    } on TimeoutException {
+      throw const AiException('The model took too long. Try again, or pick a faster model.');
+    } catch (e) {
+      if (e is AiException) rethrow;
+      throw const AiException("Couldn't reach the AI. Check your connection or endpoint.");
+    }
+    final busy = res.statusCode == 429 || res.statusCode == 503;
+    if (!busy || attempt >= 1) return res;
+    final wait = int.tryParse(res.headers['retry-after'] ?? '') ?? 3;
+    await Future<void>.delayed(Duration(seconds: wait.clamp(1, 8)));
   }
 }
 
@@ -201,7 +221,9 @@ Map<String, dynamic> _decode(http.Response res) {
   if (res.statusCode >= 200 && res.statusCode < 300 && body != null) return body;
 
   final err = body?['error'];
-  final msg = (err is Map ? err['message'] : err)?.toString() ?? '';
+  final msg =
+      '${(err is Map ? err['message'] : err) ?? ''} ${err is Map ? jsonEncode(err['details'] ?? '') : ''}'
+          .trim();
   switch (res.statusCode) {
     case 400 when msg.toLowerCase().contains('api key'):
     case 401:
@@ -209,6 +231,11 @@ Map<String, dynamic> _decode(http.Response res) {
       throw const AiException('That key was rejected. Double-check it in settings.');
     case 404:
       throw const AiException('Model or endpoint not found. Pick another model.');
+    case 429 when msg.contains('PerDay') || msg.contains('per day'):
+      throw const AiException(
+        "Today's free quota for this model is used up. It resets tomorrow; meanwhile "
+        'switch model or provider in You → AI model.',
+      );
     case 429:
       throw const AiException('Rate limit hit on the free tier. Wait a moment, or switch model.');
   }

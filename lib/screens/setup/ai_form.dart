@@ -169,6 +169,14 @@ class _AiFormState extends State<AiForm> {
             onTap: () => _switch(p),
           ),
         const SizedBox(height: 20),
+        if (_provider == Provider.gemini) ...[
+          Text(
+            'Gemini’s free tier can be as low as 20 requests a day per model, and each log '
+            'uses one or two. Fine for trying out; Groq lasts much longer for daily use.',
+            style: T.small,
+          ),
+          const SizedBox(height: 20),
+        ],
         if (_provider == Provider.custom) ...[
           PaperField(
             label: 'Endpoint',

@@ -24,6 +24,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.8
 
 flutter:
   uses-material-design: true
@@ -49,3 +51,19 @@ flutter:
         - asset: assets/fonts/InstrumentSerif-Regular.ttf
         - asset: assets/fonts/InstrumentSerif-Italic.ttf
           style: italic
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/icon/icon.png
+  adaptive_icon_background: "#F4F1EA"
+  adaptive_icon_foreground: assets/icon/foreground.png
+  remove_alpha_ios: true
+
+flutter_native_splash:
+  color: "#F4F1EA"
+  image: assets/icon/splash.png
+  android_12:
+    color: "#F4F1EA"
+    image: assets/icon/foreground.png
+  web: false

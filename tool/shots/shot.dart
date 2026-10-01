@@ -11,6 +11,7 @@ import 'package:nomnom/data/models.dart';
 import 'package:nomnom/data/store.dart';
 import 'package:nomnom/nutrition/food_db.dart';
 import 'package:nomnom/theme/theme.dart';
+import '../../test/support/db.dart';
 
 /// Renders screens to build/shots/*.png at phone size with the real fonts.
 /// Run: flutter test tool/shots --update-goldens
@@ -40,12 +41,7 @@ Future<void> setUpShots() async {
 
   final dir = Directory.systemTemp.createTempSync('nomnom_shots');
   await Store.i.init(path: dir.path);
-  FoodDb.use(
-    FoodDb.fromRaw(
-      File('assets/data/usda.json').readAsStringSync(),
-      File('assets/data/dishes_in.json').readAsStringSync(),
-    ),
-  );
+  FoodDb.use(loadTestDb());
 }
 
 Future<void> shoot(

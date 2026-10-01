@@ -1,0 +1,10 @@
+[
+["af-jollof", "Jollof rice", "jollof", 160, 3.5, 27, 4.5, 1, [["1 plate", 350]]],
+["af-fufu", "Fufu", "", 130, 1, 32, 0.3, 1.5, [["1 serving", 250]]],
+["af-egusi", "Egusi soup", "egusi", 180, 9, 6, 14, 2.5, [["1 bowl", 250]]],
+["af-suya", "Suya", "beef suya", 240, 24, 4, 14, 1, [["1 skewer", 100]]],
+["af-ugali", "Ugali", "nshima pap", 115, 2.5, 25, 0.5, 1.5, [["1 serving", 250]]],
+["af-pilau", "Pilau", "pilau rice", 165, 5, 24, 5, 1, [["1 plate", 350]]],
+["af-injera", "Injera", "", 165, 6, 33, 1, 4, [["1 piece", 125]]],
+["af-doro-wat", "Doro wat", "", 150, 13, 5, 9, 1.5, [["1 bowl", 250]]]
+]

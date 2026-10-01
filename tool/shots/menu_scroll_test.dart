@@ -14,6 +14,9 @@ void main() {
     await shoot(tester, 'today', const Shell());
     await tester.drag(find.byType(ListView).first, const Offset(0, -420));
     await tester.pumpAndSettle();
-    await expectLater(find.byType(MaterialApp), matchesGoldenFile('../../build/shots/today_menu.png'));
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../build/shots/today_menu.png'),
+    );
   });
 }

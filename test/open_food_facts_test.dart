@@ -6,6 +6,7 @@ import 'package:nomnom/ai/meal_parser.dart';
 import 'package:nomnom/data/models.dart';
 import 'package:nomnom/nutrition/food_db.dart';
 import 'package:nomnom/nutrition/open_food_facts.dart';
+import 'support/db.dart';
 
 class _OneShot extends AiClient {
   _OneShot(this.replies);
@@ -37,12 +38,7 @@ void main() {
   });
 
   test('a named brand pulls packaged candidates into matching', () async {
-    FoodDb.use(
-      FoodDb.fromRaw(
-        File('assets/data/usda.json').readAsStringSync(),
-        File('assets/data/dishes_in.json').readAsStringSync(),
-      ),
-    );
+    FoodDb.use(loadTestDb());
     final ai = _OneShot([
       {
         'title': 'Amul lassi',

@@ -1,0 +1,13 @@
+[
+["gb-fish-chips", "Fish and chips", "fish n chips", 210, 9, 22, 10, 2, [["1 plate", 450]]],
+["gb-full-english", "Full English breakfast", "fry up english breakfast", 190, 10, 10, 13, 2, [["1 plate", 450]]],
+["gb-shepherds-pie", "Shepherd's pie", "shepherds pie cottage pie", 110, 6, 10, 5, 1.3, [["1 plate", 350]]],
+["gb-beans-toast", "Beans on toast", "baked beans toast", 140, 6, 24, 2, 4.5, [["1 plate", 250]]],
+["gb-sausage-roll", "Sausage roll", "", 330, 8, 25, 22, 1.2, [["1 piece", 120]]],
+["gb-scone", "Scone with jam and cream", "scone cream tea", 350, 5, 45, 17, 1.5, [["1 piece", 110]]],
+["gb-jacket-potato", "Jacket potato", "jacket potato beans cheese baked potato", 130, 5.5, 19, 4, 2.5, [["1 plate", 400]]],
+["gb-roast-dinner", "Sunday roast", "roast dinner", 145, 10, 12, 6.5, 2, [["1 plate", 500]]],
+["gb-chicken-pie", "Chicken pie", "pie", 260, 9, 22, 15, 1, [["1 piece", 200]]],
+["gb-porridge", "Porridge", "oatmeal", 80, 2.8, 12, 2, 1.5, [["1 bowl", 250]]],
+["gb-crumpet", "Crumpet", "", 200, 6, 40, 1, 2, [["1 piece", 50]]]
+]

@@ -1,0 +1,12 @@
+[
+["sea-nasi-goreng", "Nasi goreng", "", 170, 6, 24, 5.5, 1, [["1 plate", 350]]],
+["sea-mee-goreng", "Mee goreng", "", 170, 6, 23, 6, 1.5, [["1 plate", 350]]],
+["sea-nasi-lemak", "Nasi lemak", "", 190, 6, 25, 7.5, 1.5, [["1 plate", 350]]],
+["sea-rendang", "Beef rendang", "rendang", 200, 18, 5, 12, 1.5, [["1 serving", 150]]],
+["sea-laksa", "Laksa", "", 110, 5, 10, 6, 1, [["1 bowl", 550]]],
+["sea-roti-canai", "Roti canai", "roti prata", 300, 6, 40, 13, 1.5, [["1 piece", 100]]],
+["sea-chicken-rice", "Hainanese chicken rice", "chicken rice", 180, 9, 24, 5, 0.5, [["1 plate", 380]]],
+["sea-adobo", "Chicken adobo", "adobo", 190, 17, 3, 12, 0.3, [["1 serving", 200]]],
+["sea-pancit", "Pancit", "pancit canton", 150, 6, 22, 4.5, 1.2, [["1 plate", 300]]],
+["sea-sinigang", "Sinigang", "", 35, 3.5, 3, 1, 0.8, [["1 bowl", 400]]]
+]

@@ -1,0 +1,16 @@
+[
+["eu-croissant", "Croissant", "", 406, 8, 46, 21, 2.6, [["1 piece", 60]]],
+["eu-pain-au-chocolat", "Pain au chocolat", "chocolate croissant", 420, 7, 46, 23, 2.5, [["1 piece", 65]]],
+["eu-quiche", "Quiche", "quiche lorraine", 300, 10, 18, 21, 0.8, [["1 slice", 150]]],
+["eu-crepe", "Nutella crepe", "crepe", 330, 6, 42, 15, 1.5, [["1 piece", 120]]],
+["eu-croque-monsieur", "Croque monsieur", "", 280, 15, 20, 16, 1, [["1 piece", 200]]],
+["eu-paella", "Paella", "", 160, 9, 20, 5, 1, [["1 plate", 400]]],
+["eu-tortilla-espanola", "Spanish omelette", "tortilla espanola", 160, 6, 11, 10, 1, [["1 slice", 120]]],
+["eu-patatas-bravas", "Patatas bravas", "", 180, 2.5, 22, 9, 2.5, [["1 plate", 200]]],
+["eu-schnitzel", "Schnitzel", "wiener schnitzel", 280, 18, 14, 17, 0.6, [["1 piece", 180]]],
+["eu-bratwurst", "Bratwurst", "sausage", 300, 12, 2, 27, 0, [["1 piece", 100]]],
+["eu-currywurst", "Currywurst", "", 210, 9, 10, 15, 0.5, [["1 serving", 250]]],
+["eu-pretzel", "Pretzel", "brezel", 340, 9, 70, 3, 2.5, [["1 piece", 100]]],
+["eu-gyro", "Gyros wrap", "gyro pita", 220, 11, 22, 10, 1.5, [["1 piece", 300]]],
+["eu-greek-salad", "Greek salad", "", 110, 3.5, 5, 9, 1.5, [["1 bowl", 250]]]
+]

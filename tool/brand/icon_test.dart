@@ -106,10 +106,13 @@ void main() {
 
   testWidgets('icon', (t) => render(t, 'icon', const Mark(size: 1024, background: C.paper)));
   // Adaptive foreground: Android crops to a circle inside the middle 66%.
-  testWidgets('foreground', (t) => render(
-        t,
-        'foreground',
-        const Padding(padding: EdgeInsets.all(170), child: Mark(size: 684)),
-      ));
+  testWidgets(
+    'foreground',
+    (t) => render(
+      t,
+      'foreground',
+      const Padding(padding: EdgeInsets.all(170), child: Mark(size: 684)),
+    ),
+  );
   testWidgets('splash', (t) => render(t, 'splash', const Mark(size: 1024)));
 }

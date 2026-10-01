@@ -1,0 +1,18 @@
+[
+["me-hummus", "Hummus", "houmous", 170, 7, 14, 10, 6, [["1 tbsp", 15], ["1 bowl", 100]]],
+["me-falafel", "Falafel", "", 330, 13, 32, 17, 5, [["1 piece", 17]]],
+["me-shawarma", "Chicken shawarma wrap", "shawarma shawarma roll", 210, 13, 20, 8.5, 1.5, [["1 piece", 300]]],
+["me-doner", "Doner kebab", "doner", 230, 12, 20, 11, 1.5, [["1 piece", 350]]],
+["me-shish-tawook", "Shish tawook", "chicken kebab skewer", 180, 25, 3, 8, 0.5, [["1 skewer", 120]]],
+["me-kofta", "Kofta kebab", "kofta", 250, 17, 4, 18, 0.8, [["1 skewer", 80]]],
+["me-kabsa", "Chicken kabsa", "kabsa machboos", 170, 9, 22, 5, 1, [["1 plate", 400]]],
+["me-mandi", "Chicken mandi", "mandi", 175, 10, 21, 5.5, 0.8, [["1 plate", 450]]],
+["me-tabbouleh", "Tabbouleh", "", 120, 2.5, 12, 7, 3, [["1 bowl", 150]]],
+["me-fattoush", "Fattoush", "", 90, 1.8, 10, 5, 2.5, [["1 bowl", 200]]],
+["me-baba-ganoush", "Baba ganoush", "mutabal", 130, 2.5, 8, 10, 3.5, [["1 bowl", 100]]],
+["me-pita", "Pita bread", "pita khubz", 275, 9, 56, 1.2, 2.2, [["1 piece", 60]]],
+["me-lahmacun", "Lahmacun", "", 240, 10, 30, 8, 2, [["1 piece", 140]]],
+["me-lentil-soup", "Lentil soup", "shorbat adas", 75, 4.5, 11, 1.5, 3, [["1 bowl", 300]]],
+["me-baklava", "Baklava", "", 430, 6, 47, 25, 2, [["1 piece", 30]]],
+["me-kunafa", "Kunafa", "knafeh", 350, 7, 40, 18, 1, [["1 piece", 120]]]
+]

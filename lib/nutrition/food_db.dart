@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../data/models.dart';
+import 'cuisines.dart';
 
 /// A food from a bundled table, with nutrition per 100 g.
 class DbFood {
@@ -19,7 +20,7 @@ class DbFood {
     required this.first,
     required this.length,
     Set<String>? front,
-    this.country,
+    this.cuisine,
   }) : front = front ?? head;
 
   final String id;
@@ -42,7 +43,8 @@ class DbFood {
   final int length;
 
   /// Set for regional dish tables.
-  final String? country;
+  /// Set for dish tables, e.g. 'indian', 'chinese'.
+  final String? cuisine;
 }
 
 class FoodDb {
@@ -79,13 +81,15 @@ class FoodDb {
 
   static Future<FoodDb> _load() async {
     final usda = await rootBundle.loadString('assets/data/usda.json');
-    final dishes = await rootBundle.loadString('assets/data/dishes_in.json');
+    final dishes = {for (final c in cuisines) c.id: await rootBundle.loadString(c.asset)};
     final foods = await compute(_parse, (usda, dishes));
     return _instance = FoodDb._(foods);
   }
 
   /// For tests and tools that have the raw JSON at hand.
-  factory FoodDb.fromRaw(String usda, String dishes) => FoodDb._(_parse((usda, dishes)));
+  /// [dishes] maps a cuisine id to its table's JSON.
+  factory FoodDb.fromRaw(String usda, Map<String, String> dishes) =>
+      FoodDb._(_parse((usda, dishes)));
 
   int get size => _foods.length;
 
@@ -116,7 +120,10 @@ class FoodDb {
       // Words up front that the query didn't ask for mean a different food.
       s -= 0.9 * f.front.where((t) => !q.contains(t)).length;
       s -= 0.1 * f.length;
-      if (f.country != null) s += f.country == country ? 2.5 : -1;
+      // Local food gets a nudge; nothing is penalised for being foreign.
+      if (f.cuisine != null && (cuisineById(f.cuisine)?.countries.contains(country) ?? false)) {
+        s += 1.5;
+      }
       if (s > 0) scored.add((f, s));
     }
     scored.sort((a, b) => b.$2.compareTo(a.$2));
@@ -181,24 +188,26 @@ Set<String> tokenize(String s) => s
     .map(_stem)
     .toSet();
 
-List<DbFood> _parse((String, String) raw) {
+List<DbFood> _parse((String, Map<String, String>) raw) {
   final out = <DbFood>[];
-  for (final r in jsonDecode(raw.$2) as List) {
-    final name = r[1] as String;
-    out.add(
-      DbFood(
-        id: r[0] as String,
-        name: name,
-        source: Source.dish,
-        country: 'IN',
-        per100: Nutrients.fromJson([r[3], r[4], r[5], r[6], r[7]]),
-        portions: [for (final p in r[8] as List) (p[0] as String, (p[1] as num).toDouble())],
-        tokens: tokenize('$name ${r[2]}'),
-        head: tokenize(name),
-        first: _first(name),
-        length: tokenize(name).length,
-      ),
-    );
+  for (final MapEntry(key: cuisine, value: json) in raw.$2.entries) {
+    for (final r in jsonDecode(json) as List) {
+      final name = r[1] as String;
+      out.add(
+        DbFood(
+          id: r[0] as String,
+          name: name,
+          source: Source.dish,
+          cuisine: cuisine,
+          per100: Nutrients.fromJson([r[3], r[4], r[5], r[6], r[7]]),
+          portions: [for (final p in r[8] as List) (p[0] as String, (p[1] as num).toDouble())],
+          tokens: tokenize('$name ${r[2]}'),
+          head: tokenize(name),
+          first: _first(name),
+          length: tokenize(name).length,
+        ),
+      );
+    }
   }
   for (final r in jsonDecode(raw.$1) as List) {
     final name = r[1] as String;

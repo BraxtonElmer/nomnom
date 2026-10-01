@@ -1,0 +1,9 @@
+[
+["sa-nihari", "Nihari", "", 150, 12, 4, 10, 0.5, [["1 bowl", 300]]],
+["sa-haleem", "Haleem", "", 140, 10, 13, 5.5, 2.5, [["1 bowl", 300]]],
+["sa-karahi", "Chicken karahi", "karahi kadai chicken", 190, 16, 5, 12, 1, [["1 bowl", 250]]],
+["sa-seekh-kebab", "Seekh kebab", "", 240, 17, 4, 17, 0.5, [["1 piece", 60]]],
+["sa-chapli-kebab", "Chapli kebab", "", 260, 16, 8, 18, 1, [["1 piece", 100]]],
+["sa-kottu", "Kottu roti", "kottu", 180, 7, 22, 7, 1.5, [["1 plate", 400]]],
+["sa-sel-roti", "Sel roti", "", 350, 4, 50, 15, 1, [["1 piece", 50]]]
+]

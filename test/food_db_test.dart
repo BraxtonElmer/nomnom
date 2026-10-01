@@ -1,13 +1,8 @@
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nomnom/nutrition/food_db.dart';
+import 'support/db.dart';
 
 void main() {
-  final db = FoodDb.fromRaw(
-    File('assets/data/usda.json').readAsStringSync(),
-    File('assets/data/dishes_in.json').readAsStringSync(),
-  );
+  final db = loadTestDb();
 
   void top(String q, String want, {String? country = 'IN'}) {
     final hits = db.search(q, country: country);
@@ -35,5 +30,23 @@ void main() {
     top('peanut butter', 'peanut butter');
     top('oats', 'oat');
     top('apple', 'apple');
+  });
+
+  test('every cuisine is found from every country', () {
+    void first(String q, String country, String id) {
+      final hits = db.search(q, country: country);
+      expect(hits.take(3).map((h) => h.id), contains(id), reason: '"$q" from $country');
+    }
+
+    first('kung pao chicken', 'IN', 'cn-kung-pao');
+    first('chilli chicken', 'IN', 'cn-chilli-chicken');
+    first('butter chicken', 'GB', 'in-butter-chicken');
+    first('pad thai', 'US', 'th-pad-thai');
+    first('jollof rice', 'GB', 'af-jollof');
+    first('salmon nigiri', 'IN', 'jp-salmon-nigiri');
+    first('margherita pizza', 'IN', 'it-margherita');
+    first('chicken shawarma', 'IN', 'me-shawarma');
+    first('fish and chips', 'IN', 'gb-fish-chips');
+    first('pho', 'AU', 'vn-pho');
   });
 }

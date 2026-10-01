@@ -1,10 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nomnom/ai/client.dart';
 import 'package:nomnom/ai/meal_parser.dart';
 import 'package:nomnom/data/models.dart';
 import 'package:nomnom/nutrition/food_db.dart';
+import 'support/db.dart';
 
 /// Replays canned replies: first the parse, then the match.
 class FakeAi extends AiClient {
@@ -23,12 +22,7 @@ class FakeAi extends AiClient {
 }
 
 void main() {
-  FoodDb.use(
-    FoodDb.fromRaw(
-      File('assets/data/usda.json').readAsStringSync(),
-      File('assets/data/dishes_in.json').readAsStringSync(),
-    ),
-  );
+  FoodDb.use(loadTestDb());
 
   test('chicken, rotis and dal resolve to table numbers', () async {
     final ai = FakeAi([

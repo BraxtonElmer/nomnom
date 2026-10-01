@@ -11,6 +11,7 @@ import 'package:nomnom/ai/meal_parser.dart';
 import 'package:nomnom/data/models.dart';
 import 'package:nomnom/nutrition/food_db.dart';
 import 'package:nomnom/nutrition/open_food_facts.dart';
+import '../../test/support/db.dart';
 
 const sentences = [
   '120g grilled chicken, 2 rotis and a bowl of dal',
@@ -32,15 +33,10 @@ void main() {
 
   test('live parse', () async {
     if (key.isEmpty) return markTestSkipped('set GEMINI_KEY');
-    FoodDb.use(
-      FoodDb.fromRaw(
-        File('assets/data/usda.json').readAsStringSync(),
-        File('assets/data/dishes_in.json').readAsStringSync(),
-      ),
-    );
+    FoodDb.use(loadTestDb());
     final parser = MealParser(
       Gemini(key, model),
-      country: 'IN',
+      country: Platform.environment['COUNTRY'] ?? 'IN',
       recall: (_) => null,
       packaged: (t, c) => OpenFoodFacts.search(t, country: c),
     );

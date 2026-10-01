@@ -96,7 +96,7 @@ class _AboutFormState extends State<AboutForm> {
           ),
         ),
         const SizedBox(height: 6),
-        Text('Used to estimate local dishes and portion sizes.', style: T.small),
+        Text('Sets typical portions and units. Food from any cuisine still works.', style: T.small),
         const SizedBox(height: 26),
         Row(
           children: [
@@ -312,11 +312,8 @@ class _CountrySheetState extends State<_CountrySheet> {
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               itemCount: list.length,
-              itemBuilder: (context, i) => RuledRow(
-                label: list[i].value,
-                value: list[i].key == 'IN' ? 'Dish table' : null,
-                onTap: () => Navigator.pop(context, list[i].key),
-              ),
+              itemBuilder: (context, i) =>
+                  RuledRow(label: list[i].value, onTap: () => Navigator.pop(context, list[i].key)),
             ),
           ),
         ],

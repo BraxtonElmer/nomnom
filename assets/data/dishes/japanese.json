@@ -1,0 +1,18 @@
+[
+["jp-salmon-nigiri", "Salmon nigiri", "sushi salmon", 180, 9, 25, 4.5, 0.3, [["1 piece", 35]]],
+["jp-california-roll", "California roll", "sushi roll maki", 150, 4.5, 25, 3.5, 1.5, [["1 piece", 30], ["1 roll", 220]]],
+["jp-salmon-sashimi", "Salmon sashimi", "", 208, 20, 0, 13, 0, [["1 piece", 15], ["1 serving", 100]]],
+["jp-tuna-sashimi", "Tuna sashimi", "", 130, 29, 0, 1, 0, [["1 piece", 15], ["1 serving", 100]]],
+["jp-tonkotsu-ramen", "Tonkotsu ramen", "ramen pork", 90, 4.5, 9, 4, 0.6, [["1 bowl", 600]]],
+["jp-shoyu-ramen", "Shoyu ramen", "ramen soy", 70, 4, 9, 2, 0.6, [["1 bowl", 550]]],
+["jp-miso-soup", "Miso soup", "", 30, 2, 3, 1, 0.5, [["1 bowl", 240]]],
+["jp-chicken-teriyaki", "Chicken teriyaki", "teriyaki", 190, 20, 8, 8, 0.2, [["1 serving", 200]]],
+["jp-katsu-curry", "Katsu curry", "chicken katsu curry rice", 165, 7, 20, 6.5, 1.2, [["1 plate", 450]]],
+["jp-tempura", "Shrimp tempura", "prawn tempura", 250, 12, 18, 15, 0.8, [["1 piece", 30]]],
+["jp-onigiri", "Onigiri", "rice ball", 180, 4, 38, 1, 0.5, [["1 piece", 110]]],
+["jp-udon", "Udon soup", "udon noodles", 75, 3, 13, 1, 0.6, [["1 bowl", 500]]],
+["jp-gyoza", "Gyoza", "japanese dumpling", 210, 8, 24, 9, 1.2, [["1 piece", 25]]],
+["jp-karaage", "Chicken karaage", "japanese fried chicken", 260, 18, 10, 16, 0.3, [["1 piece", 30], ["1 serving", 150]]],
+["jp-gyudon", "Gyudon", "beef bowl donburi", 165, 7, 22, 5, 0.5, [["1 bowl", 400]]],
+["jp-edamame", "Edamame", "", 121, 12, 9, 5, 5, [["1 bowl", 100]]]
+]

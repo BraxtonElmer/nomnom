@@ -1,0 +1,9 @@
+[
+["la-feijoada", "Feijoada", "", 150, 10, 10, 8, 4, [["1 bowl", 300]]],
+["la-pao-de-queijo", "Pao de queijo", "cheese bread", 330, 6, 35, 18, 0.3, [["1 piece", 25]]],
+["la-coxinha", "Coxinha", "", 290, 10, 30, 14, 1.5, [["1 piece", 70]]],
+["la-acai-bowl", "Acai bowl", "acai", 120, 2, 22, 3.5, 4, [["1 bowl", 350]]],
+["la-arepa", "Arepa", "", 220, 5, 38, 5, 3, [["1 piece", 120]]],
+["la-empanada", "Empanada", "", 300, 10, 28, 16, 1.5, [["1 piece", 100]]],
+["la-rice-beans", "Rice and beans", "arroz con frijoles", 140, 5, 26, 2, 4, [["1 plate", 300]]]
+]

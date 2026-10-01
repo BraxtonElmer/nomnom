@@ -191,7 +191,8 @@ class MealParser {
     for (final f in local.take(3)) {
       // Its core name is in what was typed, and every typed word is one of
       // its names: "white rice" is Rice, but "egg" is not Egg curry.
-      if (f.source == Source.dish && want.containsAll(f.head) && f.tokens.containsAll(want)) {
+      final words = want.difference(_modifiers);
+      if (f.source == Source.dish && words.containsAll(f.head) && f.tokens.containsAll(words)) {
         return f;
       }
     }
@@ -236,7 +237,14 @@ class MealParser {
     var unitGrams = estimate.unitGrams;
     if (!estimate.byWeight) {
       final portion = _portionFor(food, estimate.unit);
-      if (portion != null) unitGrams = portion;
+      if (portion != null) {
+        unitGrams = portion;
+      } else if (estimate.unit == 'serving' && food.portions.isNotEmpty) {
+        // "A serving" is vague both ways: trust the model's grams, which know
+        // the context (takeaway, country), but keep them near the table's.
+        final std = food.portions.first.$2;
+        unitGrams = estimate.unitGrams.clamp(std * 0.6, std * 1.25);
+      }
     }
     final item = estimate.copyWith(
       unitGrams: unitGrams,
@@ -278,9 +286,6 @@ class MealParser {
       }
     }
     // "A serving" of a table dish means its standard portion.
-    if (unit == 'serving' && food.source == Source.dish && food.portions.isNotEmpty) {
-      return food.portions.first.$2;
-    }
     return null;
   }
 
@@ -329,6 +334,27 @@ class MealParser {
     return alias[s] ?? s;
   }
 
+  /// Words that describe a dish without changing what it is.
+  static const _modifiers = {
+    'veg',
+    'vegetable',
+    'plain',
+    'homemade',
+    'home',
+    'made',
+    'fresh',
+    'hot',
+    'spicy',
+    'small',
+    'medium',
+    'large',
+    'big',
+    'extra',
+    'restaurant',
+    'takeaway',
+    'style',
+  };
+
   static const _microKeys = [
     (Micro.sugar, 'sugar_g'),
     (Micro.satFat, 'sat_fat_g'),
@@ -349,7 +375,9 @@ class MealParser {
 String _parseSystem(String country) =>
     '''
 You turn a food diary line into structured data for a calorie tracker.
-The user lives in $country. Assume dishes, recipes and portion sizes typical there unless the text says otherwise.
+The user lives in $country. People eat food from every cuisine, at home and out: Chinese takeaway in India, curry in London, sushi anywhere.
+- Identify each dish by its own cuisine and recipe, whatever the country.
+- For portions, use what is typical where the user lives; use restaurant or takeaway portions when the food sounds ordered or eaten out.
 
 Reply with JSON only, shaped like:
 {"title": "Grilled chicken, 2 rotis, dal", "meal": null, "items": [
@@ -385,7 +413,7 @@ String _resolveSystem(String country) =>
     '''
 You match foods to nutrition database entries for someone in $country.
 For each numbered food, pick the candidate id that best matches the food as eaten: same food, same state (cooked vs raw, with or without skin, sweetened or not).
-- Ids starting with "in-" are an Indian home-style dish table. For Indian dishes cooked at home, prefer them over commercial or frozen USDA products.
+- Ids like "in-…", "cn-…", "jp-…", "it-…" are dish tables of typical recipes for each cuisine (in = Indian home-style, cn = Chinese, jp = Japanese, it = Italian, and so on). Prefer them for prepared dishes; prefer USDA for single ingredients and plain foods.
 - Regional names: full cream milk is whole milk, toned milk is 2% milk, curd is plain yogurt, brown bread is whole-wheat bread.
 - Close variants are fine when nothing is exact: plain "dal" can match dal tadka or dal fry; "curd" can match plain yogurt.
 - Ids starting with "off:" are packaged products; pick one only when the user named that brand or product.

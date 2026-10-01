@@ -28,12 +28,12 @@ class _WeekStripState extends State<WeekStrip> {
 
   DateTime get _thisMonday {
     final t = dayOf(DateTime.now());
-    return t.subtract(Duration(days: t.weekday - 1));
+    return addDays(t, 1 - t.weekday);
   }
 
   int _pageFor(DateTime d) {
-    final monday = dayOf(d).subtract(Duration(days: d.weekday - 1));
-    return _origin + (monday.difference(_thisMonday).inDays / 7).round();
+    final monday = addDays(d, 1 - d.weekday);
+    return _origin + (daysBetween(_thisMonday, monday) / 7).round();
   }
 
   @override
@@ -61,10 +61,10 @@ class _WeekStripState extends State<WeekStrip> {
         controller: _pages,
         itemCount: _origin + 1, // no weeks in the future
         itemBuilder: (context, page) {
-          final monday = _thisMonday.add(Duration(days: 7 * (page - _origin)));
+          final monday = addDays(_thisMonday, 7 * (page - _origin));
           return Row(
             children: List.generate(7, (i) {
-              final day = monday.add(Duration(days: i));
+              final day = addDays(monday, i);
               return Expanded(child: _day(day));
             }),
           );

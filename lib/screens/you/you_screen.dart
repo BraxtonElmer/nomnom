@@ -338,11 +338,12 @@ class YouScreen extends StatelessWidget {
 
 /// Page with a title, scrolling body and a pinned Save button.
 class _EditPage extends StatelessWidget {
-  const _EditPage({required this.title, required this.child, this.onSave});
+  const _EditPage({required this.title, required this.child, this.onSave, this.canSave = true});
 
   final String title;
   final Widget child;
   final VoidCallback? onSave;
+  final bool canSave;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -376,7 +377,7 @@ class _EditPage extends StatelessWidget {
           if (onSave != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(S.gutter, 0, S.gutter, 16),
-              child: PrimaryButton(label: 'Save', onTap: onSave),
+              child: PrimaryButton(label: 'Save', onTap: canSave ? onSave : null),
             ),
         ],
       ),
@@ -397,6 +398,7 @@ class _ProfileEditState extends State<_ProfileEdit> {
   @override
   Widget build(BuildContext context) => _EditPage(
     title: 'About you',
+    canSave: _p.bodyValid,
     onSave: () async {
       final weightChanged = (_p.weightKg - Store.i.profile.weightKg).abs() > 0.05;
       await Store.i.saveProfile(_p);

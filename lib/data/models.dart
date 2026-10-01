@@ -86,6 +86,14 @@ class Nutrients {
 
 DateTime dayOf(DateTime d) => DateTime(d.year, d.month, d.day);
 
+/// [d]'s calendar day moved by [n] days. Safe across clock changes, unlike
+/// adding a 24-hour Duration.
+DateTime addDays(DateTime d, int n) => DateTime(d.year, d.month, d.day + n);
+
+/// Whole calendar days from [a] to [b].
+int daysBetween(DateTime a, DateTime b) =>
+    DateTime.utc(b.year, b.month, b.day).difference(DateTime.utc(a.year, a.month, a.day)).inDays;
+
 double _d(Object? v) => (v as num?)?.toDouble() ?? 0;
 double _r(double v) => (v * 100).roundToDouble() / 100;
 
@@ -389,7 +397,7 @@ class WeightEntry {
   Map<String, dynamic> toJson() => {'d': day.millisecondsSinceEpoch, 'kg': kg};
 
   factory WeightEntry.fromJson(Map<String, dynamic> j) =>
-      WeightEntry(day: DateTime.fromMillisecondsSinceEpoch(j['d'] as int), kg: _d(j['kg']));
+      WeightEntry(day: dayOf(DateTime.fromMillisecondsSinceEpoch(j['d'] as int)), kg: _d(j['kg']));
 }
 
 enum Sex { male, female }
@@ -450,6 +458,10 @@ class Profile {
   /// Maintenance kcal measured from the user's own logs and weight trend,
   /// once they accept a goal check-in. Replaces the formula's guess.
   final double? learnedMaintenance;
+
+  /// Age, height and weight are within sensible ranges.
+  bool get bodyValid =>
+      age >= 13 && age <= 120 && heightCm >= 100 && heightCm <= 250 && weightKg >= 30 && weightKg <= 300;
 
   Profile copyWith({
     String? country,

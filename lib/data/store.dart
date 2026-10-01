@@ -6,6 +6,7 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 
 import '../nutrition/check_in.dart';
 import '../nutrition/targets.dart';
+import 'inbox.dart';
 import 'keys.dart';
 import 'models.dart';
 
@@ -237,11 +238,11 @@ class Store extends ChangeNotifier {
   /// the streak doesn't look broken first thing in the morning).
   int get streak {
     var d = dayOf(DateTime.now());
-    if (!hasLog(d)) d = d.subtract(const Duration(days: 1));
+    if (!hasLog(d)) d = addDays(d, -1);
     var n = 0;
     while (hasLog(d)) {
       n++;
-      d = d.subtract(const Duration(days: 1));
+      d = addDays(d, -1);
     }
     return n;
   }
@@ -361,6 +362,10 @@ class Store extends ChangeNotifier {
 
   Future<void> deleteWeight(DateTime day) async {
     _weightList.removeWhere((w) => w.day == dayOf(day));
+    if (_weightList.isNotEmpty && _weightList.last.kg != profile.weightKg) {
+      profile = profile.copyWith(weightKg: _weightList.last.kg);
+      await _settings.put('profile', jsonEncode(profile.toJson()));
+    }
     notifyListeners();
     await _weights.delete(dayOf(day).millisecondsSinceEpoch.toString());
   }
@@ -400,21 +405,40 @@ class Store extends ChangeNotifier {
     if (j is! Map || j['app'] != 'nomnom') {
       throw const FormatException('Not a nomnom backup');
     }
-    final entries = (j['entries'] as List).map((e) => Entry.fromJson(Map<String, dynamic>.from(e)));
+    // Read everything before touching what's stored, so a bad backup
+    // leaves the current data as it was.
+    final List<Entry> entries;
+    final List<Favourite> favs;
+    final List<WeightEntry> weights;
+    final Map<String, dynamic> mem;
+    try {
+      entries = [
+        for (final e in j['entries'] as List) Entry.fromJson(Map<String, dynamic>.from(e)),
+      ];
+      favs = [
+        for (final f in (j['favourites'] as List? ?? []))
+          Favourite.fromJson(Map<String, dynamic>.from(f)),
+      ];
+      weights = [
+        for (final w in (j['weights'] as List? ?? []))
+          WeightEntry.fromJson(Map<String, dynamic>.from(w)),
+      ];
+      mem = Map<String, dynamic>.from(j['memory'] as Map? ?? {});
+      if (j['profile'] != null) Profile.fromJson(Map<String, dynamic>.from(j['profile']));
+    } catch (e) {
+      throw FormatException('Damaged backup: $e');
+    }
     await _entries.clear();
     await _favs.clear();
     await _weights.clear();
     await _memory.clear();
+    await _pending.clear();
+    await _settings.delete('checkInQuiet');
     await _entries.putAll({for (final e in entries) e.id: jsonEncode(e.toJson())});
-    for (final f in (j['favourites'] as List? ?? [])) {
-      final fav = Favourite.fromJson(Map<String, dynamic>.from(f));
-      await _favs.put(fav.id, jsonEncode(fav.toJson()));
-    }
-    for (final w in (j['weights'] as List? ?? [])) {
-      final we = WeightEntry.fromJson(Map<String, dynamic>.from(w));
-      await _weights.put(we.day.millisecondsSinceEpoch.toString(), jsonEncode(we.toJson()));
-    }
-    final mem = Map<String, dynamic>.from(j['memory'] as Map? ?? {});
+    await _favs.putAll({for (final f in favs) f.id: jsonEncode(f.toJson())});
+    await _weights.putAll({
+      for (final w in weights) dayOf(w.day).millisecondsSinceEpoch.toString(): jsonEncode(w.toJson()),
+    });
     await _memory.putAll(mem.map((k, v) => MapEntry(k, jsonEncode(v))));
     if (j['profile'] != null) {
       await _settings.put('profile', jsonEncode(j['profile']));
@@ -435,6 +459,7 @@ class Store extends ChangeNotifier {
       _memory.clear(),
       _pending.clear(),
       KeyVault.clear(),
+      Inbox.clear().catchError((_) {}),
     ]);
     _load();
     notifyListeners();

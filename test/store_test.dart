@@ -9,7 +9,8 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   FlutterSecureStorage.setMockInitialValues({});
 
-  setUpAll(() => Store.i.init(path: Directory.systemTemp.createTempSync('nomnom_store').path));
+  final dir = Directory.systemTemp.createTempSync('nomnom_store').path;
+  setUpAll(() => Store.i.init(path: dir));
 
   const roti = FoodItem(
     name: 'Roti',
@@ -86,5 +87,14 @@ void main() {
     expect(copies.single.at, DateTime(2026, 10, 1, 8, 40));
     expect(copies.single.meal, Meal.breakfast);
     expect(Store.i.entriesOn(DateTime(2026, 10, 1)).map((x) => x.title), contains('Poha'));
+  });
+
+  test('a damaged backup leaves the current data alone', () async {
+    final before = Store.i.entriesOn(DateTime.now()).length;
+    expect(before, greaterThan(0));
+    final bad = '{"app": "nomnom", "entries": [{"id": "a"}], "weights": []}';
+    await expectLater(Store.i.importJson(bad), throwsFormatException);
+    await Store.i.init(path: dir); // reload from disk
+    expect(Store.i.entriesOn(DateTime.now()).length, before);
   });
 }

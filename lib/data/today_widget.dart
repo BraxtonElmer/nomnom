@@ -8,6 +8,7 @@ import '../theme/tokens.dart';
 import '../ui/format.dart';
 import '../ui/macro_bar.dart';
 import '../ui/ring.dart';
+import 'activity.dart';
 import 'store.dart';
 
 /// The home-screen widget: today's ring as a small Paper card. Drawn with
@@ -22,6 +23,7 @@ class TodayWidget {
     if (!supported || _started) return;
     _started = true;
     Store.i.addListener(_changed);
+    Activity.i.addListener(_changed);
     _changed();
   }
 
@@ -53,7 +55,9 @@ class TodayCard extends StatelessWidget {
     final s = Store.i;
     final t = s.targets;
     final total = s.totalOn(DateTime.now());
-    final left = t.kcal - total.kcal;
+    final burned = Activity.i.connected && s.eatBack ? Activity.i.on(DateTime.now()).activeKcal : 0.0;
+    final goal = t.kcal + burned;
+    final left = goal - total.kcal;
     return MediaQuery(
       data: const MediaQueryData(),
       child: Container(
@@ -65,7 +69,7 @@ class TodayCard extends StatelessWidget {
           children: [
             CalorieRing(
               value: total.kcal,
-              goal: t.kcal,
+              goal: goal,
               size: 120,
               stroke: 6,
               child: Column(
@@ -91,7 +95,7 @@ class TodayCard extends StatelessWidget {
                     TextSpan(
                       children: [
                         TextSpan(text: kcal(total.kcal), style: T.bodyStrong),
-                        TextSpan(text: ' of ${kcal(t.kcal)} kcal', style: T.small),
+                        TextSpan(text: ' of ${kcal(goal)} kcal', style: T.small),
                       ],
                     ),
                   ),

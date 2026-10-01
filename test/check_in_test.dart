@@ -42,12 +42,26 @@ void main() {
   test('losing weight while eating adds the deficit back', () {
     final c = CheckIn.compute(
       profile: profile,
-      kcalByDay: eating(2000),
+      kcalByDay: eating(1900),
       weights: losing(0.5),
       today: today,
     )!;
-    // 0.5 kg a week ≈ 550 kcal a day below maintenance; smoothing lags a little.
-    expect(c.measured, inInclusiveRange(2350, 2560));
+    // 0.5 kg a week ≈ 550 kcal a day below maintenance.
+    expect(c.measured, closeTo(2450, 10));
+  });
+
+  test('sparse weigh-ins measure the real rate, not a lagging average', () {
+    final c = CheckIn.compute(
+      profile: profile,
+      kcalByDay: eating(2000),
+      weights: [
+        for (var d = 28; d >= 0; d -= 7)
+          WeightEntry(day: today.subtract(Duration(days: d)), kg: 80 - (28 - d) / 7),
+      ],
+      today: today,
+    )!;
+    // 1 kg a week ≈ 1,100 kcal a day below maintenance.
+    expect(c.measured, closeTo(3100, 10));
   });
 
   test('stays quiet when the formula already fits', () {

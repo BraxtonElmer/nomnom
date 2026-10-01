@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../ai/client.dart';
 import '../../data/keys.dart';
+import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../nutrition/week_summary.dart';
 import '../../theme/tokens.dart';
@@ -26,7 +27,7 @@ class _WeekCardState extends State<WeekCard> {
   bool _asked = false;
 
   DateTime get _monday =>
-      weekStart(widget.today ?? DateTime.now()).subtract(const Duration(days: 7));
+      addDays(weekStart(widget.today ?? DateTime.now()), -7);
 
   WeekStats? get _stats {
     final s = Store.i;
@@ -77,7 +78,7 @@ class _WeekCardState extends State<WeekCard> {
     final stats = _stats;
     if (stats == null) return const SizedBox.shrink();
     final w = _ai ?? WeekSummary.plain(stats, metric: Store.i.profile.metric);
-    final end = stats.start.add(const Duration(days: 6));
+    final end = addDays(stats.start, 6);
     final range = stats.start.month == end.month
         ? '${stats.start.day}–${DateFormat('d MMM').format(end)}'
         : '${DateFormat('d MMM').format(stats.start)} – ${DateFormat('d MMM').format(end)}';

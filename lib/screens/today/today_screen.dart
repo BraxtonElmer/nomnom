@@ -8,6 +8,7 @@ import '../../data/inbox.dart';
 import '../../data/log_queue.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
+import '../../data/today_widget.dart';
 import '../../theme/tokens.dart';
 import '../../ui/controls.dart';
 import '../../ui/format.dart';
@@ -58,10 +59,20 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      // Left open overnight: follow today rather than stay on yesterday,
+      // unless another day was picked on purpose.
+      final today = dayOf(DateTime.now());
+      if (today != _lastToday) {
+        if (TodayScreen.day.value == _lastToday) TodayScreen.day.value = today;
+        _lastToday = today;
+        TodayWidget.refresh();
+      }
       Activity.i.refresh();
       _drainQueue();
     }
   }
+
+  DateTime _lastToday = dayOf(DateTime.now());
 
   DateTime get _day => TodayScreen.day.value;
   bool get _isToday => _day == dayOf(DateTime.now());
@@ -283,7 +294,7 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
                         isToday: _isToday,
                         onTap: _open,
                         pending: s.pendingOn(_day),
-                        yesterday: s.entriesOn(_day.subtract(const Duration(days: 1))),
+                        yesterday: s.entriesOn(addDays(_day, -1)),
                         onRepeat: (es) async {
                           final copies = await Store.i.copyTo(es, _day);
                           if (!context.mounted) return;
@@ -302,7 +313,12 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
                         onTapPending: (p) => Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) =>
-                                ReviewScreen.parse(text: p.text, at: p.at, pendingId: p.id),
+                                ReviewScreen.parse(
+                                  text: p.text,
+                                  at: p.at,
+                                  meal: p.meal,
+                                  pendingId: p.id,
+                                ),
                           ),
                         ),
                       ),

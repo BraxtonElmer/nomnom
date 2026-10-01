@@ -77,7 +77,7 @@ class Reminders {
     final text = r.input?.trim() ?? '';
     if (r.actionId != 'log' || text.isEmpty) return;
     final (meal, at) = parseReminderPayload(r.payload);
-    await Inbox.add(text, meal, DateTime.now().isBefore(at) ? at : DateTime.now());
+    await Inbox.add(text, meal, replyTime(at, DateTime.now()));
     await Inbox.drain();
     await LogQueue.process();
   }

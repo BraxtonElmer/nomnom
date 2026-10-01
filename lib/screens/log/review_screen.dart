@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../ai/client.dart';
 import '../../ai/meal_parser.dart';
+import '../../data/log_queue.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../nutrition/countries.dart';
@@ -26,13 +27,15 @@ class ReviewScreen extends StatefulWidget {
     required DateTime this.at,
     this.pendingId,
     this.photo,
+    this.meal,
   }) : entry = null;
 
   const ReviewScreen.edit({super.key, required Entry this.entry})
     : text = null,
       at = null,
       pendingId = null,
-      photo = null;
+      photo = null,
+      meal = null;
 
   final String? text;
 
@@ -43,6 +46,9 @@ class ReviewScreen extends StatefulWidget {
   final Photo? photo;
   final DateTime? at;
   final Entry? entry;
+
+  /// The meal it was saved for, when known; otherwise read from the time.
+  final Meal? meal;
 
   @override
   State<ReviewScreen> createState() => _ReviewScreenState();
@@ -83,9 +89,16 @@ class _ReviewScreenState extends State<ReviewScreen> {
       _items = [for (final i in e.items) ParsedItem(item: i, estimate: i, candidates: const [])];
     } else {
       _at = widget.at!;
-      _meal = Meal.forTime(DateTime.now());
+      _meal = widget.meal ?? Meal.forTime(_at);
+      if (widget.pendingId != null) LogQueue.open.add(widget.pendingId!);
       _run();
     }
+  }
+
+  @override
+  void dispose() {
+    LogQueue.open.remove(widget.pendingId);
+    super.dispose();
   }
 
   Future<void> _run() async {

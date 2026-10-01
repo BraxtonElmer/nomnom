@@ -9,6 +9,9 @@ import 'store.dart';
 class LogQueue {
   static bool _busy = false;
 
+  /// Saved logs open in the review screen right now; left for the user.
+  static final open = <String>{};
+
   /// Returns how many waiting logs were turned into entries.
   static Future<int> process() async {
     if (_busy || Store.i.pending.isEmpty) return 0;
@@ -17,6 +20,7 @@ class LogQueue {
     try {
       MealParser? parser;
       for (final p in Store.i.pending) {
+        if (open.contains(p.id)) continue;
         try {
           final meal =
               await MealParser.readLocally(p.text) ??

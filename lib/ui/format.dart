@@ -12,7 +12,7 @@ String time(DateTime t) => DateFormat.jm().format(t).replaceAll(' ', '').toLower
 
 String dayLabel(DateTime d) {
   final today = dayOf(DateTime.now());
-  final diff = today.difference(dayOf(d)).inDays;
+  final diff = daysBetween(d, today);
   if (diff == 0) return 'Today';
   if (diff == 1) return 'Yesterday';
   if (diff < 7) return DateFormat.EEEE().format(d);

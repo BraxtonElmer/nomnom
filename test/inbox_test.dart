@@ -15,4 +15,11 @@ void main() {
     expect(meal, Meal.snack);
     expect(DateTime.now().difference(time).inSeconds, lessThan(5));
   });
+
+  test('a late reply belongs to the meal it answers', () {
+    final dinner = DateTime(2026, 10, 1, 21);
+    expect(replyTime(dinner, DateTime(2026, 10, 1, 21, 40)), DateTime(2026, 10, 1, 21, 40));
+    expect(replyTime(dinner, DateTime(2026, 10, 2, 0, 30)), dinner);
+    expect(replyTime(dinner, DateTime(2026, 10, 2, 8)), dinner);
+  });
 }

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../data/activity.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
+import '../../nutrition/check_in.dart';
 import '../../nutrition/targets.dart';
 import '../../theme/tokens.dart';
 import '../../ui/buttons.dart';
@@ -55,17 +56,20 @@ class _ProgressScreenState extends State<ProgressScreen> {
     final s = Store.i;
     final metric = s.profile.metric;
     final today = dayOf(DateTime.now());
-    final from = _weightDays == 0 ? null : today.subtract(Duration(days: _weightDays));
+    final from = _weightDays == 0 ? null : addDays(today, -_weightDays);
     final list = s.weights.where((w) => from == null || !w.day.isBefore(from)).toList();
     final trend = emaTrend(s.weights);
     final shownTrend = trend.where((w) => from == null || !w.day.isBefore(from)).toList();
 
     final start = (from ?? (list.isEmpty ? today : list.first.day));
-    final span = today.difference(start).inDays.clamp(1, 100000).toDouble();
-    double x(DateTime d) => (d.difference(start).inDays / span).clamp(0.0, 1.0);
+    final span = daysBetween(start, today).clamp(1, 100000).toDouble();
+    double x(DateTime d) => (daysBetween(start, d) / span).clamp(0.0, 1.0);
 
     final latest = trend.isEmpty ? null : trend.last.kg;
-    final change = shownTrend.length < 2 ? null : shownTrend.last.kg - shownTrend.first.kg;
+    // Fitted through the period's weigh-ins; the smoothed line lags.
+    final change = list.length < 2
+        ? null
+        : slopePerDay(list) * daysBetween(list.first.day, list.last.day);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -184,7 +188,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
     final s = Store.i;
     final goal = s.targets.kcal;
     final today = dayOf(DateTime.now());
-    final days = [for (var i = _kcalDays - 1; i >= 0; i--) today.subtract(Duration(days: i))];
+    final days = [for (var i = _kcalDays - 1; i >= 0; i--) addDays(today, -i)];
     final values = [for (final d in days) s.totalOn(d).kcal];
     final logged = values.where((v) => v > 0).toList();
     final avg = logged.isEmpty ? 0.0 : logged.reduce((a, b) => a + b) / logged.length;
@@ -223,7 +227,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
   Widget _activity() {
     final today = dayOf(DateTime.now());
-    final days = [for (var i = 6; i >= 0; i--) today.subtract(Duration(days: i))];
+    final days = [for (var i = 6; i >= 0; i--) addDays(today, -i)];
     final steps = [for (final d in days) Activity.i.on(d).steps.toDouble()];
     final withSteps = steps.where((v) => v > 0).toList();
     final avg = withSteps.isEmpty ? 0.0 : withSteps.reduce((a, b) => a + b) / withSteps.length;
@@ -273,7 +277,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
     var n = 0;
     var sum = Nutrients.zero;
     for (var i = 0; i < 7; i++) {
-      final d = today.subtract(Duration(days: i));
+      final d = addDays(today, -i);
       if (s.hasLog(d)) {
         n++;
         sum = sum + s.totalOn(d);

@@ -6,7 +6,7 @@ import 'targets.dart';
 
 /// Monday of the week [d] falls in.
 DateTime weekStart(DateTime d) =>
-    dayOf(d).subtract(Duration(days: d.weekday - 1));
+    addDays(d, 1 - d.weekday);
 
 /// The numbers behind a weekly recap. Everything the recap says comes from
 /// here; the AI only gets to word it.
@@ -58,7 +58,7 @@ class WeekStats {
     var sum = Nutrients.zero;
     final counts = <String, int>{};
     for (var i = 0; i < 7; i++) {
-      final entries = entriesOn(start.add(Duration(days: i)));
+      final entries = entriesOn(addDays(start, i));
       if (entries.isEmpty) continue;
       final total = entries.fold(Nutrients.zero, (s, e) => s + e.total);
       logged++;
@@ -75,7 +75,7 @@ class WeekStats {
     if (logged < minDays) return null;
 
     double? mean(DateTime from) {
-      final to = from.add(const Duration(days: 7));
+      final to = addDays(from, 7);
       final ws = weights
           .where((w) => !w.day.isBefore(from) && w.day.isBefore(to))
           .toList();
@@ -83,7 +83,7 @@ class WeekStats {
     }
 
     final now = mean(start);
-    final before = mean(start.subtract(const Duration(days: 7)));
+    final before = mean(addDays(start, -7));
     final top = counts.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     return WeekStats(

@@ -96,8 +96,8 @@ class Activity extends ChangeNotifier {
       await _configure();
       final today = dayOf(now);
       for (var d = 0; d < days; d++) {
-        final start = today.subtract(Duration(days: d));
-        final end = d == 0 ? now : start.add(const Duration(days: 1));
+        final start = addDays(today, -d);
+        final end = d == 0 ? now : addDays(start, 1);
         _days[start] = await _between(start, end);
       }
       _sleepMinutes = await _sleep(today, now);

@@ -29,12 +29,7 @@ class _OnboardingState extends State<Onboarding> {
   ];
 
   bool get _valid => switch (_step) {
-    1 =>
-      _profile.age >= 13 &&
-          _profile.heightCm >= 100 &&
-          _profile.heightCm <= 250 &&
-          _profile.weightKg >= 30 &&
-          _profile.weightKg <= 300,
+    1 => _profile.bodyValid,
     _ => true,
   };
 

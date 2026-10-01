@@ -47,7 +47,7 @@ class CheckIn {
     required DateTime today,
   }) {
     final end = dayOf(today); // today is still in progress; leave it out
-    final start = end.subtract(const Duration(days: window));
+    final start = addDays(end, -window);
     final target = Targets.of(profile).kcal;
 
     // Days logged so lightly they were probably incomplete would make intake
@@ -61,17 +61,12 @@ class CheckIn {
     final inWindow = weights.where((w) => !w.day.isBefore(start) && !w.day.isAfter(end)).toList()
       ..sort((a, b) => a.day.compareTo(b.day));
     if (inWindow.length < 2) return null;
-    final span = inWindow.last.day.difference(inWindow.first.day).inDays;
+    final span = daysBetween(inWindow.first.day, inWindow.last.day);
     if (span < minWeighInSpan) return null;
 
-    // Smooth the weigh-ins so a single heavy or light morning doesn't decide.
-    double? trend;
-    final points = <(DateTime, double)>[];
-    for (final w in inWindow) {
-      trend = trend == null ? w.kg : trend + 0.3 * (w.kg - trend);
-      points.add((w.day, trend));
-    }
-    final perDay = (points.last.$2 - points.first.$2) / span;
+    // A straight line through every weigh-in, so one heavy or light morning
+    // doesn't decide, and sparse weigh-ins don't lag the way smoothing does.
+    final perDay = slopePerDay(inWindow);
 
     final avg = intakes.reduce((a, b) => a + b) / intakes.length;
     final measured = avg - perDay * 7700;
@@ -91,4 +86,20 @@ class CheckIn {
       newTarget: suggestedKcal(next, rounded),
     );
   }
+}
+
+/// Least-squares weight change per day through [ws].
+double slopePerDay(List<WeightEntry> ws) {
+  if (ws.length < 2) return 0;
+  final x0 = ws.first.day;
+  final xs = [for (final w in ws) daysBetween(x0, w.day).toDouble()];
+  final mx = xs.reduce((a, b) => a + b) / xs.length;
+  final my = ws.fold(0.0, (s, w) => s + w.kg) / ws.length;
+  var num = 0.0;
+  var den = 0.0;
+  for (var i = 0; i < ws.length; i++) {
+    num += (xs[i] - mx) * (ws[i].kg - my);
+    den += (xs[i] - mx) * (xs[i] - mx);
+  }
+  return den == 0 ? 0 : num / den;
 }

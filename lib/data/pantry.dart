@@ -476,7 +476,8 @@ List<StockDraft>? readStock(String text, FoodDb db, {String? country}) {
         unit: unit,
         ref: food?.id,
         pieceGrams: food == null ? 0 : (portionGrams(food, 'piece') ?? 0),
-        raw: foodState(clean) != 'cooked',
+        // Raw or cooked only means something for solids.
+        raw: unit == 'g' && foodState(clean) != 'cooked',
       ),
     );
   }

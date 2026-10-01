@@ -26,8 +26,7 @@ class StockChoice {
 
 /// Answers are keyed by the item itself, not its position, so removing an
 /// item doesn't hand its answer to the next one.
-String stockKey(StockUse u, List<Object> keys) =>
-    '${identityHashCode(keys[u.item])}:${u.stock.id}';
+String stockKey(StockUse u, List<Object> keys) => '${identityHashCode(keys[u.item])}:${u.stock.id}';
 
 /// The amount a use takes given the answer so far.
 double? choiceAmount(StockUse u, StockChoice? c) {
@@ -351,7 +350,7 @@ class _UseRowState extends State<_UseRow> {
             Text(
               s.counted
                   ? 'How many went in?'
-                  : 'How much ${s.raw ? 'raw ' : ''}${s.name.toLowerCase()} went in?',
+                  : 'How much ${s.raw && s.unit == 'g' ? 'raw ' : ''}${s.name.toLowerCase()} went in?',
               style: T.body,
             ),
             Row(
@@ -366,7 +365,16 @@ class _UseRowState extends State<_UseRow> {
                     cursorColor: C.tomato,
                     decoration: InputDecoration(
                       isDense: true,
-                      suffixText: s.counted ? null : s.unit,
+                      hintText: s.counted ? 'how many' : '0',
+                      hintStyle: T.body.copyWith(fontSize: 18, color: C.ink3),
+                      // Shown even before typing, so the unit is clear.
+                      suffixIcon: s.counted
+                          ? null
+                          : Padding(
+                              padding: const EdgeInsets.only(left: 6),
+                              child: Text(s.unit, style: T.small),
+                            ),
+                      suffixIconConstraints: const BoxConstraints(),
                       suffixStyle: T.small,
                       contentPadding: const EdgeInsets.symmetric(vertical: 10),
                       enabledBorder: UnderlineInputBorder(

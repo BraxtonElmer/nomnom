@@ -377,7 +377,7 @@ class _DraftRow extends StatelessWidget {
       children: [
         Expanded(child: Text(draft.name, style: T.body)),
         Text(formatStock(draft.amount, draft.unit), style: T.bodyStrong),
-        if (draft.unit != 'piece') ...[
+        if (draft.unit == 'g') ...[
           const SizedBox(width: 10),
           Pressable(
             onTap: () {
@@ -550,7 +550,7 @@ class _StockSheetState extends State<_StockSheet> {
                 },
               ),
             ),
-          if (!s.counted)
+          if (s.unit == 'g')
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 10),
               child: Row(

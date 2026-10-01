@@ -12,9 +12,11 @@ class _OneShot extends AiClient {
   _OneShot(this.replies);
   final List<Map<String, dynamic>> replies;
   final prompts = <String>[];
+  final photos = <Photo?>[];
 
   @override
-  Future<Map<String, dynamic>> json(String system, String user) async {
+  Future<Map<String, dynamic>> json(String system, String user, {Photo? photo}) async {
+    photos.add(photo);
     prompts.add(user);
     return replies.removeAt(0);
   }

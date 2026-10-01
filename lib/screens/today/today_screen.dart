@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../../ai/client.dart';
 
 import '../../data/activity.dart';
 import '../../data/inbox.dart';
@@ -77,6 +80,61 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
       builder: (_) => ReviewScreen.parse(text: text, at: _logTime),
     ),
   );
+
+  Future<void> _photo(String caption) async {
+    final source = await showPaperSheet<ImageSource>(
+      context,
+      (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(S.gutter, 16, S.gutter, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Log from a photo', style: T.heading),
+            const SizedBox(height: 4),
+            Text(
+              caption.isEmpty
+                  ? 'Your AI model reads the plate; the numbers still come from the food tables.'
+                  : 'Caption: “$caption”',
+              style: T.small,
+            ),
+            const SizedBox(height: 8),
+            RuledRow(
+              label: 'Take a photo',
+              leading: Icon(Icons.photo_camera_outlined, color: C.ink),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            RuledRow(
+              label: 'Choose from gallery',
+              leading: Icon(Icons.photo_library_outlined, color: C.ink),
+              last: true,
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+    final XFile? file;
+    try {
+      file = await ImagePicker().pickImage(source: source, maxWidth: 1280, imageQuality: 80);
+    } catch (_) {
+      if (mounted) showToast(context, 'Couldn’t open the camera or gallery.');
+      return;
+    }
+    if (file == null || !mounted) return;
+    final bytes = await file.readAsBytes();
+    if (!mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ReviewScreen.parse(
+          text: caption,
+          at: _logTime,
+          photo: Photo(bytes, mime: file!.mimeType ?? 'image/jpeg'),
+        ),
+      ),
+    );
+  }
 
   Future<void> _quick(String title, List<FoodItem> items) async {
     final at = _logTime;
@@ -252,7 +310,7 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
                   ),
                 ),
               ),
-              Composer(onSubmit: _log, onQuick: _quick),
+              Composer(onSubmit: _log, onQuick: _quick, onPhoto: _photo),
             ],
           ),
         );

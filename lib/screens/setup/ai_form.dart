@@ -95,6 +95,7 @@ class _AiFormState extends State<AiForm> {
       }
       final keep = models.contains(_model) ? _model : pickModel(_provider, models);
       _manualModel.text = keep;
+      _models = models;
       await _save(key, keep);
       setState(() {
         _models = models;
@@ -114,7 +115,7 @@ class _AiFormState extends State<AiForm> {
   Future<void> _save(String key, String model) async {
     _model = model;
     await KeyVault.write(_provider, key);
-    await Store.i.saveAi(_config);
+    await Store.i.saveAi(_config.copyWith(visionModel: pickVisionModel(_provider, _models)));
     if (model.isNotEmpty) widget.onConnected?.call();
   }
 

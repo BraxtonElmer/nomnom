@@ -72,8 +72,14 @@ void main() {
 
   test('copying keeps meal and time of day on the new day', () async {
     final y = DateTime(2026, 9, 30, 8, 40);
-    final e = Entry(id: 'y1', at: y, meal: Meal.breakfast, title: 'Poha', text: 'poha',
-        items: const [roti]);
+    final e = Entry(
+      id: 'y1',
+      at: y,
+      meal: Meal.breakfast,
+      title: 'Poha',
+      text: 'poha',
+      items: const [roti],
+    );
     await Store.i.putEntry(e);
     final copies = await Store.i.copyTo([e], DateTime(2026, 10, 1));
     expect(copies.single.id, isNot('y1'));

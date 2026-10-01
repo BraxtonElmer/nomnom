@@ -58,8 +58,14 @@ void main() {
   });
 
   test('richer home cooking adds fat and its calories', () {
-    const dal = FoodItem(name: 'Dal', qty: 1, unit: 'bowl', unitGrams: 200,
-        per100: Nutrients(kcal: 110, protein: 6, carbs: 15, fat: 3), source: Source.dish);
+    const dal = FoodItem(
+      name: 'Dal',
+      qty: 1,
+      unit: 'bowl',
+      unitGrams: 200,
+      per100: Nutrients(kcal: 110, protein: 6, carbs: 15, fat: 3),
+      source: Source.dish,
+    );
     expect(dal.total.kcal, 220);
     final rich = dal.copyWith(richness: 1);
     expect(rich.total.fat, closeTo(6 * 1.35, 0.001));

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../../ai/client.dart';
@@ -23,17 +25,22 @@ class ReviewScreen extends StatefulWidget {
     required String this.text,
     required DateTime this.at,
     this.pendingId,
+    this.photo,
   }) : entry = null;
 
   const ReviewScreen.edit({super.key, required Entry this.entry})
     : text = null,
       at = null,
-      pendingId = null;
+      pendingId = null,
+      photo = null;
 
   final String? text;
 
   /// Set when this reads a log that was saved for later.
   final String? pendingId;
+
+  /// A plate photo to read instead of (or with a caption in) [text].
+  final Photo? photo;
   final DateTime? at;
   final Entry? entry;
 
@@ -87,9 +94,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
       _items = null;
     });
     try {
-      final meal =
-          (_answer == null ? await MealParser.readLocally(_text) : null) ??
-          await (await MealParser.fromSettings()).parse(_prompt);
+      final photo = widget.photo;
+      final meal = photo != null
+          ? await (await MealParser.fromSettings()).parse(_prompt, photo: photo)
+          : (_answer == null ? await MealParser.readLocally(_text) : null) ??
+                await (await MealParser.fromSettings()).parse(_prompt);
       if (!mounted) return;
       setState(() {
         _local = meal.local;
@@ -263,7 +272,24 @@ class _ReviewScreenState extends State<ReviewScreen> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(S.gutter, 14, S.gutter, 16),
                 children: [
-                  if (_text.isNotEmpty)
+                  if (widget.photo != null) ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(S.radius),
+                      child: Image.memory(
+                        Uint8List.fromList(widget.photo!.bytes),
+                        height: 200,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+                  if (widget.photo != null && _text.isEmpty)
+                    Text(
+                      _title.isEmpty ? 'Your plate' : _title,
+                      style: T.title.copyWith(fontSize: 32),
+                    )
+                  else if (_text.isNotEmpty)
                     Text(
                       '“$_text”',
                       style: T.title.copyWith(fontStyle: FontStyle.italic, fontSize: 32),
@@ -320,7 +346,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
                         ? _ErrorBlock(
                             message: _error!,
                             onRetry: _run,
-                            onLater: _errorLater && widget.pendingId == null ? _saveForLater : null,
+                            onLater: _errorLater && widget.pendingId == null && widget.photo == null
+                                ? _saveForLater
+                                : null,
                           )
                         : items == null
                         ? const _Skeleton()

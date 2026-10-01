@@ -10,9 +10,11 @@ class FakeAi extends AiClient {
   FakeAi(this.replies);
   final List<Map<String, dynamic>> replies;
   final prompts = <String>[];
+  final photos = <Photo?>[];
 
   @override
-  Future<Map<String, dynamic>> json(String system, String user) async {
+  Future<Map<String, dynamic>> json(String system, String user, {Photo? photo}) async {
+    photos.add(photo);
     prompts.add(user);
     return replies.removeAt(0);
   }
@@ -300,5 +302,24 @@ void main() {
     expect(only.items.single.item.source, Source.ai);
     expect(only.items.single.item.total.kcal, 320);
     expect(ai.prompts, hasLength(1));
+  });
+
+  test('photos go to the vision model with the caption, then the same tables', () async {
+    final text = FakeAi([]);
+    final vision = FakeAi([
+      {
+        'title': 'Masala dosa',
+        'items': [
+          {'name': 'Masala dosa', 'qty': 1, 'unit': 'piece', 'grams': 180, 'search': 'masala dosa',
+           'kcal': 300, 'protein': 7, 'carbs': 45, 'fat': 11},
+        ],
+      },
+    ]);
+    final meal = await MealParser(text, country: 'IN', recall: (_) => null, visionClient: vision)
+        .parse('half of this', photo: const Photo([1, 2, 3]));
+    expect(vision.photos.single!.bytes, [1, 2, 3]);
+    expect(vision.prompts.single, 'Caption: half of this');
+    expect(text.prompts, isEmpty); // exact dish name: no matching request either
+    expect(meal.items.single.item.ref, 'in-masala-dosa');
   });
 }

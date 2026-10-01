@@ -524,7 +524,12 @@ enum Provider {
 }
 
 class AiConfig {
-  const AiConfig({this.provider = Provider.groq, this.model = '', this.baseUrl = ''});
+  const AiConfig({
+    this.provider = Provider.groq,
+    this.model = '',
+    this.baseUrl = '',
+    this.visionModel = '',
+  });
 
   final Provider provider;
   final String model;
@@ -532,19 +537,30 @@ class AiConfig {
   /// Only for [Provider.custom], e.g. http://192.168.1.20:11434/v1
   final String baseUrl;
 
+  /// Model used for photos when the main one can't see images.
+  final String visionModel;
+
   bool get ready => model.isNotEmpty && (provider != Provider.custom || baseUrl.isNotEmpty);
 
-  AiConfig copyWith({Provider? provider, String? model, String? baseUrl}) => AiConfig(
-    provider: provider ?? this.provider,
-    model: model ?? this.model,
-    baseUrl: baseUrl ?? this.baseUrl,
-  );
+  AiConfig copyWith({Provider? provider, String? model, String? baseUrl, String? visionModel}) =>
+      AiConfig(
+        provider: provider ?? this.provider,
+        model: model ?? this.model,
+        baseUrl: baseUrl ?? this.baseUrl,
+        visionModel: visionModel ?? this.visionModel,
+      );
 
-  Map<String, dynamic> toJson() => {'p': provider.name, 'm': model, 'b': baseUrl};
+  Map<String, dynamic> toJson() => {
+    'p': provider.name,
+    'm': model,
+    'b': baseUrl,
+    if (visionModel.isNotEmpty) 'v': visionModel,
+  };
 
   factory AiConfig.fromJson(Map<String, dynamic> j) => AiConfig(
     provider: Provider.values.firstWhere((p) => p.name == j['p'], orElse: () => Provider.groq),
     model: j['m'] as String? ?? '',
     baseUrl: j['b'] as String? ?? '',
+    visionModel: j['v'] as String? ?? '',
   );
 }

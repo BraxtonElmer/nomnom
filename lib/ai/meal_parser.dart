@@ -49,15 +49,21 @@ class MealParser {
     required this.country,
     FoodItem? Function(String name)? recall,
     this.aiOnly = false,
+    AiClient? visionClient,
     Future<List<DbFood>> Function(String terms, String country)? packaged,
-  }) : recall = recall ?? Store.i.recall,
+  }) : _vision = visionClient,
+       recall = recall ?? Store.i.recall,
        packaged = packaged ?? ((t, c) => OpenFoodFacts.search(t, country: c));
 
   final AiClient client;
+  final AiClient? _vision;
   final String country;
 
   /// Use the model's numbers for everything; skip the food tables.
   final bool aiOnly;
+
+  /// Reads photos; the main client unless that model can't see images.
+  late final AiClient vision = _vision ?? client;
 
   /// Previously confirmed version of a food, if any.
   final FoodItem? Function(String name) recall;
@@ -102,11 +108,24 @@ class MealParser {
     if (!s.ai.ready || (key.isEmpty && s.ai.provider != Provider.custom)) {
       throw const AiException('Connect an AI model in You → AI model first.');
     }
-    return MealParser(AiClient.of(s.ai, key), country: s.profile.country, aiOnly: s.aiOnly);
+    return MealParser(
+      AiClient.of(s.ai, key),
+      country: s.profile.country,
+      aiOnly: s.aiOnly,
+      visionClient: AiClient.of(s.ai, key, model: visionModel(s.ai)),
+    );
   }
 
-  Future<ParsedMeal> parse(String text) async {
-    final raw = await client.json(_parseSystem(countryName(country)), text.trim());
+  /// [photo] switches to reading a picture of the plate; [text] is then an
+  /// optional caption.
+  Future<ParsedMeal> parse(String text, {Photo? photo}) async {
+    final raw = photo == null
+        ? await client.json(_parseSystem(countryName(country)), text.trim())
+        : await vision.json(
+            '${_parseSystem(countryName(country))}\n\n$_photoRules',
+            text.trim().isEmpty ? 'What is on this plate?' : 'Caption: ${text.trim()}',
+            photo: photo,
+          );
     final rawItems = (raw['items'] as List? ?? const [])
         .whereType<Map>()
         .map((m) => Map<String, dynamic>.from(m))
@@ -433,3 +452,10 @@ Reply with JSON only: {"matches": [{"item": 0, "id": "usda:171477"}, {"item": 1,
 extension on String {
   String? get nullIfEmpty => isEmpty ? null : this;
 }
+
+const _photoRules = '''
+The user sent a photo of their food instead of typing.
+- Identify every food you can see. Estimate amounts from visual cues: a dinner plate is about 26 cm across, a katori or small bowl holds about 150 g, a spoon about 15 g.
+- If a caption is given, it wins over what you see ("half of this" means half of the plate).
+- If the photo isn't food, return "items": [].
+- Only ask a question when an amount truly can't be judged from the photo.''';

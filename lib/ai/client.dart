@@ -16,18 +16,28 @@ class AiException implements Exception {
   String toString() => message;
 }
 
+/// A food photo to send along with the prompt.
+class Photo {
+  const Photo(this.bytes, {this.mime = 'image/jpeg'});
+  final List<int> bytes;
+  final String mime;
+
+  String get base64 => base64Encode(bytes);
+}
+
 /// Talks to a model straight from the device. No server of ours in between.
 abstract class AiClient {
   static const timeout = Duration(seconds: 45);
 
-  static AiClient of(AiConfig c, String key) => switch (c.provider) {
-    Provider.groq => OpenAiCompatible('https://api.groq.com/openai/v1', key, c.model),
-    Provider.gemini => Gemini(key, c.model),
-    Provider.custom => OpenAiCompatible(_trimSlash(c.baseUrl), key, c.model),
+  /// [model] overrides the configured one (used for photos).
+  static AiClient of(AiConfig c, String key, {String? model}) => switch (c.provider) {
+    Provider.groq => OpenAiCompatible('https://api.groq.com/openai/v1', key, model ?? c.model),
+    Provider.gemini => Gemini(key, model ?? c.model),
+    Provider.custom => OpenAiCompatible(_trimSlash(c.baseUrl), key, model ?? c.model),
   };
 
   /// Sends a system + user prompt and returns the parsed JSON object.
-  Future<Map<String, dynamic>> json(String system, String user);
+  Future<Map<String, dynamic>> json(String system, String user, {Photo? photo});
 
   /// Model ids this key can use. Doubles as the key check.
   Future<List<String>> models();
@@ -50,13 +60,24 @@ class OpenAiCompatible extends AiClient {
   };
 
   @override
-  Future<Map<String, dynamic>> json(String system, String user) async {
+  Future<Map<String, dynamic>> json(String system, String user, {Photo? photo}) async {
     final body = {
       'model': model,
       'temperature': 0,
       'messages': [
         {'role': 'system', 'content': system},
-        {'role': 'user', 'content': user},
+        {
+          'role': 'user',
+          'content': photo == null
+              ? user
+              : [
+                  {'type': 'text', 'text': user},
+                  {
+                    'type': 'image_url',
+                    'image_url': {'url': 'data:${photo.mime};base64,${photo.base64}'},
+                  },
+                ],
+        },
       ],
       if (_jsonMode) 'response_format': {'type': 'json_object'},
     };
@@ -67,7 +88,7 @@ class OpenAiCompatible extends AiClient {
     // Some local servers reject response_format; retry once without it.
     if (res.statusCode == 400 && _jsonMode && res.body.contains('response_format')) {
       _jsonMode = false;
-      return json(system, user);
+      return json(system, user, photo: photo);
     }
     final data = _decode(res);
     final text = (data['choices'] as List?)?.firstOrNull?['message']?['content'] as String?;
@@ -93,7 +114,7 @@ class Gemini extends AiClient {
   Map<String, String> get _headers => {'Content-Type': 'application/json', 'x-goog-api-key': key};
 
   @override
-  Future<Map<String, dynamic>> json(String system, String user) async {
+  Future<Map<String, dynamic>> json(String system, String user, {Photo? photo}) async {
     final body = {
       'systemInstruction': {
         'parts': [
@@ -105,6 +126,10 @@ class Gemini extends AiClient {
           'role': 'user',
           'parts': [
             {'text': user},
+            if (photo != null)
+              {
+                'inline_data': {'mime_type': photo.mime, 'data': photo.base64},
+              },
           ],
         },
       ],
@@ -170,6 +195,25 @@ bool _isChatModel(String id) {
   ];
   final l = id.toLowerCase();
   return !skip.any(l.contains);
+}
+
+/// A model that can read photos. Gemini models all can; on Groq the text
+/// models can't, so photos go to one of its vision models.
+String visionModel(AiConfig c) => switch (c.provider) {
+  Provider.groq =>
+    c.visionModel.isNotEmpty ? c.visionModel : 'meta-llama/llama-4-scout-17b-16e-instruct',
+  _ => c.visionModel.isNotEmpty ? c.visionModel : c.model,
+};
+
+String pickVisionModel(Provider p, List<String> available) {
+  if (p != Provider.groq) return '';
+  for (final m in [
+    'meta-llama/llama-4-scout-17b-16e-instruct',
+    'meta-llama/llama-4-maverick-17b-128e-instruct',
+  ]) {
+    if (available.contains(m)) return m;
+  }
+  return available.where((m) => m.contains('vision') || m.contains('llama-4')).firstOrNull ?? '';
 }
 
 /// Best default from what the key can see.

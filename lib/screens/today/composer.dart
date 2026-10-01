@@ -9,9 +9,12 @@ import '../../ui/pressable.dart';
 /// "What did you eat?" bar. While focused, favourites and recent plates
 /// float above it for one-tap logging.
 class Composer extends StatefulWidget {
-  const Composer({super.key, required this.onSubmit, required this.onQuick});
+  const Composer({super.key, required this.onSubmit, required this.onQuick, this.onPhoto});
 
   final ValueChanged<String> onSubmit;
+
+  /// Log from a photo; gets whatever is typed as a caption.
+  final ValueChanged<String>? onPhoto;
 
   /// Re-log a saved plate without asking the AI.
   final void Function(String title, List<FoodItem> items) onQuick;
@@ -146,7 +149,23 @@ class _ComposerState extends State<Composer> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                if (widget.onPhoto != null)
+                  Pressable(
+                    onTap: () {
+                      final caption = _text.text.trim();
+                      _focus.unfocus();
+                      _text.clear();
+                      widget.onPhoto!(caption);
+                    },
+                    scale: 0.88,
+                    semanticLabel: 'Log from a photo',
+                    child: SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: Icon(Icons.photo_camera_outlined, color: C.ink2, size: 22),
+                    ),
+                  ),
+                const SizedBox(width: 4),
                 Pressable(
                   onTap: _text.text.trim().isEmpty ? null : _submit,
                   scale: 0.88,

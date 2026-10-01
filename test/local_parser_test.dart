@@ -22,7 +22,10 @@ void main() {
 
     expect(read('poha')!.single.ref, 'in-poha');
     expect(read('dal 1 bowl')!.single.grams, 200);
-    expect(read('had 3 idli with sambar for breakfast')!.map((i) => i.ref), ['in-idli', 'in-sambar']);
+    expect(read('had 3 idli with sambar for breakfast')!.map((i) => i.ref), [
+      'in-idli',
+      'in-sambar',
+    ]);
     expect(read('veg hakka noodles')!.single.ref, 'in-hakka-noodles');
     expect(read('2 slices brown bread')!.single.grams, 64);
     expect(read('margherita pizza 2 slices')!.single.grams, 220);
@@ -37,9 +40,19 @@ void main() {
   });
 
   test('foods confirmed before are read from memory', () {
-    const mine = FoodItem(name: 'Grilled chicken', qty: 1, unit: 'g', unitGrams: 1,
-        per100: Nutrients(kcal: 165), source: Source.usda, ref: 'usda:171477');
-    final items = read('150g grilled chicken', recall: (n) => n == 'grilled chicken' ? mine : null)!;
+    const mine = FoodItem(
+      name: 'Grilled chicken',
+      qty: 1,
+      unit: 'g',
+      unitGrams: 1,
+      per100: Nutrients(kcal: 165),
+      source: Source.usda,
+      ref: 'usda:171477',
+    );
+    final items = read(
+      '150g grilled chicken',
+      recall: (n) => n == 'grilled chicken' ? mine : null,
+    )!;
     expect(items.single.total.kcal, closeTo(247.5, 0.01));
   });
 }

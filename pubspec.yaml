@@ -17,6 +17,7 @@ dependencies:
   hive_ce: ^2.20.1
   hive_ce_flutter: ^2.4.0
   http: ^1.6.0
+  image_picker: ^1.2.3
   intl: ^0.20.2
   lucide_icons_flutter: ^3.1.20
   path_provider: ^2.1.6

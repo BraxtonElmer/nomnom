@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 
+import 'theme/theme.dart';
+import 'theme/tokens.dart';
+
 void main() {
-  runApp(const MainApp());
+  runApp(const NomnomApp());
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+class NomnomApp extends StatelessWidget {
+  const NomnomApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
-      ),
+    return MaterialApp(
+      title: 'nomnom',
+      debugShowCheckedModeBanner: false,
+      theme: buildTheme(),
+      home: const Scaffold(body: Center(child: Text('nomnom', style: T.brand))),
     );
   }
 }

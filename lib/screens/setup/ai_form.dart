@@ -126,7 +126,7 @@ class _AiFormState extends State<AiForm> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
           children: [
-            const Text('Model', style: T.heading),
+            Text('Model', style: T.heading),
             const SizedBox(height: 4),
             Text(
               'Bigger models read meals more accurately; smaller ones reply faster.',
@@ -237,7 +237,7 @@ class _AiFormState extends State<AiForm> {
                   _Check.ok => Row(
                     key: const ValueKey('ok'),
                     children: [
-                      const Icon(Icons.check_rounded, size: 16, color: C.good),
+                      Icon(Icons.check_rounded, size: 16, color: C.good),
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(_message, style: T.small.copyWith(color: C.good)),

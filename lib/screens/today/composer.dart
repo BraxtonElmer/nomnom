@@ -97,7 +97,7 @@ class _ComposerState extends State<Composer> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               if (fav) ...[
-                                const Icon(Icons.star_rounded, size: 15, color: C.tomato),
+                                Icon(Icons.star_rounded, size: 15, color: C.tomato),
                                 const SizedBox(width: 4),
                               ],
                               Text(title, style: T.small.copyWith(color: C.ink)),
@@ -159,7 +159,7 @@ class _ComposerState extends State<Composer> {
                       color: _text.text.trim().isEmpty ? C.ink3 : C.ink,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.arrow_upward_rounded, color: C.paper, size: 22),
+                    child: Icon(Icons.arrow_upward_rounded, color: C.paper, size: 22),
                   ),
                 ),
               ],

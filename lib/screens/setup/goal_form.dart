@@ -60,7 +60,7 @@ class _GoalFormState extends State<GoalForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('YOUR GOAL', style: T.caps),
+        Text('YOUR GOAL', style: T.caps),
         const SizedBox(height: 4),
         for (final (i, g) in Goal.values.indexed)
           RadioRow(
@@ -79,7 +79,7 @@ class _GoalFormState extends State<GoalForm> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text('PACE PER WEEK', style: T.caps),
+                      Text('PACE PER WEEK', style: T.caps),
                       const SizedBox(height: 10),
                       Segmented<int>(
                         values: const [0, 1, 2, 3],
@@ -92,7 +92,7 @@ class _GoalFormState extends State<GoalForm> {
                 ),
         ),
         const SizedBox(height: 26),
-        const Text('MACRO SPLIT', style: T.caps),
+        Text('MACRO SPLIT', style: T.caps),
         const SizedBox(height: 10),
         Segmented<MacroPreset>(
           values: MacroPreset.values,
@@ -106,9 +106,9 @@ class _GoalFormState extends State<GoalForm> {
           decoration: BoxDecoration(
             color: C.card,
             borderRadius: BorderRadius.circular(S.radius),
-            boxShadow: const [
+            boxShadow: [
               BoxShadow(color: C.lineStrong, offset: Offset(0, 1)),
-              BoxShadow(color: Color(0x141A1916), blurRadius: 24, offset: Offset(0, 10)),
+              BoxShadow(color: C.shadow, blurRadius: 24, offset: Offset(0, 10)),
             ],
           ),
           child: Column(
@@ -116,7 +116,7 @@ class _GoalFormState extends State<GoalForm> {
             children: [
               Row(
                 children: [
-                  const Expanded(child: Text('DAILY TARGET', style: T.caps)),
+                  Expanded(child: Text('DAILY TARGET', style: T.caps)),
                   Pressable(
                     onTap: () {
                       if (custom) {
@@ -151,7 +151,7 @@ class _GoalFormState extends State<GoalForm> {
                               keyboardType: TextInputType.number,
                               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                               style: T.display,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 border: InputBorder.none,
                                 isDense: true,
                                 helperText: 'kcal a day',

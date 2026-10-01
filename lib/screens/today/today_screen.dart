@@ -124,7 +124,7 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
                     children: [
                       Row(
                         children: [
-                          const Text('nomnom', style: T.brand),
+                          Text('nomnom', style: T.brand),
                           const Spacer(),
                           if (streak > 0) _StreakPill(streak),
                         ],
@@ -249,7 +249,7 @@ class _Stat extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(vertical: 9),
     decoration: BoxDecoration(
-      border: last ? null : const Border(bottom: BorderSide(color: C.line)),
+      border: last ? null : Border(bottom: BorderSide(color: C.line)),
     ),
     child: Row(
       children: [
@@ -276,7 +276,7 @@ class _StreakPill extends StatelessWidget {
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(Icons.local_fire_department_outlined, size: 15, color: C.tomato),
+        Icon(Icons.local_fire_department_outlined, size: 15, color: C.tomato),
         const SizedBox(width: 4),
         Text(days == 1 ? '1 day' : '$days days', style: T.small.copyWith(color: C.ink)),
       ],

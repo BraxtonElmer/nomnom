@@ -39,7 +39,7 @@ class _ShellState extends State<Shell> {
             top: false,
             child: Container(
               height: 56,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(top: BorderSide(color: C.line)),
               ),
               child: Row(

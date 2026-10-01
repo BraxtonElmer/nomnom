@@ -90,7 +90,7 @@ class _WeekStripState extends State<WeekStrip> {
           color: selected ? C.card : Colors.transparent,
           borderRadius: BorderRadius.circular(18),
           boxShadow: selected
-              ? const [BoxShadow(color: Color(0x1F1A1916), blurRadius: 2, offset: Offset(0, 1))]
+              ? [BoxShadow(color: C.shadow, blurRadius: 2, offset: Offset(0, 1))]
               : null,
         ),
         child: Column(
@@ -119,7 +119,7 @@ class _WeekStripState extends State<WeekStrip> {
               child: Container(
                 width: 4,
                 height: 4,
-                decoration: const BoxDecoration(color: C.tomato, shape: BoxShape.circle),
+                decoration: BoxDecoration(color: C.tomato, shape: BoxShape.circle),
               ),
             ),
           ],

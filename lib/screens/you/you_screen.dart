@@ -35,7 +35,7 @@ class YouScreen extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(S.gutter, 12, S.gutter, 40),
             children: [
-              const Text('You', style: T.title),
+              Text('You', style: T.title),
               const SizedBox(height: 20),
               Pressable(
                 onTap: () => _push(context, const _GoalEdit()),
@@ -45,9 +45,9 @@ class YouScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: C.card,
                     borderRadius: BorderRadius.circular(S.radius),
-                    boxShadow: const [
+                    boxShadow: [
                       BoxShadow(color: C.lineStrong, offset: Offset(0, 1)),
-                      BoxShadow(color: Color(0x121A1916), blurRadius: 24, offset: Offset(0, 10)),
+                      BoxShadow(color: C.shadow, blurRadius: 24, offset: Offset(0, 10)),
                     ],
                   ),
                   child: Column(
@@ -90,7 +90,16 @@ class YouScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 30),
-              const Text('PROFILE', style: T.caps),
+              Text('APPEARANCE', style: T.caps),
+              const SizedBox(height: 10),
+              Segmented<String>(
+                values: const ['system', 'light', 'dark'],
+                labels: const ['System', 'Light', 'Dark'],
+                value: s.theme,
+                onChanged: Store.i.setTheme,
+              ),
+              const SizedBox(height: 30),
+              Text('PROFILE', style: T.caps),
               RuledRow(
                 label: 'Country',
                 value: countryName(p.country),
@@ -113,7 +122,7 @@ class YouScreen extends StatelessWidget {
                 last: true,
               ),
               const SizedBox(height: 28),
-              const Text('AI MODEL', style: T.caps),
+              Text('AI MODEL', style: T.caps),
               RuledRow(
                 label: s.ai.provider.label,
                 value: s.ai.ready ? s.ai.model : 'Not connected',
@@ -127,7 +136,7 @@ class YouScreen extends StatelessWidget {
               ),
               if (Activity.supported) ...[
                 const SizedBox(height: 28),
-                const Text('HEALTH CONNECT', style: T.caps),
+                Text('HEALTH CONNECT', style: T.caps),
                 if (!s.healthConnected)
                   RuledRow(
                     label: 'Connect steps & activity',
@@ -138,7 +147,7 @@ class YouScreen extends StatelessWidget {
                 else ...[
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       border: Border(bottom: BorderSide(color: C.line)),
                     ),
                     child: Row(
@@ -147,7 +156,7 @@ class YouScreen extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Add exercise to my budget', style: T.body),
+                              Text('Add exercise to my budget', style: T.body),
                               const SizedBox(height: 2),
                               Text('Active calories burned raise the day’s goal', style: T.small),
                             ],
@@ -170,7 +179,7 @@ class YouScreen extends StatelessWidget {
               ],
               if (Reminders.supported) ...[
                 const SizedBox(height: 28),
-                const Text('REMINDERS', style: T.caps),
+                Text('REMINDERS', style: T.caps),
                 _ToggleRow(
                   title: 'Remind me to log',
                   subtitle: 'Only for meals you haven’t logged yet',
@@ -203,7 +212,7 @@ class YouScreen extends StatelessWidget {
                     ),
               ],
               const SizedBox(height: 28),
-              const Text('FAVOURITES', style: T.caps),
+              Text('FAVOURITES', style: T.caps),
               RuledRow(
                 label: 'Saved plates',
                 value: s.favourites.isEmpty ? 'None yet' : '${s.favourites.length}',
@@ -211,7 +220,7 @@ class YouScreen extends StatelessWidget {
                 last: true,
               ),
               const SizedBox(height: 28),
-              const Text('YOUR DATA', style: T.caps),
+              Text('YOUR DATA', style: T.caps),
               RuledRow(label: 'Export a backup', onTap: () => exportBackup(context)),
               RuledRow(label: 'Restore from a backup', onTap: () => restoreBackup(context)),
               RuledRow(
@@ -231,7 +240,7 @@ class YouScreen extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 36),
-              const Text('nomnom', style: T.brand),
+              Text('nomnom', style: T.brand),
               const SizedBox(height: 6),
               Text(
                 'Version 2.2.0. Everything stays on this phone; the AI is called directly '
@@ -256,7 +265,7 @@ class YouScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Nutrition numbers', style: T.heading),
+            Text('Nutrition numbers', style: T.heading),
             const SizedBox(height: 8),
             RadioRow(
               title: 'Food tables first',
@@ -456,7 +465,7 @@ class _Favourites extends StatelessWidget {
                       decoration: BoxDecoration(
                         border: i == favs.length - 1
                             ? null
-                            : const Border(bottom: BorderSide(color: C.line)),
+                            : Border(bottom: BorderSide(color: C.line)),
                       ),
                       child: Row(
                         children: [
@@ -510,7 +519,7 @@ class _ToggleRow extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(vertical: 14),
     decoration: BoxDecoration(
-      border: last ? null : const Border(bottom: BorderSide(color: C.line)),
+      border: last ? null : Border(bottom: BorderSide(color: C.line)),
     ),
     child: Row(
       children: [

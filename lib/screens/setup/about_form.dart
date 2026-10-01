@@ -78,19 +78,19 @@ class _AboutFormState extends State<AboutForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('COUNTRY', style: T.caps),
+        Text('COUNTRY', style: T.caps),
         Pressable(
           onTap: _pickCountry,
           scale: 0.99,
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: C.ink, width: 1.2)),
             ),
             child: Row(
               children: [
                 Expanded(child: Text(countryName(p.country), style: T.body.copyWith(fontSize: 18))),
-                const Icon(Icons.expand_more_rounded, color: C.ink2),
+                Icon(Icons.expand_more_rounded, color: C.ink2),
               ],
             ),
           ),
@@ -198,7 +198,7 @@ class _AboutFormState extends State<AboutForm> {
           ),
         ),
         const SizedBox(height: 26),
-        const Text('HOW ACTIVE ARE YOU?', style: T.caps),
+        Text('HOW ACTIVE ARE YOU?', style: T.caps),
         const SizedBox(height: 4),
         for (final (i, a) in activityLevels.indexed)
           RadioRow(
@@ -240,7 +240,7 @@ class RadioRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          border: last ? null : const Border(bottom: BorderSide(color: C.line)),
+          border: last ? null : Border(bottom: BorderSide(color: C.line)),
         ),
         child: Row(
           children: [
@@ -302,9 +302,9 @@ class _CountrySheetState extends State<_CountrySheet> {
               decoration: InputDecoration(
                 hintText: 'Search countries',
                 hintStyle: T.body.copyWith(fontSize: 18, color: C.ink3),
-                prefixIcon: const Icon(Icons.search_rounded, color: C.ink2),
-                enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: C.ink)),
-                focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: C.tomato)),
+                prefixIcon: Icon(Icons.search_rounded, color: C.ink2),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: C.ink)),
+                focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: C.tomato)),
               ),
             ),
           ),

@@ -73,7 +73,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             children: [
               Row(
                 children: [
-                  const Expanded(child: Text('History', style: T.title)),
+                  Expanded(child: Text('History', style: T.title)),
                   CircleIconButton(
                     icon: Icons.chevron_left_rounded,
                     label: 'Previous month',
@@ -120,11 +120,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
               const SizedBox(height: 14),
               Row(
                 children: [
-                  const _Key(C.ink, 'On target'),
+                  _Key(C.ink, 'On target'),
                   const SizedBox(width: 16),
-                  const _Key(C.lineStrong, 'Under'),
+                  _Key(C.lineStrong, 'Under'),
                   const SizedBox(width: 16),
-                  const _Key(C.tomato, 'Over'),
+                  _Key(C.tomato, 'Over'),
                 ],
               ),
               const SizedBox(height: 22),
@@ -186,7 +186,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final selected = day == _selected;
     final (bg, fg) = switch (mark) {
       DayMark.onTarget => (C.ink, C.paper),
-      DayMark.over => (C.tomato, Colors.white),
+      DayMark.over => (C.tomato, C.onTomato),
       DayMark.under => (C.paperDeep, C.ink),
       DayMark.none => (Colors.transparent, future ? C.ink3 : C.ink2),
     };
@@ -244,7 +244,7 @@ class _Fig extends StatelessWidget {
     child: Container(
       padding: const EdgeInsets.symmetric(vertical: 14),
       decoration: BoxDecoration(
-        border: last ? null : const Border(right: BorderSide(color: C.line)),
+        border: last ? null : Border(right: BorderSide(color: C.line)),
       ),
       child: Column(
         children: [

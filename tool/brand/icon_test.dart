@@ -104,7 +104,7 @@ void main() {
     await expectLater(find.byWidget(w), matchesGoldenFile('../../assets/icon/$name.png'));
   }
 
-  testWidgets('icon', (t) => render(t, 'icon', const Mark(size: 1024, background: C.paper)));
+  testWidgets('icon', (t) => render(t, 'icon', Mark(size: 1024, background: C.paper)));
   // Adaptive foreground: Android crops to a circle inside the middle 66%.
   testWidgets(
     'foreground',

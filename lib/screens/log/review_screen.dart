@@ -176,7 +176,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
       initialTime: TimeOfDay.fromDateTime(_at),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(primary: C.ink, onPrimary: C.paper, surface: C.card),
+          colorScheme: ColorScheme.light(primary: C.ink, onPrimary: C.paper, surface: C.card),
         ),
         child: child!,
       ),
@@ -260,7 +260,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     const SizedBox(height: 12),
                     Text(
                       _note!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: F.serif,
                         fontStyle: FontStyle.italic,
                         fontSize: 19,
@@ -385,7 +385,7 @@ class _ItemRow extends StatelessWidget {
       scale: 0.99,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(bottom: BorderSide(color: C.line)),
         ),
         child: Column(
@@ -493,7 +493,7 @@ class _SkeletonState extends State<_Skeleton> with SingleTickerProviderStateMixi
           for (var i = 0; i < 3; i++)
             Container(
               padding: const EdgeInsets.symmetric(vertical: 18),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(bottom: BorderSide(color: C.line)),
               ),
               child: Column(

@@ -11,6 +11,7 @@ import 'package:nomnom/data/models.dart';
 import 'package:nomnom/data/store.dart';
 import 'package:nomnom/nutrition/food_db.dart';
 import 'package:nomnom/theme/theme.dart';
+import 'package:nomnom/theme/tokens.dart';
 import '../../test/support/db.dart';
 
 /// Renders screens to build/shots/*.png at phone size with the real fonts.
@@ -49,7 +50,9 @@ Future<void> shoot(
   String name,
   Widget screen, {
   Future<void> Function(WidgetTester)? act,
+  bool dark = false,
 }) async {
+  C.p = dark ? Palette.dark : Palette.light;
   tester.view.physicalSize = const Size(390 * 2, 844 * 2);
   tester.view.devicePixelRatio = 2;
   await tester.pumpWidget(

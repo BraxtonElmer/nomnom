@@ -101,9 +101,7 @@ class Segmented<V> extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: C.card,
                       borderRadius: BorderRadius.circular(999),
-                      boxShadow: const [
-                        BoxShadow(color: Color(0x1F1A1916), blurRadius: 2, offset: Offset(0, 1)),
-                      ],
+                      boxShadow: [BoxShadow(color: C.shadow, blurRadius: 2, offset: Offset(0, 1))],
                     ),
                   ),
                 ),
@@ -234,10 +232,8 @@ class PaperField extends StatelessWidget {
             hintStyle: T.body.copyWith(fontSize: 18, color: C.ink3),
             suffixText: suffix,
             suffixStyle: T.small,
-            enabledBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: C.ink, width: 1.2),
-            ),
-            focusedBorder: const UnderlineInputBorder(
+            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: C.ink, width: 1.2)),
+            focusedBorder: UnderlineInputBorder(
               borderSide: BorderSide(color: C.tomato, width: 1.6),
             ),
           ),
@@ -271,7 +267,7 @@ class RuledRow extends StatelessWidget {
     final row = Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        border: last ? null : const Border(bottom: BorderSide(color: C.line)),
+        border: last ? null : Border(bottom: BorderSide(color: C.line)),
       ),
       child: Row(
         children: [
@@ -291,7 +287,7 @@ class RuledRow extends StatelessWidget {
             ),
           if (onTap != null) ...[
             const SizedBox(width: 6),
-            const Icon(Icons.chevron_right_rounded, size: 20, color: C.ink3),
+            Icon(Icons.chevron_right_rounded, size: 20, color: C.ink3),
           ],
         ],
       ),
@@ -307,7 +303,7 @@ Future<R?> showPaperSheet<R>(BuildContext context, Widget Function(BuildContext)
     isScrollControlled: true,
     useSafeArea: true,
     backgroundColor: C.card,
-    barrierColor: const Color(0x661A1916),
+    barrierColor: C.scrim,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
     ),
@@ -378,7 +374,7 @@ Future<bool> confirm(
                       border: Border.all(color: C.ink),
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    child: const Text('Cancel', style: T.bodyStrong),
+                    child: Text('Cancel', style: T.bodyStrong),
                   ),
                 ),
               ),
@@ -393,7 +389,7 @@ Future<bool> confirm(
                       color: C.tomato,
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    child: Text(action, style: T.button.copyWith(color: Colors.white)),
+                    child: Text(action, style: T.button.copyWith(color: C.onTomato)),
                   ),
                 ),
               ),

@@ -114,7 +114,7 @@ class _Row extends StatelessWidget {
         : '${kcal(v)} mg';
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: C.line)),
       ),
       child: Column(

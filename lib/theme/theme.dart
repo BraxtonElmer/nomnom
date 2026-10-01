@@ -7,19 +7,23 @@ import 'tokens.dart';
 ThemeData buildTheme() {
   final base = ThemeData(
     useMaterial3: true,
-    brightness: Brightness.light,
+    brightness: C.p.brightness,
     fontFamily: F.sans,
     scaffoldBackgroundColor: C.paper,
-    colorScheme: const ColorScheme.light(
+    colorScheme: ColorScheme(
+      brightness: C.p.brightness,
       surface: C.paper,
+      onSurface: C.ink,
       primary: C.ink,
       onPrimary: C.paper,
       secondary: C.tomato,
+      onSecondary: C.onTomato,
       error: C.tomato,
+      onError: C.onTomato,
     ),
     splashFactory: NoSplash.splashFactory,
     highlightColor: Colors.transparent,
-    textSelectionTheme: const TextSelectionThemeData(
+    textSelectionTheme: TextSelectionThemeData(
       cursorColor: C.tomato,
       selectionColor: C.tomatoSoft,
       selectionHandleColor: C.tomato,
@@ -30,11 +34,11 @@ ThemeData buildTheme() {
         TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
       },
     ),
-    appBarTheme: const AppBarTheme(
+    appBarTheme: AppBarTheme(
       backgroundColor: C.paper,
       elevation: 0,
       scrolledUnderElevation: 0,
-      systemOverlayStyle: SystemUiOverlayStyle.dark,
+      systemOverlayStyle: C.isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
     ),
   );
   return base.copyWith(

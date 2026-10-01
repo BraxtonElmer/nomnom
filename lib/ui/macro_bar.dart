@@ -80,7 +80,7 @@ class MacroSplit extends StatelessWidget {
                     ),
                     TextSpan(
                       text: '/${v.target.round()}g',
-                      style: const TextStyle(color: C.ink2),
+                      style: TextStyle(color: C.ink2),
                     ),
                   ],
                 ),

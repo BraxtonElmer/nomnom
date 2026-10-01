@@ -38,9 +38,9 @@ class MenuCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: C.card,
         borderRadius: BorderRadius.circular(26),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(color: C.lineStrong, offset: Offset(0, 1)),
-          BoxShadow(color: Color(0x161A1916), blurRadius: 30, offset: Offset(0, 12)),
+          BoxShadow(color: C.shadow, blurRadius: 30, offset: Offset(0, 12)),
         ],
       ),
       child: Column(
@@ -51,7 +51,7 @@ class MenuCard extends StatelessWidget {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Expanded(child: Text(title, style: T.heading.copyWith(fontSize: 28))),
-              const Text('KCAL', style: T.caps),
+              Text('KCAL', style: T.caps),
             ],
           ),
           const SizedBox(height: 6),
@@ -115,7 +115,7 @@ class MenuCard extends StatelessWidget {
           if (list.isEmpty && waiting.isEmpty)
             Text(
               isToday ? 'Not yet' : '—',
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: F.serif,
                 fontStyle: FontStyle.italic,
                 fontSize: 18,
@@ -139,7 +139,7 @@ class MenuCard extends StatelessWidget {
               '“${p.text}”',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: F.serif,
                 fontStyle: FontStyle.italic,
                 fontSize: 18,

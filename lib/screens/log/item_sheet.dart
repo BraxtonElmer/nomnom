@@ -221,11 +221,9 @@ class _ItemSheetState extends State<_ItemSheet> {
                   decoration: InputDecoration(
                     hintText: 'Search foods',
                     hintStyle: T.body.copyWith(fontSize: 17, color: C.ink3),
-                    prefixIcon: const Icon(Icons.search_rounded, color: C.ink2, size: 20),
-                    enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: C.ink)),
-                    focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: C.tomato),
-                    ),
+                    prefixIcon: Icon(Icons.search_rounded, color: C.ink2, size: 20),
+                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: C.ink)),
+                    focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: C.tomato)),
                   ),
                 ),
                 if (item?.aiTotal case final ai?)
@@ -257,7 +255,7 @@ class _ItemSheetState extends State<_ItemSheet> {
                   const SizedBox(height: 22),
                   Row(
                     children: [
-                      const Text('PACKAGED PRODUCTS', style: T.caps),
+                      Text('PACKAGED PRODUCTS', style: T.caps),
                       const SizedBox(width: 10),
                       if (_packagedLoading) const Dots(size: 4),
                     ],
@@ -296,7 +294,7 @@ class _ItemSheetState extends State<_ItemSheet> {
                         shape: BoxShape.circle,
                         border: Border.all(color: C.tomato),
                       ),
-                      child: const Icon(Icons.delete_outline_rounded, color: C.tomato),
+                      child: Icon(Icons.delete_outline_rounded, color: C.tomato),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -337,7 +335,7 @@ class _ItemSheetState extends State<_ItemSheet> {
     scale: 0.99,
     child: Container(
       padding: const EdgeInsets.symmetric(vertical: 13),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: C.line)),
       ),
       child: Row(
@@ -352,7 +350,7 @@ class _ItemSheetState extends State<_ItemSheet> {
               ],
             ),
           ),
-          if (selected) const Icon(Icons.check_rounded, color: C.tomato, size: 20),
+          if (selected) Icon(Icons.check_rounded, color: C.tomato, size: 20),
         ],
       ),
     ),

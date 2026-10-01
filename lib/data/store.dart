@@ -33,6 +33,9 @@ class Store extends ChangeNotifier {
 
   /// Use AI estimates for everything instead of the food tables.
   bool aiOnly = false;
+
+  /// 'system', 'light' or 'dark'.
+  String theme = 'system';
   final Map<Meal, int> _reminderMinutes = {};
 
   static const _defaultReminders = {
@@ -75,6 +78,7 @@ class Store extends ChangeNotifier {
     eatBack = _settings.get('eatBack') == 'true';
     remindersOn = _settings.get('reminders') == 'true';
     aiOnly = _settings.get('aiOnly') == 'true';
+    theme = _settings.get('theme') ?? 'system';
     _reminderMinutes.clear();
     for (final m in Meal.values) {
       final v = int.tryParse(_settings.get('remind_${m.name}') ?? '');
@@ -142,6 +146,12 @@ class Store extends ChangeNotifier {
     notifyListeners();
     await _settings.put('reminders', '$remindersOn');
     if (meal != null && minutes != null) await _settings.put('remind_${meal.name}', '$minutes');
+  }
+
+  Future<void> setTheme(String v) async {
+    theme = v;
+    notifyListeners();
+    await _settings.put('theme', v);
   }
 
   Future<void> setAiOnly(bool v) async {

@@ -32,7 +32,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(S.gutter, 12, S.gutter, 32),
           children: [
-            const Text('Progress', style: T.title),
+            Text('Progress', style: T.title),
             const SizedBox(height: 22),
             _weight(),
             const SizedBox(height: 34),
@@ -69,7 +69,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
       children: [
         Row(
           children: [
-            const Expanded(child: Text('WEIGHT', style: T.caps)),
+            Expanded(child: Text('WEIGHT', style: T.caps)),
             TextLink(label: '+ Log weight', onTap: _logWeight),
           ],
         ),
@@ -148,7 +148,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Today’s weight', style: T.heading),
+            Text('Today’s weight', style: T.heading),
             const SizedBox(height: 18),
             PaperField(
               label: 'Weight',
@@ -192,7 +192,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('CALORIES', style: T.caps),
+        Text('CALORIES', style: T.caps),
         const SizedBox(height: 6),
         Row(
           crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -228,7 +228,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('ACTIVITY', style: T.caps),
+        Text('ACTIVITY', style: T.caps),
         const SizedBox(height: 6),
         Row(
           crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -280,7 +280,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('MACROS · 7-DAY AVERAGE', style: T.caps),
+        Text('MACROS · 7-DAY AVERAGE', style: T.caps),
         const SizedBox(height: 16),
         Row(
           children: [

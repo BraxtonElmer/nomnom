@@ -10,14 +10,14 @@ class PrimaryButton extends StatelessWidget {
     this.onTap,
     this.trailing,
     this.busy = false,
-    this.color = C.ink,
+    this.color,
   });
 
   final String label;
   final String? trailing;
   final VoidCallback? onTap;
   final bool busy;
-  final Color color;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -27,11 +27,11 @@ class PrimaryButton extends StatelessWidget {
         duration: Motion.base,
         height: 60,
         padding: const EdgeInsets.symmetric(horizontal: 26),
-        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(999)),
+        decoration: BoxDecoration(color: color ?? C.ink, borderRadius: BorderRadius.circular(999)),
         child: AnimatedSwitcher(
           duration: Motion.fast,
           child: busy
-              ? const Center(
+              ? Center(
                   key: ValueKey('busy'),
                   child: Dots(color: C.paper),
                 )
@@ -126,11 +126,11 @@ class CircleIconButton extends StatelessWidget {
 }
 
 class TextLink extends StatelessWidget {
-  const TextLink({super.key, required this.label, this.onTap, this.color = C.tomato});
+  const TextLink({super.key, required this.label, this.onTap, this.color});
 
   final String label;
   final VoidCallback? onTap;
-  final Color color;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -140,7 +140,7 @@ class TextLink extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Text(
           label,
-          style: T.small.copyWith(color: color, fontWeight: FontWeight.w500),
+          style: T.small.copyWith(color: color ?? C.tomato, fontWeight: FontWeight.w500),
         ),
       ),
     );
@@ -149,9 +149,9 @@ class TextLink extends StatelessWidget {
 
 /// Three breathing dots, used anywhere we wait on the AI.
 class Dots extends StatefulWidget {
-  const Dots({super.key, this.color = C.ink, this.size = 6});
+  const Dots({super.key, this.color, this.size = 6});
 
-  final Color color;
+  final Color? color;
   final double size;
 
   @override
@@ -184,7 +184,7 @@ class _DotsState extends State<Dots> with SingleTickerProviderStateMixin {
               child: Container(
                 width: widget.size,
                 height: widget.size,
-                decoration: BoxDecoration(color: widget.color, shape: BoxShape.circle),
+                decoration: BoxDecoration(color: widget.color ?? C.ink, shape: BoxShape.circle),
               ),
             ),
           );

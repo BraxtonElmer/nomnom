@@ -1,6 +1,6 @@
 [
 ["kr-bibimbap", "Bibimbap", "", 130, 6, 20, 3.5, 1.5, [["1 bowl", 450]]],
-["kr-kimchi", "Kimchi", "", 23, 1.7, 4, 0.5, 1.6, [["1 serving", 50]]],
+["kr-kimchi", "Kimchi", "", 18, 1.1, 2.4, 0.5, 1.6, [["1 serving", 50]]],
 ["kr-bulgogi", "Bulgogi", "korean bbq beef", 200, 17, 8, 11, 0.5, [["1 serving", 200]]],
 ["kr-fried-chicken", "Korean fried chicken", "yangnyeom", 290, 17, 16, 17, 0.5, [["1 piece", 50]]],
 ["kr-tteokbokki", "Tteokbokki", "rice cake", 180, 3.5, 38, 2, 1, [["1 plate", 250]]],

@@ -5,7 +5,7 @@
 ["mx-chicken-taco", "Chicken taco", "taco", 190, 12, 18, 8, 2, [["1 piece", 90]]],
 ["mx-quesadilla", "Quesadilla", "cheese quesadilla", 300, 13, 26, 16, 1.5, [["1 piece", 180]]],
 ["mx-nachos", "Nachos", "nachos cheese", 310, 8, 32, 17, 3, [["1 plate", 200]]],
-["mx-enchiladas", "Enchiladas", "enchilada", 160, 8, 14, 8, 2, [["1 piece", 150]]],
+["mx-enchiladas", "Enchiladas", "enchilada", 190, 9, 16, 10, 2, [["1 piece", 150]]],
 ["mx-fajitas", "Chicken fajitas", "fajita", 130, 13, 9, 5, 1.5, [["1 serving", 300]]],
 ["mx-guacamole", "Guacamole", "", 160, 2, 9, 14, 6, [["1 tbsp", 15], ["1 bowl", 100]]],
 ["mx-tortilla-chips", "Tortilla chips", "chips", 490, 7, 64, 23, 5, [["1 handful", 30]]],

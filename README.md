@@ -29,6 +29,8 @@ The AI is good at understanding language and unreliable at remembering numbers, 
 - **Dish table (India)**: about 95 common dishes with per-100 g values and typical serving weights.
 - **Open Food Facts**: packaged products, searched live when you name a brand ("a glass of Amul lassi") or search in the item sheet.
 
+Exact dish names ("poha", "2 idli with sambar") are matched on the phone without a second AI request, which matters on small free tiers.
+
 When nothing in the tables matches, the item keeps the AI's own estimate and is labelled **AI estimate**. If a table value and the AI's estimate disagree wildly, the item is marked **Check this one**. Every item shows its source, and you can rematch it to another food in one tap.
 
 Foods you confirm are remembered, so repeat meals come out the same every time and don't need a lookup.
@@ -41,6 +43,9 @@ Foods you confirm are remembered, so repeat meals come out the same every time a
 - Nutrition details: calories and macros up front; fibre, sugar, saturated fat, sodium, potassium, calcium, iron, vitamin C and B12 against daily values one tap away, per day, plate or item
 - A one-line note on each plate from the model
 - One-tap re-logging of favourites and recent plates, with no AI call
+- Follow-up questions: when a missing amount would swing the numbers ("rice and rajma"), one tap-to-answer question instead of a guess
+- Save for later: if the AI can't be reached, the text is kept and logged automatically once it can be
+- Meal reminders for breakfast, lunch and dinner, skipped for meals you've already logged
 - History: month calendar shaded by how close each day was to goal, with day detail
 - Progress: weight log with a smoothed trend and BMI, calorie bars against goal, 7-day macro averages, streak
 - Health Connect (Android): steps, active calories and sleep, with an option to add exercise to the day's budget
@@ -105,6 +110,21 @@ Rebuild the USDA table from the [SR Legacy CSV download](https://fdc.nal.usda.go
 
 ```bash
 python tool/build_usda.py path/to/FoodData_Central_sr_legacy_food_csv_2018-04
+```
+
+### Release builds
+
+Create an upload key once and keep it somewhere safe (losing it means you can't update the app on the Play Store):
+
+```bash
+keytool -genkey -v -keystore nomnom-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+```
+
+Copy `android/key.properties.example` to `android/key.properties` and fill in the path and passwords. It is git-ignored; without it, release builds are signed with the debug key.
+
+```bash
+flutter build appbundle            # for the Play Store
+flutter build apk --split-per-abi  # smaller APKs to share directly
 ```
 
 ### Layout

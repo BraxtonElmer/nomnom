@@ -1,7 +1,7 @@
 name: nomnom
 description: "nomnom — type what you ate, get the macros."
 publish_to: 'none'
-version: 2.1.0+3
+version: 2.2.0+4
 
 environment:
   sdk: ^3.12.2

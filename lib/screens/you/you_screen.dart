@@ -229,7 +229,7 @@ class YouScreen extends StatelessWidget {
               const Text('nomnom', style: T.brand),
               const SizedBox(height: 6),
               Text(
-                'Version 2.1.0. Everything stays on this phone; the AI is called directly '
+                'Version 2.2.0. Everything stays on this phone; the AI is called directly '
                 'with your own key. Nutrition data from USDA FoodData Central, Open Food '
                 'Facts and the nomnom dish table. Estimates, not medical advice.',
                 style: T.small,

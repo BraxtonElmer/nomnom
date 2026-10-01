@@ -46,3 +46,8 @@ app.*.map.json
 
 # Local tooling
 .claude/
+
+# Release signing (see README)
+android/key.properties
+*.jks
+*.keystore

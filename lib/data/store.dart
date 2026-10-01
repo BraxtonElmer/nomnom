@@ -1,0 +1,276 @@
+import 'dart:convert';
+import 'dart:math';
+
+import 'package:flutter/foundation.dart';
+import 'package:hive_ce_flutter/hive_flutter.dart';
+
+import '../nutrition/targets.dart';
+import 'keys.dart';
+import 'models.dart';
+
+/// Everything the app knows, held in memory and written through to Hive.
+/// Reads are synchronous, which is what keeps every screen instant.
+class Store extends ChangeNotifier {
+  Store._();
+  static final Store i = Store._();
+
+  late Box<String> _settings;
+  late Box<String> _entries;
+  late Box<String> _favs;
+  late Box<String> _weights;
+  late Box<String> _memory;
+
+  Profile profile = const Profile();
+  AiConfig ai = const AiConfig();
+  bool onboarded = false;
+
+  final List<Entry> _all = [];
+  final Map<DateTime, List<Entry>> _byDay = {};
+  final List<Favourite> _favList = [];
+  final List<WeightEntry> _weightList = [];
+
+  Future<void> init() async {
+    await Hive.initFlutter('nomnom');
+    _settings = await Hive.openBox<String>('settings');
+    _entries = await Hive.openBox<String>('entries');
+    _favs = await Hive.openBox<String>('favourites');
+    _weights = await Hive.openBox<String>('weights');
+    _memory = await Hive.openBox<String>('memory');
+    _load();
+  }
+
+  void _load() {
+    final p = _settings.get('profile');
+    final a = _settings.get('ai');
+    profile = p == null ? const Profile() : Profile.fromJson(_map(p));
+    ai = a == null ? const AiConfig() : AiConfig.fromJson(_map(a));
+    onboarded = _settings.get('onboarded') == 'true';
+
+    _all
+      ..clear()
+      ..addAll(_entries.values.map((v) => Entry.fromJson(_map(v))));
+    _reindex();
+    _favList
+      ..clear()
+      ..addAll(_favs.values.map((v) => Favourite.fromJson(_map(v))));
+    _weightList
+      ..clear()
+      ..addAll(_weights.values.map((v) => WeightEntry.fromJson(_map(v))))
+      ..sort((a, b) => a.day.compareTo(b.day));
+  }
+
+  static Map<String, dynamic> _map(String s) => Map<String, dynamic>.from(jsonDecode(s));
+
+  void _reindex() {
+    _all.sort((a, b) => a.at.compareTo(b.at));
+    _byDay.clear();
+    for (final e in _all) {
+      _byDay.putIfAbsent(dayOf(e.at), () => []).add(e);
+    }
+  }
+
+  static String newId() =>
+      DateTime.now().microsecondsSinceEpoch.toRadixString(36) +
+      Random().nextInt(1 << 20).toRadixString(36);
+
+  // Profile & settings
+
+  Targets get targets => Targets.of(profile);
+
+  Future<void> saveProfile(Profile p) async {
+    profile = p;
+    notifyListeners();
+    await _settings.put('profile', jsonEncode(p.toJson()));
+  }
+
+  Future<void> saveAi(AiConfig c) async {
+    ai = c;
+    notifyListeners();
+    await _settings.put('ai', jsonEncode(c.toJson()));
+  }
+
+  Future<void> finishOnboarding() async {
+    onboarded = true;
+    notifyListeners();
+    await _settings.put('onboarded', 'true');
+    if (_weightList.isEmpty) await logWeight(DateTime.now(), profile.weightKg);
+  }
+
+  // Entries
+
+  List<Entry> entriesOn(DateTime day) => _byDay[dayOf(day)] ?? const [];
+
+  Nutrients totalOn(DateTime day) =>
+      entriesOn(day).fold(Nutrients.zero, (s, e) => s + e.total);
+
+  bool hasLog(DateTime day) => _byDay.containsKey(dayOf(day));
+
+  Iterable<DateTime> get loggedDays => _byDay.keys;
+
+  Entry? entry(String id) => _all.where((e) => e.id == id).firstOrNull;
+
+  /// Days in a row with at least one entry, ending today (or yesterday, so
+  /// the streak doesn't look broken first thing in the morning).
+  int get streak {
+    var d = dayOf(DateTime.now());
+    if (!hasLog(d)) d = d.subtract(const Duration(days: 1));
+    var n = 0;
+    while (hasLog(d)) {
+      n++;
+      d = d.subtract(const Duration(days: 1));
+    }
+    return n;
+  }
+
+  Future<void> putEntry(Entry e) async {
+    _all.removeWhere((x) => x.id == e.id);
+    _all.add(e);
+    _reindex();
+    for (final item in e.items) {
+      remember(item);
+    }
+    notifyListeners();
+    await _entries.put(e.id, jsonEncode(e.toJson()));
+  }
+
+  Future<void> deleteEntry(String id) async {
+    _all.removeWhere((x) => x.id == id);
+    _reindex();
+    notifyListeners();
+    await _entries.delete(id);
+  }
+
+  /// Distinct recent plates, newest first, for one-tap re-logging.
+  List<Entry> recents({int limit = 12}) {
+    final seen = <String>{};
+    final out = <Entry>[];
+    for (final e in _all.reversed) {
+      if (seen.add(e.title.toLowerCase())) out.add(e);
+      if (out.length >= limit) break;
+    }
+    return out;
+  }
+
+  // Favourites
+
+  List<Favourite> get favourites => List.unmodifiable(_favList);
+
+  bool isFavourite(String title) =>
+      _favList.any((f) => f.title.toLowerCase() == title.toLowerCase());
+
+  Future<void> addFavourite(Entry e) async {
+    if (isFavourite(e.title)) return;
+    final f = Favourite(id: newId(), title: e.title, items: e.items, meal: e.meal);
+    _favList.add(f);
+    notifyListeners();
+    await _favs.put(f.id, jsonEncode(f.toJson()));
+  }
+
+  Future<void> removeFavourite(String title) async {
+    final gone = _favList.where((f) => f.title.toLowerCase() == title.toLowerCase()).toList();
+    _favList.removeWhere(gone.contains);
+    notifyListeners();
+    for (final f in gone) {
+      await _favs.delete(f.id);
+    }
+  }
+
+  // Weight
+
+  List<WeightEntry> get weights => List.unmodifiable(_weightList);
+
+  Future<void> logWeight(DateTime day, double kgValue) async {
+    final d = dayOf(day);
+    _weightList.removeWhere((w) => w.day == d);
+    _weightList
+      ..add(WeightEntry(day: d, kg: kgValue))
+      ..sort((a, b) => a.day.compareTo(b.day));
+    if (d == dayOf(DateTime.now()) || _weightList.last.day == d) {
+      profile = profile.copyWith(weightKg: kgValue);
+      await _settings.put('profile', jsonEncode(profile.toJson()));
+    }
+    notifyListeners();
+    await _weights.put(d.millisecondsSinceEpoch.toString(),
+        jsonEncode(WeightEntry(day: d, kg: kgValue).toJson()));
+  }
+
+  Future<void> deleteWeight(DateTime day) async {
+    _weightList.removeWhere((w) => w.day == dayOf(day));
+    notifyListeners();
+    await _weights.delete(dayOf(day).millisecondsSinceEpoch.toString());
+  }
+
+  // Food memory: the last confirmed version of a food, reused next time so
+  // repeat meals are consistent and cost no lookup.
+
+  static String memoryKey(String name) => name.toLowerCase().trim();
+
+  FoodItem? recall(String name) {
+    final v = _memory.get(memoryKey(name));
+    return v == null ? null : FoodItem.fromJson(_map(v));
+  }
+
+  void remember(FoodItem item) {
+    if (item.source == Source.ai) return;
+    _memory.put(memoryKey(item.name), jsonEncode(item.copyWith(qty: 1).toJson()));
+  }
+
+  // Backup
+
+  String exportJson() => const JsonEncoder.withIndent(' ').convert({
+        'app': 'nomnom',
+        'version': 1,
+        'exportedAt': DateTime.now().toIso8601String(),
+        'profile': profile.toJson(),
+        'ai': ai.toJson(),
+        'entries': _all.map((e) => e.toJson()).toList(),
+        'favourites': _favList.map((e) => e.toJson()).toList(),
+        'weights': _weightList.map((e) => e.toJson()).toList(),
+        'memory': {for (final k in _memory.keys) k: jsonDecode(_memory.get(k)!)},
+      });
+
+  /// Replaces everything with a backup. Throws [FormatException] on junk.
+  Future<int> importJson(String raw) async {
+    final j = jsonDecode(raw);
+    if (j is! Map || j['app'] != 'nomnom') {
+      throw const FormatException('Not a nomnom backup');
+    }
+    final entries = (j['entries'] as List).map((e) => Entry.fromJson(Map<String, dynamic>.from(e)));
+    await _entries.clear();
+    await _favs.clear();
+    await _weights.clear();
+    await _memory.clear();
+    await _entries.putAll({for (final e in entries) e.id: jsonEncode(e.toJson())});
+    for (final f in (j['favourites'] as List? ?? [])) {
+      final fav = Favourite.fromJson(Map<String, dynamic>.from(f));
+      await _favs.put(fav.id, jsonEncode(fav.toJson()));
+    }
+    for (final w in (j['weights'] as List? ?? [])) {
+      final we = WeightEntry.fromJson(Map<String, dynamic>.from(w));
+      await _weights.put(we.day.millisecondsSinceEpoch.toString(), jsonEncode(we.toJson()));
+    }
+    final mem = Map<String, dynamic>.from(j['memory'] as Map? ?? {});
+    await _memory.putAll(mem.map((k, v) => MapEntry(k, jsonEncode(v))));
+    if (j['profile'] != null) {
+      await _settings.put('profile', jsonEncode(j['profile']));
+    }
+    if (j['ai'] != null) await _settings.put('ai', jsonEncode(j['ai']));
+    await _settings.put('onboarded', 'true');
+    _load();
+    notifyListeners();
+    return _all.length;
+  }
+
+  Future<void> wipe() async {
+    await Future.wait([
+      _settings.clear(),
+      _entries.clear(),
+      _favs.clear(),
+      _weights.clear(),
+      _memory.clear(),
+      KeyVault.clear(),
+    ]);
+    _load();
+    notifyListeners();
+  }
+}

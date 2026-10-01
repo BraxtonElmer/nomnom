@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../data/models.dart';
 import '../theme/tokens.dart';
 import 'pressable.dart';
-
-DateTime dayOf(DateTime d) => DateTime(d.year, d.month, d.day);
 
 /// Monday-first week capsule. Swipe sideways for other weeks.
 class WeekStrip extends StatefulWidget {

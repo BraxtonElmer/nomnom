@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/activity.dart';
 import '../../data/models.dart';
+import '../../data/reminders.dart';
 import '../../data/store.dart';
 import '../../nutrition/countries.dart';
 import '../../nutrition/targets.dart';
@@ -162,6 +163,40 @@ class YouScreen extends StatelessWidget {
                   ),
                 ],
               ],
+              if (Reminders.supported) ...[
+                const SizedBox(height: 28),
+                const Text('REMINDERS', style: T.caps),
+                _ToggleRow(
+                  title: 'Remind me to log',
+                  subtitle: 'Only for meals you haven’t logged yet',
+                  value: s.remindersOn,
+                  last: !s.remindersOn,
+                  onChanged: (v) async {
+                    if (!v) return Store.i.setReminders(on: false);
+                    final ok = await Reminders.enable();
+                    if (!ok && context.mounted) {
+                      showToast(context, 'Notifications are off for nomnom in system settings.');
+                    }
+                  },
+                ),
+                if (s.remindersOn)
+                  for (final (i, meal) in Reminders.meals.indexed)
+                    RuledRow(
+                      label: meal.label,
+                      value: _clock(context, s.reminderAt(meal)),
+                      last: i == Reminders.meals.length - 1,
+                      onTap: () async {
+                        final m = s.reminderAt(meal);
+                        final t = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay(hour: m ~/ 60, minute: m % 60),
+                        );
+                        if (t != null) {
+                          await Store.i.setReminders(meal: meal, minutes: t.hour * 60 + t.minute);
+                        }
+                      },
+                    ),
+              ],
               const SizedBox(height: 28),
               const Text('FAVOURITES', style: T.caps),
               RuledRow(
@@ -195,8 +230,8 @@ class YouScreen extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 'Version 2.1.0. Everything stays on this phone; the AI is called directly '
-                'with your own key. Nutrition data from USDA FoodData Central (public domain) '
-                'and the nomnom dish table. Estimates, not medical advice.',
+                'with your own key. Nutrition data from USDA FoodData Central, Open Food '
+                'Facts and the nomnom dish table. Estimates, not medical advice.',
                 style: T.small,
               ),
             ],
@@ -404,5 +439,47 @@ class _Favourites extends StatelessWidget {
               ),
       );
     },
+  );
+}
+
+String _clock(BuildContext context, int minutes) =>
+    TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60).format(context);
+
+class _ToggleRow extends StatelessWidget {
+  const _ToggleRow({
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+    this.last = false,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final bool last;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(vertical: 14),
+    decoration: BoxDecoration(
+      border: last ? null : const Border(bottom: BorderSide(color: C.line)),
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: T.body),
+              const SizedBox(height: 2),
+              Text(subtitle, style: T.small),
+            ],
+          ),
+        ),
+        PaperSwitch(value: value, label: title, onChanged: onChanged),
+      ],
+    ),
   );
 }

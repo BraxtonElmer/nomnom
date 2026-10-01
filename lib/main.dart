@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'data/reminders.dart';
 import 'data/store.dart';
 import 'nutrition/food_db.dart';
 import 'screens/setup/onboarding.dart';
@@ -22,6 +23,7 @@ Future<void> main() async {
   // Food tables parse in the background; the first parse awaits them.
   FoodDb.load();
   runApp(const NomnomApp());
+  Reminders.init();
 }
 
 class NomnomApp extends StatelessWidget {

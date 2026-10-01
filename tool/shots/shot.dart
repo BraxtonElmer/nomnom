@@ -164,6 +164,7 @@ Future<void> seed() async {
     }
   }
   await s.setHealth(connected: true, eatBack: true);
+  await s.setReminders(on: true);
   Activity.i.seed({
     for (var d = 0; d < 7; d++)
       today.subtract(Duration(days: d)): DayActivity(

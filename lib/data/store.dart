@@ -28,6 +28,18 @@ class Store extends ChangeNotifier {
   /// Add active calories burned to the day's budget.
   bool eatBack = false;
 
+  bool remindersOn = false;
+  final Map<Meal, int> _reminderMinutes = {};
+
+  static const _defaultReminders = {
+    Meal.breakfast: 10 * 60 + 30,
+    Meal.lunch: 14 * 60 + 30,
+    Meal.dinner: 21 * 60,
+  };
+
+  /// Minutes after midnight to nudge for [meal].
+  int reminderAt(Meal meal) => _reminderMinutes[meal] ?? _defaultReminders[meal] ?? 12 * 60;
+
   final List<Entry> _all = [];
   final Map<DateTime, List<Entry>> _byDay = {};
   final List<Favourite> _favList = [];
@@ -55,6 +67,12 @@ class Store extends ChangeNotifier {
     onboarded = _settings.get('onboarded') == 'true';
     healthConnected = _settings.get('health') == 'true';
     eatBack = _settings.get('eatBack') == 'true';
+    remindersOn = _settings.get('reminders') == 'true';
+    _reminderMinutes.clear();
+    for (final m in Meal.values) {
+      final v = int.tryParse(_settings.get('remind_${m.name}') ?? '');
+      if (v != null) _reminderMinutes[m] = v;
+    }
 
     _all
       ..clear()
@@ -105,6 +123,14 @@ class Store extends ChangeNotifier {
     notifyListeners();
     await _settings.put('health', '$healthConnected');
     await _settings.put('eatBack', '${this.eatBack}');
+  }
+
+  Future<void> setReminders({bool? on, Meal? meal, int? minutes}) async {
+    if (on != null) remindersOn = on;
+    if (meal != null && minutes != null) _reminderMinutes[meal] = minutes;
+    notifyListeners();
+    await _settings.put('reminders', '$remindersOn');
+    if (meal != null && minutes != null) await _settings.put('remind_${meal.name}', '$minutes');
   }
 
   Future<void> finishOnboarding() async {

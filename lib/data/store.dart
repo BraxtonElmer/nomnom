@@ -255,6 +255,26 @@ class Store extends ChangeNotifier {
     await _entries.delete(id);
   }
 
+  /// Logs [entries] again on [day], keeping each one's meal and time of day.
+  Future<List<Entry>> copyTo(List<Entry> entries, DateTime day) async {
+    final copies = [
+      for (final e in entries)
+        Entry(
+          id: newId(),
+          at: DateTime(day.year, day.month, day.day, e.at.hour, e.at.minute),
+          meal: e.meal,
+          title: e.title,
+          text: e.text,
+          items: e.items,
+        ),
+    ];
+    _all.addAll(copies);
+    _reindex();
+    notifyListeners();
+    await _entries.putAll({for (final c in copies) c.id: jsonEncode(c.toJson())});
+    return copies;
+  }
+
   /// Distinct recent plates, newest first, for one-tap re-logging.
   List<Entry> recents({int limit = 12}) {
     final seen = <String>{};

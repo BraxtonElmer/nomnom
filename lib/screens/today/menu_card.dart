@@ -17,6 +17,8 @@ class MenuCard extends StatelessWidget {
     this.isToday = true,
     this.pending = const [],
     this.onTapPending,
+    this.yesterday = const [],
+    this.onRepeat,
   });
 
   final String title;
@@ -28,6 +30,10 @@ class MenuCard extends StatelessWidget {
   /// Logs saved while offline, shown under their meal until they're read.
   final List<PendingLog> pending;
   final ValueChanged<PendingLog>? onTapPending;
+
+  /// Yesterday's entries, offered as "same as yesterday" for empty meals.
+  final List<Entry> yesterday;
+  final ValueChanged<List<Entry>>? onRepeat;
 
   @override
   Widget build(BuildContext context) {
@@ -113,18 +119,42 @@ class MenuCard extends StatelessWidget {
           for (final e in list) _line(e),
           for (final p in waiting) _waiting(p),
           if (list.isEmpty && waiting.isEmpty)
-            Text(
-              isToday ? 'Not yet' : '—',
-              style: TextStyle(
-                fontFamily: F.serif,
-                fontStyle: FontStyle.italic,
-                fontSize: 18,
-                color: C.ink3,
-              ),
+            Row(
+              children: [
+                Text(
+                  isToday ? 'Not yet' : '—',
+                  style: TextStyle(
+                    fontFamily: F.serif,
+                    fontStyle: FontStyle.italic,
+                    fontSize: 18,
+                    color: C.ink3,
+                  ),
+                ),
+                const Spacer(),
+                if (isToday && onRepeat != null) ..._repeat(meal),
+              ],
             ),
         ],
       ),
     );
+  }
+
+  List<Widget> _repeat(Meal meal) {
+    final same = yesterday.where((e) => e.meal == meal).toList();
+    if (same.isEmpty) return const [];
+    final k = same.fold<double>(0, (s, e) => s + e.total.kcal);
+    return [
+      Pressable(
+        onTap: () => onRepeat!(same),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Text(
+            'Same as yesterday · ${kcal(k)}',
+            style: T.small.copyWith(color: C.tomato, fontWeight: FontWeight.w500),
+          ),
+        ),
+      ),
+    ];
   }
 
   Widget _waiting(PendingLog p) => Pressable(

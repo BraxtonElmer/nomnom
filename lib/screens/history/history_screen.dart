@@ -5,6 +5,7 @@ import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../theme/tokens.dart';
 import '../../ui/buttons.dart';
+import '../../ui/controls.dart';
 import '../../ui/format.dart';
 import '../../ui/macro_bar.dart';
 import '../../ui/pressable.dart';
@@ -160,15 +161,38 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             ).push(MaterialPageRoute(builder: (_) => ReviewScreen.edit(entry: e))),
                           ),
                           const SizedBox(height: 6),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: TextLink(
-                              label: 'Log food for this day',
-                              onTap: () {
-                                TodayScreen.day.value = _selected!;
-                                Shell.tab.value = 0;
-                              },
-                            ),
+                          Wrap(
+                            spacing: 20,
+                            children: [
+                              TextLink(
+                                label: 'Log food for this day',
+                                onTap: () {
+                                  TodayScreen.day.value = _selected!;
+                                  Shell.tab.value = 0;
+                                },
+                              ),
+                              if (_selected != today && s.entriesOn(_selected!).isNotEmpty)
+                                TextLink(
+                                  label: 'Copy this day to today',
+                                  onTap: () async {
+                                    final copies = await Store.i.copyTo(
+                                      s.entriesOn(_selected!),
+                                      today,
+                                    );
+                                    if (!context.mounted) return;
+                                    showToast(
+                                      context,
+                                      'Copied ${copies.length} entries to today',
+                                      action: 'Undo',
+                                      onAction: () {
+                                        for (final c in copies) {
+                                          Store.i.deleteEntry(c.id);
+                                        }
+                                      },
+                                    );
+                                  },
+                                ),
+                            ],
                           ),
                         ],
                       ),

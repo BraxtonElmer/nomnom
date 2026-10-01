@@ -225,6 +225,22 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
                         isToday: _isToday,
                         onTap: _open,
                         pending: s.pendingOn(_day),
+                        yesterday: s.entriesOn(_day.subtract(const Duration(days: 1))),
+                        onRepeat: (es) async {
+                          final copies = await Store.i.copyTo(es, _day);
+                          if (!context.mounted) return;
+                          showToast(
+                            context,
+                            'Logged ${es.first.meal.label.toLowerCase()} again · '
+                            '${kcal(copies.fold<double>(0, (s, e) => s + e.total.kcal))} kcal',
+                            action: 'Undo',
+                            onAction: () {
+                              for (final c in copies) {
+                                Store.i.deleteEntry(c.id);
+                              }
+                            },
+                          );
+                        },
                         onTapPending: (p) => Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) =>

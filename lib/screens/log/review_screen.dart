@@ -181,6 +181,20 @@ class _ReviewScreenState extends State<ReviewScreen> {
     }
   }
 
+  /// Moves the entry to another day, keeping its time.
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final d = await showDatePicker(
+      context: context,
+      initialDate: _at.isAfter(now) ? now : _at,
+      firstDate: now.subtract(const Duration(days: 365 * 3)),
+      lastDate: now,
+    );
+    if (d != null) {
+      setState(() => _at = DateTime(d.year, d.month, d.day, _at.hour, _at.minute));
+    }
+  }
+
   Future<void> _pickTime() async {
     final t = await showTimePicker(
       context: context,
@@ -354,6 +368,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
                         labels: Meal.values.map((m) => m.label).toList(),
                         value: _meal,
                         onChanged: (m) => setState(() => _meal = m),
+                      ),
+                    ),
+                    Pressable(
+                      onTap: _pickDate,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 10, 6, 10),
+                        child: Text(dayLabel(_at), style: T.small.copyWith(color: C.ink)),
                       ),
                     ),
                     Pressable(

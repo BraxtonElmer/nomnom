@@ -151,6 +151,7 @@ class FoodItem {
     this.ai,
     this.richness = 0,
     this.size = 1,
+    this.aiUnitGrams,
   });
 
   final String name;
@@ -169,6 +170,11 @@ class FoodItem {
 
   /// The model's own estimate per 100 g, kept for comparison and switching.
   final Nutrients? ai;
+
+  /// The model's own grams per unit, which can differ from the table's
+  /// portion ("AI says" shows the AI's whole estimate, not its density at
+  /// the table's weight).
+  final double? aiUnitGrams;
 
   /// For home-style dishes: -1 light on oil and ghee, 0 typical, 1 rich.
   /// Home cooking varies mostly in fat, so this moves fat by about a third.
@@ -195,7 +201,9 @@ class FoodItem {
 
   /// AI estimate for this amount, when it exists and the numbers came from
   /// somewhere else.
-  Nutrients? get aiTotal => (ai == null || source == Source.ai) ? null : ai!.scale(grams / 100);
+  Nutrients? get aiTotal => (ai == null || source == Source.ai)
+      ? null
+      : ai!.scale(qty * (aiUnitGrams ?? unitGrams) / 100);
 
   double get grams => qty * unitGrams;
   Nutrients get total => eff100.scale(grams / 100);
@@ -222,6 +230,7 @@ class FoodItem {
     Nutrients? ai,
     int? richness,
     double? size,
+    double? aiUnitGrams,
   }) => FoodItem(
     name: name ?? this.name,
     qty: qty ?? this.qty,
@@ -235,6 +244,7 @@ class FoodItem {
     ai: ai ?? this.ai,
     richness: richness ?? this.richness,
     size: size ?? this.size,
+    aiUnitGrams: aiUnitGrams ?? this.aiUnitGrams,
   );
 
   /// One stepper notch. Small for single pieces, 10% for weights.
@@ -263,6 +273,7 @@ class FoodItem {
     if (ai != null && source != Source.ai) 'a': ai!.toJson(),
     if (richness != 0) 'rv': richness,
     if (size != 1) 'sz': size,
+    if (aiUnitGrams != null && source != Source.ai) 'ag': aiUnitGrams,
   };
 
   factory FoodItem.fromJson(Map<String, dynamic> j) => FoodItem(
@@ -278,6 +289,7 @@ class FoodItem {
     ai: j['a'] == null ? null : Nutrients.fromJson(j['a'] as List),
     richness: (j['rv'] as int?) ?? 0,
     size: j['sz'] == null ? 1 : _d(j['sz']),
+    aiUnitGrams: j['ag'] == null ? null : _d(j['ag']),
   );
 }
 
@@ -352,6 +364,7 @@ class Entry {
     this.note,
     this.stock,
     this.stockCheck = false,
+    this.logged,
   });
 
   final String id;
@@ -370,6 +383,9 @@ class Entry {
   /// amount, too little in stock); shown until they open the entry.
   final bool stockCheck;
 
+  /// When it was first saved (not when it was eaten).
+  final DateTime? logged;
+
   Nutrients get total => items.fold(Nutrients.zero, (s, i) => s + i.total);
 
   Entry copyWith({
@@ -379,6 +395,7 @@ class Entry {
     List<FoodItem>? items,
     Map<String, double>? Function()? stock,
     bool? stockCheck,
+    DateTime? logged,
   }) => Entry(
     id: id,
     at: at ?? this.at,
@@ -389,6 +406,7 @@ class Entry {
     note: note,
     stock: stock == null ? this.stock : stock(),
     stockCheck: stockCheck ?? this.stockCheck,
+    logged: logged ?? this.logged,
   );
 
   Map<String, dynamic> toJson() => {
@@ -401,6 +419,7 @@ class Entry {
     if (note != null) 'n': note,
     if (stock != null) 'st': stock,
     if (stockCheck) 'sc': true,
+    if (logged != null) 'lg': logged!.millisecondsSinceEpoch,
   };
 
   factory Entry.fromJson(Map<String, dynamic> j) => Entry(
@@ -415,6 +434,7 @@ class Entry {
         ? null
         : {for (final e in (j['st'] as Map).entries) e.key as String: _d(e.value)},
     stockCheck: j['sc'] == true,
+    logged: j['lg'] == null ? null : DateTime.fromMillisecondsSinceEpoch(j['lg'] as int),
   );
 }
 

@@ -94,6 +94,9 @@ class _ItemSheetState extends State<_ItemSheet> {
     });
   }
 
+  /// The user typed a gram amount; re-matching keeps it.
+  bool _gramsSet = false;
+
   void _choose(DbFood food) {
     final base =
         _item ??
@@ -113,6 +116,8 @@ class _ItemSheetState extends State<_ItemSheet> {
       ).copyWith(name: _adding ? _cleanName(food.name) : base.name, flagged: false);
       if (_adding && food.portions.isEmpty) {
         _item = _item!.copyWith(qty: 100, unit: 'g', unitGrams: 1);
+      } else if (_gramsSet && !base.byWeight) {
+        _item = _item!.copyWith(unitGrams: base.unitGrams);
       }
       _syncGrams();
     });
@@ -126,6 +131,7 @@ class _ItemSheetState extends State<_ItemSheet> {
   void _setGrams(String v) {
     final g = double.tryParse(v);
     if (g == null || g <= 0 || _item == null) return;
+    _gramsSet = true;
     setState(
       () => _item = _item!.byWeight
           ? _item!.copyWith(qty: g)
@@ -254,7 +260,7 @@ class _ItemSheetState extends State<_ItemSheet> {
                         name: item!.name,
                         qty: item.qty,
                         unit: item.unit,
-                        unitGrams: item.unitGrams,
+                        unitGrams: item.aiUnitGrams ?? item.unitGrams,
                         per100: item.ai!,
                         source: Source.ai,
                         ai: item.ai,

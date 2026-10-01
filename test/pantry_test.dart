@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nomnom/data/models.dart';
 import 'package:nomnom/data/pantry.dart';
 import 'package:nomnom/data/store.dart';
+import 'package:nomnom/screens/log/pantry_section.dart';
 
 import 'support/db.dart';
 
@@ -221,5 +222,127 @@ void main() {
     expect(eggs.copyWith(left: 4, lowAt: () => 1).isLow, isFalse);
     StockItem.lowPieces = 2;
     StockItem.lowPercent = 20;
+  });
+
+  test('groceries as people write them', () {
+    final db = loadTestDb();
+    (double, String) one(String t) {
+      final d = readStock(t, db)!.single;
+      return (d.amount, d.unit);
+    }
+
+    expect(one('2 x 500g paneer'), (1000.0, 'g'));
+    expect(one('half a dozen eggs'), (6.0, 'piece'));
+    expect(one('1/2 kg rice'), (500.0, 'g'));
+    expect(one('tray of 30 eggs'), (30.0, 'piece'));
+    expect(one('1,5 kg rice'), (1500.0, 'g'));
+    expect(one('1 loaf bread'), (1.0, 'piece'));
+    expect(readStock('1 loaf bread', db)!.single.name, 'Bread');
+    expect(one('1.5kg chicken'), (1500.0, 'g'));
+    expect(one('milk 2 litres'), (2000.0, 'ml'));
+    final aloo = readStock('aloo 1kg', db)!.single;
+    expect(aloo.ref?.startsWith('in-'), isNot(true)); // not aloo paratha
+  });
+
+  test('a food that only contains the stock asks how much', () {
+    final rice = food('Egg fried rice', 300, 'g', source: Source.ai);
+    final p = planStock(
+      [rice],
+      [
+        eggs.copyWith(links: {'egg fried rice'}),
+      ],
+      at: at,
+    ).single;
+    expect(p.ask, StockAsk.amount);
+    expect(p.suggested, isNull);
+  });
+
+  group('review-screen answers', () {
+    final chickenFood = food(
+      'Chicken breast',
+      250,
+      'g',
+      ref: 'usda:171077',
+      refName: 'Chicken breast',
+    );
+
+    test('editing keeps what the entry took when nothing is answered', () {
+      final keys = <Object>[Object()];
+      final plan = planStock(
+        [chickenFood],
+        [chicken.copyWith(left: 117)],
+        at: at,
+        previous: {'chicken': 333},
+      );
+      expect(plan.single.ask, StockAsk.amount);
+      final choices = <String, StockChoice>{};
+      prefillStock(plan, keys, choices, {'chicken': 333});
+      final r = resolveStock(plan, keys, choices, previous: {'chicken': 333});
+      expect(r.use, {'chicken': 333});
+      expect(r.open, isFalse);
+    });
+
+    test('a cooked answer follows a changed quantity', () {
+      final keys = <Object>[Object()];
+      final choices = <String, StockChoice>{};
+      var plan = planStock([chickenFood], [chicken], at: at);
+      choices[stockKey(plan.single, keys)] = StockChoice()
+        ..take = true
+        ..cooked = true;
+      plan = planStock([chickenFood.copyWith(qty: 300)], [chicken], at: at);
+      expect(resolveStock(plan, keys, choices).use, {'chicken': 400});
+    });
+
+    test('answers stay with their item when another is removed', () {
+      final a = Object(), b = Object();
+      final boiled = food('Boiled egg', 2, 'piece', ref: 'usda:173424');
+      final omelette = food('Egg', 1, 'piece', ref: 'usda:171287');
+      final plan = planStock([boiled, omelette], [eggs], at: at);
+      final choices = {
+        stockKey(plan.first, [a, b]): StockChoice()..take = false,
+      };
+      final after = planStock([omelette], [eggs], at: at);
+      expect(resolveStock(after, [b], choices).use, {'eggs': 1});
+    });
+  });
+
+  group('store, later changes', () {
+    Entry meal(String id, List<FoodItem> items, {Map<String, double>? stock}) =>
+        Entry(id: id, at: at, meal: Meal.lunch, title: 'x', text: 'x', items: items, stock: stock);
+    final twoEggs = food('Egg', 2, 'piece', unitGrams: 50, ref: 'usda:171287');
+
+    test('meals saved before a hand recount are already in it', () async {
+      await Store.i.putStock(eggs);
+      await Store.i.putEntry(meal('r1', [twoEggs]));
+      expect(Store.i.stockItem('eggs')!.left, 8);
+      await Store.i.putStock(
+        Store.i
+            .stockItem('eggs')!
+            .copyWith(left: 5, recount: DateTime.now().add(const Duration(seconds: 1))),
+      );
+      await Store.i.deleteEntry('r1');
+      expect(Store.i.stockItem('eggs')!.left, 5);
+    });
+
+    test('a copy takes what the original took, even after a one-off answer', () async {
+      await Store.i.putStock(chicken);
+      await Store.i.putEntry(
+        meal('c1', [food('Chicken breast', 250, 'g', ref: 'usda:171077')], stock: {'chicken': 250}),
+      );
+      final copies = await Store.i.copyTo([Store.i.entry('c1')!], DateTime(2026, 10, 2));
+      expect(copies.single.stockCheck, isFalse);
+      expect(Store.i.stockItem('chicken')!.left, 0); // 450 − 250 − 200 left on the shelf
+      expect(copies.single.stock, {'chicken': 200});
+    });
+
+    test('restocking drops a use-by date that has passed', () {
+      final old = eggs.copyWith(left: 1, useBy: () => DateTime(2020));
+      final fresh = old.restock(12);
+      expect(fresh.left, 13);
+      expect(fresh.full, 13);
+      expect(fresh.useBy, isNull);
+      final soon = eggs.copyWith(useBy: () => DateTime.now().add(const Duration(days: 3)));
+      expect(soon.restock(6).useBy, isNotNull);
+    });
   });
 }

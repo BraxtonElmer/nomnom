@@ -25,6 +25,8 @@ class LogQueue {
           final meal =
               await MealParser.readLocally(p.text) ??
               await (parser ??= await MealParser.fromSettings()).parse(p.text);
+          // Opened in the review screen (or saved there) while being read.
+          if (open.contains(p.id) || !Store.i.pending.any((x) => x.id == p.id)) continue;
           await Store.i.putEntry(
             Entry(
               id: Store.newId(),

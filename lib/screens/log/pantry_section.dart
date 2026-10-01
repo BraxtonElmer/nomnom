@@ -15,12 +15,47 @@ class StockChoice {
   /// Overrides the planned amount (raw grams, what's left…).
   double? amount;
 
+  /// Weighed raw (false) or cooked (true), when that was the question. The
+  /// amount follows the item if its quantity changes afterwards.
+  bool? cooked;
+
   /// Remember the link ("always") or its absence ("never").
   bool always = false;
   bool never = false;
 }
 
-String stockKey(StockUse u) => '${u.item}:${u.stock.id}';
+/// Answers are keyed by the item itself, not its position, so removing an
+/// item doesn't hand its answer to the next one.
+String stockKey(StockUse u, List<Object> keys) =>
+    '${identityHashCode(keys[u.item])}:${u.stock.id}';
+
+/// The amount a use takes given the answer so far.
+double? choiceAmount(StockUse u, StockChoice? c) {
+  if (c?.cooked != null && u.suggested != null) {
+    final y = cookedYield(u.stock.name) ?? 1;
+    return c!.cooked! ? (u.suggested! / y).roundToDouble() : u.suggested;
+  }
+  return c?.amount ?? u.amount;
+}
+
+/// When editing, what the entry already took stands as answered, so saving
+/// without touching the pantry changes nothing.
+void prefillStock(
+  List<StockUse> plan,
+  List<Object> keys,
+  Map<String, StockChoice> choices,
+  Map<String, double> previous,
+) {
+  for (final u in plan) {
+    final took = previous[u.stock.id];
+    if (took == null || choices.containsKey(stockKey(u, keys))) continue;
+    // Only when one item uses that stock; otherwise the split is unknown.
+    if (plan.where((x) => x.stock.id == u.stock.id).length != 1) continue;
+    choices[stockKey(u, keys)] = StockChoice()
+      ..take = true
+      ..amount = took;
+  }
+}
 
 /// Turns the plan and answers into what the entry takes. [open] is true
 /// while a question is unanswered; those uses are left out.
@@ -28,20 +63,21 @@ String stockKey(StockUse u) => '${u.item}:${u.stock.id}';
 /// entry already took), so undoing a meal never puts back more than it took.
 ({Map<String, double> use, bool open}) resolveStock(
   List<StockUse> plan,
+  List<Object> keys,
   Map<String, StockChoice> choices, {
   Map<String, double> previous = const {},
 }) {
   final use = <String, double>{};
   var open = false;
   for (final u in plan) {
-    final c = choices[stockKey(u)];
+    final c = choices[stockKey(u, keys)];
     final take = c?.take ?? (u.ask == null ? true : null);
     if (take == null) {
       open = true;
       continue;
     }
     if (!take) continue;
-    final amount = c?.amount ?? u.amount;
+    final amount = choiceAmount(u, c);
     if (amount == null) {
       open = true;
       continue;
@@ -55,11 +91,12 @@ String stockKey(StockUse u) => '${u.item}:${u.stock.id}';
 /// Saves "always" and "never" answers as links on the stock items.
 Future<void> rememberStockLinks(
   List<StockUse> plan,
+  List<Object> keys,
   Map<String, StockChoice> choices,
   List<FoodItem> items,
 ) async {
   for (final u in plan) {
-    final c = choices[stockKey(u)];
+    final c = choices[stockKey(u, keys)];
     if (c == null || u.ask != StockAsk.link) continue;
     if (c.always && c.take == true) {
       await Store.i.linkStock(u.stock.id, items[u.item].name, yes: true);
@@ -75,6 +112,7 @@ class PantrySection extends StatelessWidget {
     super.key,
     required this.plan,
     required this.items,
+    required this.keys,
     required this.choices,
     required this.onChanged,
     this.previous = const {},
@@ -83,6 +121,9 @@ class PantrySection extends StatelessWidget {
   final List<StockUse> plan;
   final List<FoodItem> items;
   final Map<String, StockChoice> choices;
+
+  /// One object per item, for [stockKey].
+  final List<Object> keys;
   final VoidCallback onChanged;
 
   /// What the entry took before an edit, back on the shelf for the preview.
@@ -99,10 +140,10 @@ class PantrySection extends StatelessWidget {
         const SizedBox(height: 4),
         for (final u in plan)
           _UseRow(
-            key: ValueKey(stockKey(u)),
+            key: ValueKey(stockKey(u, keys)),
             use: u,
             food: items[u.item],
-            choice: choices.putIfAbsent(stockKey(u), StockChoice.new),
+            choice: choices.putIfAbsent(stockKey(u, keys), StockChoice.new),
             before: u.stock.left + (previous[u.stock.id] ?? 0),
             onChanged: onChanged,
           ),
@@ -153,7 +194,7 @@ class _UseRowState extends State<_UseRow> {
     final c = widget.choice;
     final s = u.stock;
     final take = c.take ?? (u.ask == null ? true : null);
-    final amount = c.amount ?? u.amount;
+    final amount = choiceAmount(u, c);
     final after = take == true && amount != null ? widget.before - amount : widget.before;
     // Weighed but not said raw or cooked: two answers, nothing to type.
     final y = cookedYield(s.name);
@@ -287,18 +328,18 @@ class _UseRowState extends State<_UseRow> {
               children: [
                 _Pill(
                   'Raw',
-                  on: take == true && c.amount == u.suggested,
+                  on: take == true && c.cooked == false,
                   onTap: () => _set((c) {
                     c.take = true;
-                    c.amount = u.suggested;
+                    c.cooked = false;
                   }),
                 ),
                 _Pill(
                   'Cooked · ≈${formatNum((u.suggested! / y).roundToDouble())} g raw',
-                  on: take == true && c.amount == (u.suggested! / y).roundToDouble(),
+                  on: take == true && c.cooked == true,
                   onTap: () => _set((c) {
                     c.take = true;
-                    c.amount = (u.suggested! / y).roundToDouble();
+                    c.cooked = true;
                   }),
                 ),
                 _Pill('Not from here', on: take == false, onTap: () => _set((c) => c.take = false)),

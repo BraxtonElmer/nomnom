@@ -17,6 +17,7 @@ class StockAlerts {
 
   /// Ids 5000 and up; meal reminders use 0–69.
   static const _base = 5000;
+  /// Low and out alerts use 3975–4998.
   static const _now = 4999;
 
   static void start() {
@@ -54,7 +55,8 @@ class StockAlerts {
     final body = after.isOut
         ? 'The last of it was just logged. Restock it in Pantry when you buy more.'
         : '${after.amount()} left of ${after.amount(after.full)}.';
-    _show(_now, title, body);
+    // One notification per item, so two in one meal don't replace each other.
+    _show(_now - 1 - (after.id.hashCode & 0x3ff), title, body);
   }
 
   static Future<void> _show(int id, String title, String body) async {

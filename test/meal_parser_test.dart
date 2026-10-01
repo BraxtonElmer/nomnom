@@ -289,7 +289,7 @@ void main() {
     ).parse('poha');
     final item = tables.items.single.item;
     expect(item.source, Source.dish);
-    expect(item.aiTotal!.kcal, closeTo(320 * 180 / 200, 0.5)); // AI per-100 at the table's 180 g
+    expect(item.aiTotal!.kcal, closeTo(320, 0.5)); // what the AI said, at its own 200 g
     expect(FoodItem.fromJson(item.toJson()).ai!.kcal, closeTo(160, 0.01));
 
     final ai = FakeAi([reply()]);

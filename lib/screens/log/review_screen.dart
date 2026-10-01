@@ -104,6 +104,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
       _meal = e.meal;
       _title = e.title;
       _items = [for (final i in e.items) ParsedItem(item: i, estimate: i, candidates: const [])];
+      prefillStock(_stockPlan, _items!, _stockChoices, _stockBefore);
     } else {
       _at = widget.at!;
       _meal = widget.meal ?? Meal.forTime(_at);
@@ -168,8 +169,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
     if (items.isEmpty) return;
     setState(() => _saving = true);
     final plan = _stockPlan;
-    final stock = resolveStock(plan, _stockChoices, previous: _stockBefore);
-    await rememberStockLinks(plan, _stockChoices, [for (final p in items) p.item]);
+    final stock = resolveStock(plan, items, _stockChoices, previous: _stockBefore);
+    await rememberStockLinks(plan, items, _stockChoices, [for (final p in items) p.item]);
     final entry = Entry(
       id: widget.entry?.id ?? Store.newId(),
       at: _at,
@@ -401,6 +402,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                               PantrySection(
                                 plan: _stockPlan,
                                 items: [for (final p in items) p.item],
+                                keys: items,
                                 choices: _stockChoices,
                                 previous: _stockBefore,
                                 onChanged: () => setState(() {}),

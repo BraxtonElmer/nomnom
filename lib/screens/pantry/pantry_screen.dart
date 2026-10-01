@@ -314,8 +314,7 @@ class _AddSheetState extends State<_AddSheet> {
           .where((s) => s.name.toLowerCase() == d.name.toLowerCase() && s.unit == d.unit)
           .firstOrNull;
       if (same != null) {
-        final left = same.left + d.amount;
-        await Store.i.putStock(same.copyWith(left: left, full: left));
+        await Store.i.putStock(same.restock(d.amount));
       } else {
         await Store.i.putStock(d.toItem(Store.newId(), now));
       }
@@ -432,10 +431,11 @@ class _StockSheetState extends State<_StockSheet> {
     final bought = _num(_bought);
     final left = _num(_left);
     if (bought != null && bought > 0) {
-      final now = s.left + bought;
-      await Store.i.putStock(s.copyWith(left: now, full: now));
+      await Store.i.putStock(s.restock(bought));
     } else if (left != null && left >= 0) {
-      await Store.i.putStock(s.copyWith(left: left, full: left > s.full ? left : null));
+      await Store.i.putStock(
+        s.copyWith(left: left, full: left > s.full ? left : null, recount: DateTime.now()),
+      );
     }
     if (mounted) Navigator.pop(context);
   }

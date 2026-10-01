@@ -21,6 +21,7 @@ class StockItem {
     this.useBy,
     this.links = const {},
     this.unlinks = const {},
+    this.recount,
   });
 
   final String id;
@@ -55,6 +56,10 @@ class StockItem {
   final Set<String> links;
   final Set<String> unlinks;
 
+  /// When the user last set the amount by hand. Meals from before it are
+  /// already in that count.
+  final DateTime? recount;
+
   /// App-wide warning points, set from the user's settings: pieces left
   /// for counted things, percent of the last restock for weighed ones.
   static double lowPieces = 2;
@@ -77,6 +82,7 @@ class StockItem {
     DateTime? Function()? useBy,
     Set<String>? links,
     Set<String>? unlinks,
+    DateTime? recount,
   }) => StockItem(
     id: id,
     name: name ?? this.name,
@@ -91,7 +97,16 @@ class StockItem {
     useBy: useBy == null ? this.useBy : useBy(),
     links: links ?? this.links,
     unlinks: unlinks ?? this.unlinks,
+    recount: recount ?? this.recount,
   );
+
+  /// More bought: adds to what's left and starts a new batch, dropping a
+  /// use-by date that has already passed.
+  StockItem restock(double amount) {
+    final now = left + amount;
+    final stale = useBy != null && dayOf(useBy!).isBefore(dayOf(DateTime.now()));
+    return copyWith(left: now, full: now, useBy: stale ? () => null : null);
+  }
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -107,6 +122,7 @@ class StockItem {
     if (useBy != null) 'ub': useBy!.millisecondsSinceEpoch,
     if (links.isNotEmpty) 'ln': links.toList(),
     if (unlinks.isNotEmpty) 'un': unlinks.toList(),
+    if (recount != null) 'rc': recount!.millisecondsSinceEpoch,
   };
 
   factory StockItem.fromJson(Map<String, dynamic> j) {
@@ -125,6 +141,7 @@ class StockItem {
       useBy: j['ub'] == null ? null : DateTime.fromMillisecondsSinceEpoch(j['ub'] as int),
       links: {...(j['ln'] as List? ?? const []).cast<String>()},
       unlinks: {...(j['un'] as List? ?? const []).cast<String>()},
+      recount: j['rc'] == null ? null : DateTime.fromMillisecondsSinceEpoch(j['rc'] as int),
     );
   }
 }
@@ -292,7 +309,9 @@ List<StockUse> planStock(
 (double?, double?, String?) _amount(FoodItem f, StockItem s) {
   // A dish that merely contains the stock ("chicken biryani" from chicken
   // breast) holds an unknown share of it.
-  final mixed = f.source == Source.dish && !_key(s.name).containsAll(_key(f.name));
+  // Any food named with more than the stock ("egg fried rice", "milk tea"),
+  // whether from a dish table, USDA or the AI's own estimate.
+  final mixed = !_key(s.name).containsAll(_key(f.name));
   if (mixed) return (null, null, null);
 
   if (s.counted) {
@@ -377,6 +396,19 @@ const _stockUnits = {
   'piece': ('piece', 1.0),
   'pieces': ('piece', 1.0),
   'dozen': ('piece', 12.0),
+  'loaf': ('piece', 1.0),
+  'loaves': ('piece', 1.0),
+  'bottle': ('piece', 1.0),
+  'bottles': ('piece', 1.0),
+  'can': ('piece', 1.0),
+  'cans': ('piece', 1.0),
+  'tin': ('piece', 1.0),
+  'tins': ('piece', 1.0),
+  'jar': ('piece', 1.0),
+  'jars': ('piece', 1.0),
+  'bunch': ('piece', 1.0),
+  'block': ('piece', 1.0),
+  'blocks': ('piece', 1.0),
   'pack': ('piece', 1.0),
   'packs': ('piece', 1.0),
   'packet': ('piece', 1.0),
@@ -390,8 +422,13 @@ List<StockDraft>? readStock(String text, FoodDb db, {String? country}) {
   final out = <StockDraft>[];
   final chunks = text
       .toLowerCase()
+      // "1,5 kg" is a decimal, not two lines.
+      .replaceAllMapped(
+        RegExp(r'(\d),(\d+)(?=\s*(kg|g|l|ml|litres?|liters?)\b)'),
+        (m) => '${m[1]}.${m[2]}',
+      )
       .split(RegExp(r',|\band\b|\n|;|\+'))
-      .map((c) => c.trim().replaceAll(RegExp(r'\s+'), ' '))
+      .map((c) => _normalise(c.trim().replaceAll(RegExp(r'\s+'), ' ')))
       .where((c) => c.isNotEmpty);
   const num = r'(\d+(?:\.\d+)?|a|an|one|half)';
   final units = _stockUnits.keys.join('|');
@@ -483,6 +520,9 @@ DbFood? _groceryMatch(String name, FoodDb db, String? country) {
   final hits = db
       .search('$name raw', country: country, limit: 20)
       .where((f) => f.tokens.containsAll(want))
+      // A dish table is a prepared dish ("aloo" is not aloo paratha),
+      // unless it is the plain ingredient itself, like paneer.
+      .where((f) => f.source != Source.dish || f.head.difference(want).isEmpty)
       .toList();
   double score(DbFood f, int rank) {
     final words = tokenize(f.name);
@@ -507,4 +547,34 @@ DbFood? _groceryMatch(String name, FoodDb db, String? country) {
     }
   }
   return best;
+}
+
+/// Rewrites the ways people write amounts into "N unit name":
+/// "2 x 500g paneer" → "1000 g paneer", "half a dozen eggs" → "6 eggs",
+/// "1/2 kg rice" → "0.5 kg rice", "tray of 30 eggs" → "30 eggs".
+String _normalise(String c) {
+  String n(double v) => formatNum(v);
+  c = c.replaceAllMapped(
+    RegExp(r'(\d+)\s*/\s*(\d+)'),
+    (m) => n(int.parse(m[1]!) / int.parse(m[2]!)),
+  );
+  c = c.replaceFirst(RegExp(r'^half (a|an) '), 'half ');
+  final times = RegExp(
+    r'^(\d+(?:\.\d+)?)\s*[x×*]\s*(\d+(?:\.\d+)?)\s*([a-z]+)?\s+(.+)$',
+  ).firstMatch(c);
+  if (times != null) {
+    return '${n(double.parse(times[1]!) * double.parse(times[2]!))} ${times[3] ?? ''} ${times[4]}'
+        .replaceAll(RegExp(r'\s+'), ' ');
+  }
+  final box = RegExp(
+    r'^(?:(a|an|one|\d+(?:\.\d+)?) )?(?:trays?|cartons?|box(?:es)?|packs?|packets?|crates?|bags?) of (\d+) (.+)$',
+  ).firstMatch(c);
+  if (box != null) {
+    final k = switch (box[1]) {
+      null || 'a' || 'an' || 'one' => 1.0,
+      final s => double.parse(s),
+    };
+    return '${n(k * double.parse(box[2]!))} ${box[3]}';
+  }
+  return c;
 }

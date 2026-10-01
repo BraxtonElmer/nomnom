@@ -82,4 +82,18 @@ void main() {
     expect(item.source, Source.off);
     expect(item.total.kcal, closeTo(284, 0.5));
   });
+
+  test('a pack is the whole pack, and prepared values are their own match', () {
+    final foods = OpenFoodFacts.parse(
+      '{"hits": [{"code": "1", "product_name": "Masala noodles",'
+      ' "brands": "Maggi", "serving_quantity": 70, "product_quantity": "280",'
+      ' "nutriments": {"energy-kcal_100g": 430, "proteins_100g": 9,'
+      ' "energy-kcal_prepared_100g": 95, "proteins_prepared_100g": 2}}]}',
+    );
+    expect(foods.map((f) => f.id), ['off:1', 'off:1:prep']);
+    expect(foods.first.portions, [('1 serving', 70.0), ('1 pack', 280.0)]);
+    expect(foods.last.name, 'Maggi Masala noodles (as prepared)');
+    expect(foods.last.per100.kcal, 95);
+    expect(foods.last.portions, isEmpty);
+  });
 }

@@ -286,11 +286,15 @@ class Store extends ChangeNotifier {
   /// stock moves by the difference from what the entry took before, so
   /// edits, deletes, undo and copies all keep the pantry right.
   Future<void> putEntry(Entry e) async {
-    final before = entry(e.id)?.stock ?? const {};
-    e = _capStock(_planStock(e, before), before);
+    final old = entry(e.id);
+    final before = old?.stock ?? const {};
+    e = _capStock(
+      _planStock(e, before),
+      before,
+    ).copyWith(logged: old?.logged ?? e.logged ?? DateTime.now());
     _all.removeWhere((x) => x.id == e.id);
     _all.add(e);
-    await _moveStock(before, e.stock ?? const {});
+    await _moveStock(before, e.stock ?? const {}, logged: e.logged);
     _reindex();
     for (final item in e.items) {
       remember(item);
@@ -300,9 +304,10 @@ class Store extends ChangeNotifier {
   }
 
   Future<void> deleteEntry(String id) async {
-    final before = entry(id)?.stock ?? const {};
+    final old = entry(id);
+    final before = old?.stock ?? const {};
     _all.removeWhere((x) => x.id == id);
-    await _moveStock(before, const {});
+    if (old != null) await _moveStock(before, const {}, logged: old.logged);
     _reindex();
     notifyListeners();
     await _entries.delete(id);
@@ -312,18 +317,32 @@ class Store extends ChangeNotifier {
   Future<List<Entry>> copyTo(List<Entry> entries, DateTime day) async {
     final copies = <Entry>[];
     for (final e in entries) {
-      final c = _planStock(
-        Entry(
-          id: newId(),
-          at: DateTime(day.year, day.month, day.day, e.at.hour, e.at.minute),
-          meal: e.meal,
-          title: e.title,
-          text: e.text,
-          items: e.items,
+      // Eaten again: take what the original took, as already answered;
+      // work it out afresh only when the original took nothing.
+      final source = e.stockCheck || (e.stock?.isEmpty ?? true) ? null : e.stock;
+      final c = _capStock(
+        _planStock(
+          Entry(
+            id: newId(),
+            at: DateTime(day.year, day.month, day.day, e.at.hour, e.at.minute),
+            meal: e.meal,
+            title: e.title,
+            text: e.text,
+            items: e.items,
+            logged: DateTime.now(),
+            stock: source == null
+                ? null
+                : {
+                    for (final MapEntry(:key, :value) in source.entries)
+                      if (stockItem(key) case final s? when !dayOf(day).isBefore(dayOf(s.added)))
+                        key: value,
+                  },
+          ),
+          const {},
         ),
         const {},
       );
-      await _moveStock(const {}, c.stock!);
+      await _moveStock(const {}, c.stock!, logged: c.logged);
       copies.add(c);
     }
     _all.addAll(copies);
@@ -401,7 +420,9 @@ class Store extends ChangeNotifier {
   /// the alerts so the store doesn't depend on notifications.
   static void Function(StockItem before, StockItem after)? onStockChanged;
 
-  Future<void> putStock(StockItem s) async {
+  /// [logged] marks a change made by logging a meal, which is the only kind
+  /// that sends a low or out alert (not a hand recount).
+  Future<void> putStock(StockItem s, {bool logged = false}) async {
     final before = stockItem(s.id);
     _stockList
       ..removeWhere((x) => x.id == s.id)
@@ -409,7 +430,7 @@ class Store extends ChangeNotifier {
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     notifyListeners();
     await _stock.put(s.id, jsonEncode(s.toJson()));
-    if (before != null) onStockChanged?.call(before, s);
+    if (before != null && logged) onStockChanged?.call(before, s);
   }
 
   Future<void> deleteStock(String id) async {
@@ -455,12 +476,19 @@ class Store extends ChangeNotifier {
     return e.copyWith(stock: () => capped);
   }
 
-  Future<void> _moveStock(Map<String, double> before, Map<String, double> after) async {
+  /// Moves stock by the change in what a meal takes. A meal saved before a
+  /// hand recount is already in that count, so it moves nothing.
+  Future<void> _moveStock(
+    Map<String, double> before,
+    Map<String, double> after, {
+    required DateTime? logged,
+  }) async {
     for (final id in {...before.keys, ...after.keys}) {
       final delta = (after[id] ?? 0) - (before[id] ?? 0);
       final s = stockItem(id);
       if (s == null || delta.abs() < 1e-9) continue;
-      await putStock(s.copyWith(left: max(0, s.left - delta)));
+      if (s.recount != null && (logged == null || logged.isBefore(s.recount!))) continue;
+      await putStock(s.copyWith(left: max(0, s.left - delta)), logged: true);
     }
   }
 

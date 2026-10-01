@@ -329,7 +329,8 @@ class MealParser {
       source: food.source,
       ref: food.id,
       refName: food.name,
-      ai: estimate.per100,
+      ai: estimate.source == Source.ai ? estimate.per100 : (estimate.ai ?? estimate.per100),
+      aiUnitGrams: estimate.source == Source.ai ? estimate.unitGrams : estimate.aiUnitGrams,
     );
     final ratio = estimate.total.kcal <= 0 ? 1 : item.total.kcal / estimate.total.kcal;
     return item.copyWith(flagged: estimate.total.kcal > 40 && (ratio > 2 || ratio < 0.5));
@@ -491,6 +492,7 @@ String _resolveSystem(String country) =>
 You match foods to nutrition database entries for someone in $country.
 For each numbered food, pick the candidate id that best matches the food as eaten: same food, same state (cooked vs raw, with or without skin, sweetened or not).
 - Ids like "in-…", "cn-…", "jp-…", "it-…" are dish tables of typical recipes for each cuisine (in = Indian home-style, cn = Chinese, jp = Japanese, it = Italian, and so on). Prefer them for prepared dishes; prefer USDA for single ingredients and plain foods.
+- A packaged product can be listed twice: as sold, and "(as prepared)". Pick "as prepared" when it was eaten made up (a bowl of noodles, a glass of a drink made from powder); pick as sold when it was eaten as it comes or weighed dry.
 - Regional names: full cream milk is whole milk, toned milk is 2% milk, curd is plain yogurt, brown bread is whole-wheat bread.
 - Close variants are fine when nothing is exact: plain "dal" can match dal tadka or dal fry; "curd" can match plain yogurt.
 - Ids starting with "off:" are packaged products; pick one only when the user named that brand or product.

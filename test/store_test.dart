@@ -58,4 +58,15 @@ void main() {
     expect(Store.i.targets.kcal, 1900);
     expect(() => Store.i.importJson('{"app":"other"}'), throwsFormatException);
   });
+
+  test('logs saved for later persist per day until removed', () async {
+    final now = DateTime.now();
+    await Store.i.addPending(
+      PendingLog(id: 'p1', at: now, meal: Meal.dinner, text: 'chicken curry and rice'),
+    );
+    expect(Store.i.pendingOn(now).single.text, 'chicken curry and rice');
+    expect(Store.i.pendingOn(now.subtract(const Duration(days: 1))), isEmpty);
+    await Store.i.removePending('p1');
+    expect(Store.i.pending, isEmpty);
+  });
 }

@@ -19,6 +19,7 @@ class Store extends ChangeNotifier {
   late Box<String> _favs;
   late Box<String> _weights;
   late Box<String> _memory;
+  late Box<String> _pending;
 
   Profile profile = const Profile();
   AiConfig ai = const AiConfig();
@@ -44,6 +45,7 @@ class Store extends ChangeNotifier {
   final Map<DateTime, List<Entry>> _byDay = {};
   final List<Favourite> _favList = [];
   final List<WeightEntry> _weightList = [];
+  final List<PendingLog> _pendingList = [];
 
   Future<void> init({String? path}) async {
     if (path != null) {
@@ -56,6 +58,7 @@ class Store extends ChangeNotifier {
     _favs = await Hive.openBox<String>('favourites');
     _weights = await Hive.openBox<String>('weights');
     _memory = await Hive.openBox<String>('memory');
+    _pending = await Hive.openBox<String>('pending');
     _load();
   }
 
@@ -78,6 +81,10 @@ class Store extends ChangeNotifier {
       ..clear()
       ..addAll(_entries.values.map((v) => Entry.fromJson(_map(v))));
     _reindex();
+    _pendingList
+      ..clear()
+      ..addAll(_pending.values.map((v) => PendingLog.fromJson(_map(v))))
+      ..sort((a, b) => a.at.compareTo(b.at));
     _favList
       ..clear()
       ..addAll(_favs.values.map((v) => Favourite.fromJson(_map(v))));
@@ -192,6 +199,25 @@ class Store extends ChangeNotifier {
       if (out.length >= limit) break;
     }
     return out;
+  }
+
+  // Waiting to be read
+
+  List<PendingLog> get pending => List.unmodifiable(_pendingList);
+
+  List<PendingLog> pendingOn(DateTime day) =>
+      _pendingList.where((p) => dayOf(p.at) == dayOf(day)).toList();
+
+  Future<void> addPending(PendingLog p) async {
+    _pendingList.add(p);
+    notifyListeners();
+    await _pending.put(p.id, jsonEncode(p.toJson()));
+  }
+
+  Future<void> removePending(String id) async {
+    _pendingList.removeWhere((p) => p.id == id);
+    notifyListeners();
+    await _pending.delete(id);
   }
 
   // Favourites
@@ -313,6 +339,7 @@ class Store extends ChangeNotifier {
       _favs.clear(),
       _weights.clear(),
       _memory.clear(),
+      _pending.clear(),
       KeyVault.clear(),
     ]);
     _load();

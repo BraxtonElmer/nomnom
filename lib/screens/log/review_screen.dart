@@ -17,12 +17,22 @@ import 'item_sheet.dart';
 /// Shows what a sentence turned into and lets you fix it before saving.
 /// Also the editor for entries already in the log.
 class ReviewScreen extends StatefulWidget {
-  const ReviewScreen.parse({super.key, required String this.text, required DateTime this.at})
-    : entry = null;
+  const ReviewScreen.parse({
+    super.key,
+    required String this.text,
+    required DateTime this.at,
+    this.pendingId,
+  }) : entry = null;
 
-  const ReviewScreen.edit({super.key, required Entry this.entry}) : text = null, at = null;
+  const ReviewScreen.edit({super.key, required Entry this.entry})
+    : text = null,
+      at = null,
+      pendingId = null;
 
   final String? text;
+
+  /// Set when this reads a log that was saved for later.
+  final String? pendingId;
   final DateTime? at;
   final Entry? entry;
 
@@ -37,6 +47,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
   late Meal _meal;
   late DateTime _at;
   String? _error;
+  bool _errorLater = false;
   bool _saving = false;
 
   bool get _editing => widget.entry != null;
@@ -75,7 +86,12 @@ class _ReviewScreenState extends State<ReviewScreen> {
         if (meal.meal != null) _meal = meal.meal!;
       });
     } on AiException catch (e) {
-      if (mounted) setState(() => _error = e.message);
+      if (mounted) {
+        setState(() {
+          _error = e.message;
+          _errorLater = e.later;
+        });
+      }
     } catch (e) {
       if (mounted) setState(() => _error = 'Something went wrong reading that. Try again.');
     }
@@ -97,11 +113,19 @@ class _ReviewScreenState extends State<ReviewScreen> {
       note: _note,
     );
     await Store.i.putEntry(entry);
+    if (widget.pendingId != null) await Store.i.removePending(widget.pendingId!);
     if (!mounted) return;
     Navigator.pop(context);
     if (!_editing) {
       showToast(context, 'Added to ${_meal.label.toLowerCase()} · ${kcal(entry.total.kcal)} kcal');
     }
+  }
+
+  Future<void> _saveForLater() async {
+    await Store.i.addPending(PendingLog(id: Store.newId(), at: _at, meal: _meal, text: _text));
+    if (!mounted) return;
+    Navigator.pop(context);
+    showToast(context, 'Saved. It’ll be logged as soon as the AI is reachable.');
   }
 
   Future<void> _delete() async {
@@ -233,7 +257,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   AnimatedSwitcher(
                     duration: Motion.base,
                     child: _error != null
-                        ? _ErrorBlock(message: _error!, onRetry: _run)
+                        ? _ErrorBlock(
+                            message: _error!,
+                            onRetry: _run,
+                            onLater: _errorLater && widget.pendingId == null ? _saveForLater : null,
+                          )
                         : items == null
                         ? const _Skeleton()
                         : Column(
@@ -449,10 +477,11 @@ class _SkeletonState extends State<_Skeleton> with SingleTickerProviderStateMixi
 }
 
 class _ErrorBlock extends StatelessWidget {
-  const _ErrorBlock({required this.message, required this.onRetry});
+  const _ErrorBlock({required this.message, required this.onRetry, this.onLater});
 
   final String message;
   final VoidCallback onRetry;
+  final VoidCallback? onLater;
 
   @override
   Widget build(BuildContext context) {
@@ -464,11 +493,18 @@ class _ErrorBlock extends StatelessWidget {
         children: [
           Text(message, style: T.body),
           const SizedBox(height: 18),
-          Row(
+          if (onLater != null) ...[
+            PrimaryButton(label: 'Save for later', onTap: onLater),
+            const SizedBox(height: 6),
+            Text('nomnom keeps what you typed and reads it the next time it can.', style: T.small),
+            const SizedBox(height: 18),
+          ],
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
             children: [
               OutlineButton(label: 'Try again', icon: Icons.refresh_rounded, onTap: onRetry),
-              if (needsKey) ...[
-                const SizedBox(width: 10),
+              if (needsKey)
                 OutlineButton(
                   label: 'Open settings',
                   onTap: () {
@@ -476,7 +512,6 @@ class _ErrorBlock extends StatelessWidget {
                     Shell.tab.value = 3;
                   },
                 ),
-              ],
             ],
           ),
         ],

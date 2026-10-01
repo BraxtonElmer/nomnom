@@ -15,6 +15,8 @@ class MenuCard extends StatelessWidget {
     required this.goal,
     required this.onTap,
     this.isToday = true,
+    this.pending = const [],
+    this.onTapPending,
   });
 
   final String title;
@@ -22,6 +24,10 @@ class MenuCard extends StatelessWidget {
   final double goal;
   final ValueChanged<Entry> onTap;
   final bool isToday;
+
+  /// Logs saved while offline, shown under their meal until they're read.
+  final List<PendingLog> pending;
+  final ValueChanged<PendingLog>? onTapPending;
 
   @override
   Widget build(BuildContext context) {
@@ -89,6 +95,7 @@ class MenuCard extends StatelessWidget {
 
   Widget _section(Meal meal) {
     final list = entries.where((e) => e.meal == meal).toList();
+    final waiting = pending.where((p) => p.meal == meal).toList();
     final heading = list.isEmpty ? meal.label : '${meal.label} · ${time(list.first.at)}';
     return Padding(
       padding: const EdgeInsets.only(top: 12),
@@ -97,10 +104,15 @@ class MenuCard extends StatelessWidget {
         children: [
           Text(
             heading.toUpperCase(),
-            style: T.caps.copyWith(color: list.isEmpty ? C.ink3 : C.tomato, letterSpacing: 1.3),
+            style: T.caps.copyWith(
+              color: list.isEmpty && waiting.isEmpty ? C.ink3 : C.tomato,
+              letterSpacing: 1.3,
+            ),
           ),
           const SizedBox(height: 3),
-          if (list.isEmpty)
+          for (final e in list) _line(e),
+          for (final p in waiting) _waiting(p),
+          if (list.isEmpty && waiting.isEmpty)
             Text(
               isToday ? 'Not yet' : '—',
               style: const TextStyle(
@@ -109,13 +121,38 @@ class MenuCard extends StatelessWidget {
                 fontSize: 18,
                 color: C.ink3,
               ),
-            )
-          else
-            for (final e in list) _line(e),
+            ),
         ],
       ),
     );
   }
+
+  Widget _waiting(PendingLog p) => Pressable(
+    onTap: onTapPending == null ? null : () => onTapPending!(p),
+    scale: 0.985,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              '“${p.text}”',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontFamily: F.serif,
+                fontStyle: FontStyle.italic,
+                fontSize: 18,
+                color: C.ink2,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text('waiting', style: T.small.copyWith(color: C.carbs)),
+        ],
+      ),
+    ),
+  );
 
   Widget _line(Entry e) => Pressable(
     onTap: () => onTap(e),

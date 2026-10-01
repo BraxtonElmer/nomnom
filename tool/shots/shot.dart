@@ -165,6 +165,9 @@ Future<void> seed() async {
   }
   await s.setHealth(connected: true, eatBack: true);
   await s.setReminders(on: true);
+  await s.addPending(
+    PendingLog(id: 'p1', at: at(0, 20, 10), meal: Meal.dinner, text: 'chicken curry with 2 rotis'),
+  );
   Activity.i.seed({
     for (var d = 0; d < 7; d++)
       today.subtract(Duration(days: d)): DayActivity(

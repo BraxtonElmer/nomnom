@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/activity.dart';
+import '../../data/log_queue.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../theme/tokens.dart';
@@ -31,6 +32,15 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     Activity.i.refresh();
+    _drainQueue();
+  }
+
+  /// Reads logs saved while offline, now that we might be online.
+  Future<void> _drainQueue() async {
+    final n = await LogQueue.process();
+    if (n > 0 && mounted) {
+      showToast(context, n == 1 ? 'Logged 1 saved meal.' : 'Logged $n saved meals.');
+    }
   }
 
   @override
@@ -41,7 +51,10 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) Activity.i.refresh();
+    if (state == AppLifecycleState.resumed) {
+      Activity.i.refresh();
+      _drainQueue();
+    }
   }
 
   DateTime get _day => TodayScreen.day.value;
@@ -204,6 +217,13 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
                         goal: budget,
                         isToday: _isToday,
                         onTap: _open,
+                        pending: s.pendingOn(_day),
+                        onTapPending: (p) => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                ReviewScreen.parse(text: p.text, at: p.at, pendingId: p.id),
+                          ),
+                        ),
                       ),
                     ],
                   ),

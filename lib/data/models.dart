@@ -295,6 +295,30 @@ class Entry {
   );
 }
 
+/// Text typed while the AI couldn't be reached, waiting to be read.
+class PendingLog {
+  const PendingLog({required this.id, required this.at, required this.meal, required this.text});
+
+  final String id;
+  final DateTime at;
+  final Meal meal;
+  final String text;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'at': at.millisecondsSinceEpoch,
+    'm': meal.name,
+    'x': text,
+  };
+
+  factory PendingLog.fromJson(Map<String, dynamic> j) => PendingLog(
+    id: j['id'] as String,
+    at: DateTime.fromMillisecondsSinceEpoch(j['at'] as int),
+    meal: Meal.parse(j['m']),
+    text: j['x'] as String,
+  );
+}
+
 /// A saved plate you can re-log in one tap.
 class Favourite {
   const Favourite({required this.id, required this.title, required this.items, this.meal});

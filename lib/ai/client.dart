@@ -6,8 +6,11 @@ import 'package:http/http.dart' as http;
 import '../data/models.dart';
 
 class AiException implements Exception {
-  const AiException(this.message);
+  const AiException(this.message, {this.later = false});
   final String message;
+
+  /// Worth retrying on its own later: offline, busy, rate or quota limits.
+  final bool later;
 
   @override
   String toString() => message;
@@ -201,10 +204,16 @@ Future<http.Response> _send(Future<http.Response> Function() req) async {
     try {
       res = await req().timeout(AiClient.timeout);
     } on TimeoutException {
-      throw const AiException('The model took too long. Try again, or pick a faster model.');
+      throw const AiException(
+        'The model took too long. Try again, or pick a faster model.',
+        later: true,
+      );
     } catch (e) {
       if (e is AiException) rethrow;
-      throw const AiException("Couldn't reach the AI. Check your connection or endpoint.");
+      throw const AiException(
+        "Couldn't reach the AI. Check your connection or endpoint.",
+        later: true,
+      );
     }
     final busy = res.statusCode == 429 || res.statusCode == 503;
     if (!busy || attempt >= 1) return res;
@@ -235,12 +244,16 @@ Map<String, dynamic> _decode(http.Response res) {
       throw const AiException(
         "Today's free quota for this model is used up. It resets tomorrow; meanwhile "
         'switch model or provider in You → AI model.',
+        later: true,
       );
     case 429:
-      throw const AiException('Rate limit hit on the free tier. Wait a moment, or switch model.');
+      throw const AiException(
+        'Rate limit hit on the free tier. Wait a moment, or switch model.',
+        later: true,
+      );
   }
   if (res.statusCode >= 500) {
-    throw const AiException('The AI service is having trouble. Try again shortly.');
+    throw const AiException('The AI service is having trouble. Try again shortly.', later: true);
   }
   throw AiException(msg.isEmpty ? 'Unexpected reply (${res.statusCode}).' : _short(msg));
 }

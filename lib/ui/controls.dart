@@ -277,7 +277,8 @@ class RuledRow extends StatelessWidget {
             child: Text(label, style: T.body.copyWith(color: danger ? C.tomato : C.ink)),
           ),
           if (value != null)
-            Flexible(
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 220),
               child: Text(
                 value!,
                 style: T.small,

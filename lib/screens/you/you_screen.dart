@@ -1,12 +1,342 @@
 import 'package:flutter/material.dart';
 
+import '../../data/models.dart';
+import '../../data/store.dart';
+import '../../nutrition/countries.dart';
+import '../../nutrition/targets.dart';
 import '../../theme/tokens.dart';
+import '../../ui/buttons.dart';
+import '../../ui/controls.dart';
+import '../../ui/format.dart';
+import '../../ui/macro_bar.dart';
+import '../../ui/pressable.dart';
+import '../setup/about_form.dart';
+import '../setup/ai_form.dart';
+import '../setup/goal_form.dart';
+import 'backup.dart';
 
 class YouScreen extends StatelessWidget {
   const YouScreen({super.key});
 
+  void _push(BuildContext context, Widget page) =>
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+
   @override
-  Widget build(BuildContext context) => const SafeArea(
-    child: Center(child: Text('You', style: T.title)),
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: Store.i,
+      builder: (context, _) {
+        final s = Store.i;
+        final p = s.profile;
+        final t = s.targets;
+        return SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(S.gutter, 12, S.gutter, 40),
+            children: [
+              const Text('You', style: T.title),
+              const SizedBox(height: 20),
+              Pressable(
+                onTap: () => _push(context, const _GoalEdit()),
+                scale: 0.985,
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+                  decoration: BoxDecoration(
+                    color: C.card,
+                    borderRadius: BorderRadius.circular(S.radius),
+                    boxShadow: const [
+                      BoxShadow(color: C.lineStrong, offset: Offset(0, 1)),
+                      BoxShadow(color: Color(0x121A1916), blurRadius: 24, offset: Offset(0, 10)),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Text(p.goal.label.toUpperCase(), style: T.caps),
+                          const Spacer(),
+                          Text(
+                            'Edit',
+                            style: T.small.copyWith(color: C.tomato, fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(kcal(t.kcal), style: T.display.copyWith(fontSize: 40)),
+                          const SizedBox(width: 8),
+                          Text(
+                            p.customKcal != null ? 'kcal a day · your own' : 'kcal a day',
+                            style: T.small,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _m('Protein', t.protein, C.protein),
+                          _m('Carbs', t.carbs, C.carbs),
+                          _m('Fat', t.fat, C.fat),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 30),
+              const Text('PROFILE', style: T.caps),
+              RuledRow(
+                label: 'Country',
+                value: countryName(p.country),
+                onTap: () => _push(context, const _ProfileEdit()),
+              ),
+              RuledRow(
+                label: 'Body',
+                value: '${p.age} yrs · ${cm(p.heightCm, p.metric)} · ${kg(p.weightKg, p.metric)}',
+                onTap: () => _push(context, const _ProfileEdit()),
+              ),
+              RuledRow(
+                label: 'Activity',
+                value: activityLabel(p.activity),
+                onTap: () => _push(context, const _ProfileEdit()),
+                last: true,
+              ),
+              const SizedBox(height: 28),
+              const Text('AI MODEL', style: T.caps),
+              RuledRow(
+                label: s.ai.provider.label,
+                value: s.ai.ready ? s.ai.model : 'Not connected',
+                onTap: () => _push(context, const _AiEdit()),
+                last: true,
+              ),
+              const SizedBox(height: 28),
+              const Text('FAVOURITES', style: T.caps),
+              RuledRow(
+                label: 'Saved plates',
+                value: s.favourites.isEmpty ? 'None yet' : '${s.favourites.length}',
+                onTap: () => _push(context, const _Favourites()),
+                last: true,
+              ),
+              const SizedBox(height: 28),
+              const Text('YOUR DATA', style: T.caps),
+              RuledRow(label: 'Export a backup', onTap: () => exportBackup(context)),
+              RuledRow(label: 'Restore from a backup', onTap: () => restoreBackup(context)),
+              RuledRow(
+                label: 'Delete everything',
+                danger: true,
+                last: true,
+                onTap: () async {
+                  final ok = await confirm(
+                    context,
+                    title: 'Delete everything?',
+                    body:
+                        'Your log, weights, favourites, goals and saved API keys will be '
+                        'erased from this phone. Export a backup first if you might want them.',
+                    action: 'Delete',
+                  );
+                  if (ok) await Store.i.wipe();
+                },
+              ),
+              const SizedBox(height: 36),
+              const Text('nomnom', style: T.brand),
+              const SizedBox(height: 6),
+              Text(
+                'Version 0.1.0. Everything stays on this phone; the AI is called directly '
+                'with your own key. Nutrition data from USDA FoodData Central (public domain) '
+                'and the nomnom dish table. Estimates, not medical advice.',
+                style: T.small,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _m(String label, double g, Color c) => Text.rich(
+    TextSpan(
+      children: [
+        WidgetSpan(alignment: PlaceholderAlignment.middle, child: Dot(c)),
+        TextSpan(text: '$label '),
+        TextSpan(
+          text: '${g.round()}g',
+          style: const TextStyle(fontWeight: FontWeight.w500),
+        ),
+      ],
+    ),
+    style: T.small.copyWith(color: C.ink),
+  );
+}
+
+/// Page with a title, scrolling body and a pinned Save button.
+class _EditPage extends StatelessWidget {
+  const _EditPage({required this.title, required this.child, this.onSave});
+
+  final String title;
+  final Widget child;
+  final VoidCallback? onSave;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    body: SafeArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            child: Row(
+              children: [
+                CircleIconButton(
+                  icon: Icons.arrow_back_rounded,
+                  label: 'Back',
+                  onTap: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(S.gutter, 8, S.gutter, 24),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              children: [
+                Text(title, style: T.display),
+                const SizedBox(height: 26),
+                child,
+              ],
+            ),
+          ),
+          if (onSave != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(S.gutter, 0, S.gutter, 16),
+              child: PrimaryButton(label: 'Save', onTap: onSave),
+            ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _ProfileEdit extends StatefulWidget {
+  const _ProfileEdit();
+
+  @override
+  State<_ProfileEdit> createState() => _ProfileEditState();
+}
+
+class _ProfileEditState extends State<_ProfileEdit> {
+  Profile _p = Store.i.profile;
+
+  @override
+  Widget build(BuildContext context) => _EditPage(
+    title: 'About you',
+    onSave: () async {
+      final weightChanged = (_p.weightKg - Store.i.profile.weightKg).abs() > 0.05;
+      await Store.i.saveProfile(_p);
+      if (weightChanged) await Store.i.logWeight(DateTime.now(), _p.weightKg);
+      if (context.mounted) Navigator.pop(context);
+    },
+    child: AboutForm(profile: _p, onChanged: (p) => setState(() => _p = p)),
+  );
+}
+
+class _GoalEdit extends StatefulWidget {
+  const _GoalEdit();
+
+  @override
+  State<_GoalEdit> createState() => _GoalEditState();
+}
+
+class _GoalEditState extends State<_GoalEdit> {
+  Profile _p = Store.i.profile;
+
+  @override
+  Widget build(BuildContext context) => _EditPage(
+    title: 'Your goal',
+    onSave: () async {
+      await Store.i.saveProfile(_p);
+      if (context.mounted) Navigator.pop(context);
+    },
+    child: GoalForm(profile: _p, onChanged: (p) => setState(() => _p = p)),
+  );
+}
+
+class _AiEdit extends StatelessWidget {
+  const _AiEdit();
+
+  @override
+  Widget build(BuildContext context) => _EditPage(
+    title: 'AI model',
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'nomnom reads your meals with this model. Calls go straight from your phone '
+          'to the provider; the key is kept in the phone’s secure storage.',
+          style: T.body.copyWith(color: C.ink2),
+        ),
+        const SizedBox(height: 18),
+        const AiForm(),
+      ],
+    ),
+  );
+}
+
+class _Favourites extends StatelessWidget {
+  const _Favourites();
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: Store.i,
+    builder: (context, _) {
+      final favs = Store.i.favourites;
+      return _EditPage(
+        title: 'Favourites',
+        child: favs.isEmpty
+            ? Text(
+                'Open any logged meal and tap the star to save it here. Favourites show '
+                'up above the log bar for one-tap logging.',
+                style: T.body.copyWith(color: C.ink2),
+              )
+            : Column(
+                children: [
+                  for (final (i, f) in favs.indexed)
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        border: i == favs.length - 1
+                            ? null
+                            : const Border(bottom: BorderSide(color: C.line)),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(f.title, style: T.body),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${kcal(f.total.kcal)} kcal · ${macros(f.total)}',
+                                  style: T.small,
+                                ),
+                              ],
+                            ),
+                          ),
+                          CircleIconButton(
+                            icon: Icons.close_rounded,
+                            label: 'Remove ${f.title}',
+                            onTap: () => Store.i.removeFavourite(f.title),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+      );
+    },
   );
 }

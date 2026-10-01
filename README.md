@@ -26,10 +26,12 @@ There is no backend and no account. The app calls the AI directly with your own 
 The AI is good at understanding language and unreliable at remembering numbers, so it is only trusted with the first step. Calories and macros come from real nutrition tables bundled in the app:
 
 - **USDA FoodData Central, SR Legacy**: about 7,300 generic foods with household portion weights. Public domain.
-- **Dish table (India)**: about 95 common dishes with per-100 g values and typical serving weights.
+- **Dish tables by cuisine**: about 300 dishes across Indian, Chinese and Indo-Chinese, Japanese, Korean, Thai, Vietnamese, Southeast Asian, Italian, European, British, American, Mexican, Latin American, Middle Eastern, African and South Asian food, with per-100 g values and typical serving weights. Every table is searched for every user, so takeaway from another cuisine matches properly; your own country's food only gets a small nudge. Values are estimates for typical recipes (`tool/build_dishes.py`).
 - **Open Food Facts**: packaged products, searched live when you name a brand ("a glass of Amul lassi") or search in the item sheet.
 
 Exact dish names ("poha", "2 idli with sambar") are matched on the phone without a second AI request, which matters on small free tiers.
+
+Prefer the AI's numbers? **You → Nutrition numbers → AI estimates** uses the model for everything (one request per log). Either way, each item keeps the AI's estimate for comparison ("Dish table · AI says 360") and can be switched in the item sheet. Amounts can always be given in grams ("250g dal") or set per item.
 
 When nothing in the tables matches, the item keeps the AI's own estimate and is labelled **AI estimate**. If a table value and the AI's estimate disagree wildly, the item is marked **Check this one**. Every item shows its source, and you can rematch it to another food in one tap.
 
@@ -50,6 +52,7 @@ Foods you confirm are remembered, so repeat meals come out the same every time a
 - Progress: weight log with a smoothed trend and BMI, calorie bars against goal, 7-day macro averages, streak
 - Health Connect (Android): steps, active calories and sleep, with an option to add exercise to the day's budget
 - BMI with WHO bands, using the lower Asian cut-offs for countries where they apply
+- Dark mode: a night version of the Paper look, following the system or set by hand
 - Backup: export everything to a JSON file and restore it on any phone (API keys are never included)
 
 ## AI providers

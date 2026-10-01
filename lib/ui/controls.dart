@@ -194,6 +194,7 @@ class PaperField extends StatelessWidget {
     this.formatters,
     this.autofocus = false,
     this.mono = false,
+    this.trailingGap = 0,
   });
 
   final String label;
@@ -206,6 +207,7 @@ class PaperField extends StatelessWidget {
   final List<TextInputFormatter>? formatters;
   final bool autofocus;
   final bool mono;
+  final double trailingGap;
 
   @override
   Widget build(BuildContext context) {
@@ -227,10 +229,11 @@ class PaperField extends StatelessWidget {
           decoration: InputDecoration(
             isDense: true,
             hintText: hint,
+            // Leave room for a trailing icon laid over the field (show key).
+            contentPadding: EdgeInsets.fromLTRB(0, 12, trailingGap, 12),
             hintStyle: T.body.copyWith(fontSize: 18, color: C.ink3),
             suffixText: suffix,
             suffixStyle: T.small,
-            contentPadding: const EdgeInsets.symmetric(vertical: 12),
             enabledBorder: const UnderlineInputBorder(
               borderSide: BorderSide(color: C.ink, width: 1.2),
             ),

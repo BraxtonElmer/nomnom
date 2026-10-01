@@ -197,11 +197,12 @@ class _AiFormState extends State<AiForm> {
           alignment: Alignment.centerRight,
           children: [
             PaperField(
+              trailingGap: 44,
               label: _provider == Provider.custom ? 'API key (optional)' : 'API key',
               controller: _key,
               obscure: !_showKey,
               hint: _provider == Provider.gemini
-                  ? 'AIza…'
+                  ? 'Paste your Gemini key'
                   : (_provider == Provider.groq ? 'gsk_…' : ''),
               onChanged: (_) => setState(() => _check = _Check.idle),
             ),

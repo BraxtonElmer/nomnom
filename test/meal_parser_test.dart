@@ -201,14 +201,71 @@ void main() {
       {
         'title': 'Rice and rajma',
         'items': [
-          {'name': 'Rajma', 'qty': 1, 'unit': 'bowl', 'grams': 200, 'search': 'rajma',
-           'kcal': 250, 'protein': 13, 'carbs': 32, 'fat': 8},
+          {
+            'name': 'Rajma',
+            'qty': 1,
+            'unit': 'bowl',
+            'grams': 200,
+            'search': 'rajma',
+            'kcal': 250,
+            'protein': 13,
+            'carbs': 32,
+            'fat': 8,
+          },
         ],
-        'ask': {'question': 'How much rice?', 'options': ['Small bowl', '1 cup', 'Full plate', '']},
+        'ask': {
+          'question': 'How much rice?',
+          'options': ['Small bowl', '1 cup', 'Full plate', ''],
+        },
       },
     ]);
     final meal = await MealParser(ai, country: 'IN', recall: (_) => null).parse('rice and rajma');
     expect(meal.question, 'How much rice?');
     expect(meal.options, ['Small bowl', '1 cup', 'Full plate']);
+  });
+
+  test('plain names match the dish table without a second request', () async {
+    final ai = FakeAi([
+      {
+        'title': 'Rice and egg',
+        'items': [
+          {
+            'name': 'White rice',
+            'qty': 1,
+            'unit': 'bowl',
+            'grams': 180,
+            'search': 'rice white cooked',
+            'kcal': 230,
+            'protein': 4,
+            'carbs': 50,
+            'fat': 0.5,
+          },
+          {
+            'name': 'Egg',
+            'qty': 1,
+            'unit': 'piece',
+            'grams': 50,
+            'search': 'egg whole boiled',
+            'kcal': 78,
+            'protein': 6,
+            'carbs': 0.5,
+            'fat': 5,
+          },
+        ],
+      },
+      {
+        'matches': [
+          {'item': 1, 'id': 'usda:173424'},
+        ],
+      },
+    ]);
+    final meal = await MealParser(
+      ai,
+      country: 'IN',
+      recall: (_) => null,
+    ).parse('white rice and an egg');
+    expect(meal.items[0].item.ref, 'in-rice');
+    expect(meal.items[1].item.ref, 'usda:173424'); // not Egg curry
+    expect(ai.prompts[1], isNot(contains('White rice')));
   });
 }

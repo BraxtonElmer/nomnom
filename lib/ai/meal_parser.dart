@@ -184,12 +184,14 @@ class MealParser {
     }
   }
 
-  /// A dish-table entry whose name is exactly what the user wrote ("poha",
-  /// "dal tadka") needs no second request to confirm. Saves free-tier quota.
+  /// A dish-table entry that is plainly what the user wrote ("poha", "dal
+  /// tadka", "white rice") needs no second request to confirm. Saves quota.
   static DbFood? _obviousDish(String name, List<DbFood> local) {
     final want = tokenize(name);
     for (final f in local.take(3)) {
-      if (f.source == Source.dish && f.head.length == want.length && f.head.containsAll(want)) {
+      // Its core name is in what was typed, and every typed word is one of
+      // its names: "white rice" is Rice, but "egg" is not Egg curry.
+      if (f.source == Source.dish && want.containsAll(f.head) && f.tokens.containsAll(want)) {
         return f;
       }
     }
@@ -374,6 +376,8 @@ Fields:
 Rules:
 - One item per distinct food. Split combinations ("dal rice" is dal and rice). Keep a single named dish as one item ("chicken biryani", "masala dosa").
 - "a", "an", "one" mean 1; "a couple" means 2; "half" means 0.5. With no amount, assume one typical serving.
+- Size words change qty, never the unit: small means 0.75, medium 1, large 1.5, extra large 2 of the standard unit (a "large bowl" of dal is qty 1.5, unit bowl).
+- A line starting "Portion answer:" is the user answering a question about amounts. Apply it to the foods it names, then return "ask": null.
 - Don't add oil, ghee, sugar or sides the user didn't mention, beyond what the dish normally contains.
 - If there's no food in the text, return "items": [].''';
 

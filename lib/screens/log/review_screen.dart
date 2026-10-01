@@ -49,6 +49,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   /// Extra detail from answering the follow-up question.
   String? _answer;
+  String? _asked;
   late Meal _meal;
   late DateTime _at;
   String? _error;
@@ -56,10 +57,12 @@ class _ReviewScreenState extends State<ReviewScreen> {
   bool _saving = false;
 
   bool get _editing => widget.entry != null;
-  String get _text {
-    final base = widget.entry?.text ?? widget.text!;
-    return _answer == null ? base : '$base ($_answer)';
-  }
+
+  /// What the user typed, as shown and stored.
+  String get _text => widget.entry?.text ?? widget.text!;
+
+  /// What the model reads: the text plus any answered portion question.
+  String get _prompt => _answer == null ? _text : '$_text\nPortion answer: $_asked $_answer';
 
   @override
   void initState() {
@@ -85,7 +88,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
     });
     try {
       final parser = await MealParser.fromSettings();
-      final meal = await parser.parse(_text);
+      final meal = await parser.parse(_prompt);
       if (!mounted) return;
       setState(() {
         _items = meal.items;
@@ -249,6 +252,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
                         : 'Estimated for ${countryName(Store.i.profile.country)} · tap an item to adjust',
                     style: T.small,
                   ),
+                  if (_answer != null) ...[
+                    const SizedBox(height: 6),
+                    Text('$_asked $_answer', style: T.small.copyWith(color: C.ink)),
+                  ],
                   if (_note != null && items != null) ...[
                     const SizedBox(height: 12),
                     Text(
@@ -269,6 +276,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       options: _options,
                       onAnswer: (a) {
                         setState(() {
+                          _asked = _question;
                           _answer = a;
                           _question = null;
                         });

@@ -100,6 +100,11 @@ class YouScreen extends StatelessWidget {
                 onTap: () => _push(context, const _ProfileEdit()),
               ),
               RuledRow(
+                label: 'BMI',
+                value: bmiLabel(p).replaceFirst('BMI ', ''),
+                onTap: () => _push(context, const _ProfileEdit()),
+              ),
+              RuledRow(
                 label: 'Activity',
                 value: activityLabel(p.activity),
                 onTap: () => _push(context, const _ProfileEdit()),

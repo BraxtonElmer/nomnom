@@ -49,4 +49,11 @@ void main() {
     expect(roti.step(1).qty, 3);
     expect(roti.qtyLabel, '2 pcs');
   });
+
+  test('bmi uses asian cut-offs where they apply', () {
+    expect(bmiOf(74, 176), closeTo(23.9, 0.05));
+    expect(bmiBand(23.9, 'IN'), 'Overweight');
+    expect(bmiBand(23.9, 'US'), 'Healthy range');
+    expect(bmiBand(17, 'GB'), 'Underweight');
+  });
 }

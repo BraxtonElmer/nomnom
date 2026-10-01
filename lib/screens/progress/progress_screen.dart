@@ -97,7 +97,10 @@ class _ProgressScreenState extends State<ProgressScreen> {
             ],
           ],
         ),
-        Text('Trend, smoothed so one salty dinner doesn’t count.', style: T.small),
+        Text(
+        latest == null ? 'Smoothed trend' : '${bmiLabel(s.profile, latest)} · smoothed trend',
+        style: T.small,
+      ),
         const SizedBox(height: 16),
         if (list.length < 2)
           Container(

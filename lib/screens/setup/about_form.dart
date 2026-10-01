@@ -186,7 +186,18 @@ class _AboutFormState extends State<AboutForm> {
               ),
             ],
           ),
-        const SizedBox(height: 30),
+        const SizedBox(height: 10),
+        AnimatedSwitcher(
+          duration: Motion.fast,
+          layoutBuilder: (current, previous) =>
+              Stack(alignment: Alignment.centerLeft, children: [...previous, ?current]),
+          child: Text(
+            p.heightCm >= 100 && p.weightKg >= 30 ? bmiLabel(p) : ' ',
+            key: ValueKey(bmiLabel(p)),
+            style: T.small,
+          ),
+        ),
+        const SizedBox(height: 26),
         const Text('HOW ACTIVE ARE YOU?', style: T.caps),
         const SizedBox(height: 4),
         for (final (i, a) in activityLevels.indexed)

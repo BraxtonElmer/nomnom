@@ -78,3 +78,23 @@ String cm(double v, bool metric) {
 }
 
 double _round1(double v) => (v * 10).roundToDouble() / 10;
+
+double bmiOf(double kgValue, double heightCm) =>
+    heightCm <= 0 ? 0 : kgValue / ((heightCm / 100) * (heightCm / 100));
+
+/// WHO bands. South Asian countries use the lower Asian cut-offs, where
+/// health risk rises at a lower BMI.
+const _asianCutoffs = {'IN', 'PK', 'BD', 'LK', 'NP', 'SG', 'MY', 'ID', 'PH', 'TH', 'VN', 'CN', 'JP', 'KR'};
+
+String bmiBand(double bmi, String country) {
+  final asian = _asianCutoffs.contains(country);
+  if (bmi < 18.5) return 'Underweight';
+  if (bmi < (asian ? 23 : 25)) return 'Healthy range';
+  if (bmi < (asian ? 27.5 : 30)) return 'Overweight';
+  return 'Obese range';
+}
+
+String bmiLabel(Profile p, [double? kgValue]) {
+  final b = bmiOf(kgValue ?? p.weightKg, p.heightCm);
+  return 'BMI ${b.toStringAsFixed(1)} · ${bmiBand(b, p.country)}';
+}

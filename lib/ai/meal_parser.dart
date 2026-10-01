@@ -3,6 +3,7 @@ import '../data/models.dart';
 import '../data/store.dart';
 import '../nutrition/countries.dart';
 import '../nutrition/food_db.dart';
+import '../nutrition/open_food_facts.dart';
 import 'client.dart';
 
 /// One parsed food plus everything needed to change our mind about it on
@@ -31,14 +32,22 @@ class ParsedMeal {
 /// Text → items in two steps. The model reads the sentence; the numbers come
 /// from the bundled tables whenever there's a match.
 class MealParser {
-  MealParser(this.client, {required this.country, FoodItem? Function(String name)? recall})
-    : recall = recall ?? Store.i.recall;
+  MealParser(
+    this.client, {
+    required this.country,
+    FoodItem? Function(String name)? recall,
+    Future<List<DbFood>> Function(String terms, String country)? packaged,
+  }) : recall = recall ?? Store.i.recall,
+       packaged = packaged ?? ((t, c) => OpenFoodFacts.search(t, country: c));
 
   final AiClient client;
   final String country;
 
   /// Previously confirmed version of a food, if any.
   final FoodItem? Function(String name) recall;
+
+  /// Live packaged-food search, used when the text names a brand.
+  final Future<List<DbFood>> Function(String terms, String country) packaged;
 
   static Future<MealParser> fromSettings() async {
     final s = Store.i;
@@ -75,10 +84,22 @@ class MealParser {
         continue;
       }
       final query = (r['search'] as String?)?.trim();
-      final candidates = FoodDb.i.search(
+      final local = FoodDb.i.search(
         (query == null || query.isEmpty) ? estimate.name : query,
         country: country,
       );
+      final brand = (r['brand'] as String?)?.trim() ?? '';
+      final candidates = brand.isEmpty
+          ? local
+          : [
+              ...(await packaged(
+                estimate.name.toLowerCase().contains(brand.toLowerCase())
+                    ? estimate.name
+                    : '$brand ${estimate.name}',
+                country,
+              )).take(6),
+              ...local.take(4),
+            ];
       parsed.add(ParsedItem(item: estimate, estimate: estimate, candidates: candidates));
       if (candidates.isNotEmpty) unresolved.add(parsed.length - 1);
     }
@@ -87,8 +108,7 @@ class MealParser {
       final ids = await _resolve(parsed, unresolved, rawItems);
       for (final i in unresolved) {
         final id = ids[i];
-        final food =
-            parsed[i].candidates.where((c) => c.id == id).firstOrNull ?? FoodDb.i.get(id);
+        final food = parsed[i].candidates.where((c) => c.id == id).firstOrNull ?? FoodDb.i.get(id);
         if (food != null) parsed[i].item = fromDb(food, parsed[i].estimate);
       }
     }
@@ -286,7 +306,7 @@ The user lives in $country. Assume dishes, recipes and portion sizes typical the
 Reply with JSON only, shaped like:
 {"title": "Grilled chicken, 2 rotis, dal", "meal": null, "items": [
   {"name": "Grilled chicken breast", "qty": 120, "unit": "g", "grams": 120,
-   "search": "chicken breast cooked roasted",
+   "search": "chicken breast cooked roasted", "brand": null,
    "kcal": 198, "protein": 37, "carbs": 0, "fat": 4.3, "fiber": 0,
    "sugar_g": 0, "sat_fat_g": 1.2, "sodium_mg": 90, "potassium_mg": 300, "calcium_mg": 18,
    "iron_mg": 1.2, "vitamin_c_mg": 0, "vitamin_b12_mcg": 0.4}
@@ -298,6 +318,7 @@ Fields:
 - name: short natural name, singular, capitalised.
 - qty and unit: the amount as the user said it. unit is one of g, ml, piece, slice, cup, bowl, katori, plate, glass, tbsp, tsp, scoop, serving.
 - grams: total edible grams for that amount (ml counts as grams for drinks).
+- brand: the brand if the user named a packaged product ("Amul", "Maggi", "Coca-Cola", "Quest"), else null.
 - search: plain generic English words to find the food in a nutrition database like USDA, including the cooking method or state (cooked, raw, fried, boiled). Use the local dish name for regional dishes.
 - kcal, protein, carbs, fat, fiber: your best estimate for the whole amount, in kcal and grams.
 - sugar_g, sat_fat_g, sodium_mg, potassium_mg, calcium_mg, iron_mg, vitamin_c_mg, vitamin_b12_mcg: estimates for the whole amount, including salt and sugar normally used in the dish.
@@ -311,7 +332,7 @@ Rules:
 
 const _resolveSystem = '''
 You match foods to nutrition database entries.
-For each numbered food, pick the candidate id that is the same food in the same state: cooked vs raw, with or without skin, sweetened or not, homemade vs restaurant. Prefer plain generic entries over branded ones.
+For each numbered food, pick the candidate id that is the same food in the same state: cooked vs raw, with or without skin, sweetened or not, homemade vs restaurant. Prefer plain generic entries over branded ones, unless the user named that brand.
 If no candidate is a reasonable match, use null. Never invent ids.
 Reply with JSON only: {"matches": [{"item": 0, "id": "usda:171477"}, {"item": 1, "id": null}]}''';
 

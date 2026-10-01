@@ -84,7 +84,22 @@ double bmiOf(double kgValue, double heightCm) =>
 
 /// WHO bands. South Asian countries use the lower Asian cut-offs, where
 /// health risk rises at a lower BMI.
-const _asianCutoffs = {'IN', 'PK', 'BD', 'LK', 'NP', 'SG', 'MY', 'ID', 'PH', 'TH', 'VN', 'CN', 'JP', 'KR'};
+const _asianCutoffs = {
+  'IN',
+  'PK',
+  'BD',
+  'LK',
+  'NP',
+  'SG',
+  'MY',
+  'ID',
+  'PH',
+  'TH',
+  'VN',
+  'CN',
+  'JP',
+  'KR',
+};
 
 String bmiBand(double bmi, String country) {
   final asian = _asianCutoffs.contains(country);

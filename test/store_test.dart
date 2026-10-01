@@ -11,15 +11,29 @@ void main() {
 
   setUpAll(() => Store.i.init(path: Directory.systemTemp.createTempSync('nomnom_store').path));
 
-  const roti = FoodItem(name: 'Roti', qty: 2, unit: 'piece', unitGrams: 40,
-      per100: Nutrients(kcal: 300, protein: 9.6, carbs: 52, fat: 6), source: Source.dish,
-      ref: 'in-roti');
+  const roti = FoodItem(
+    name: 'Roti',
+    qty: 2,
+    unit: 'piece',
+    unitGrams: 40,
+    per100: Nutrients(kcal: 300, protein: 9.6, carbs: 52, fat: 6),
+    source: Source.dish,
+    ref: 'in-roti',
+  );
 
   test('entries index by day, streak counts back from today', () async {
     final now = DateTime.now();
     for (var d = 0; d < 3; d++) {
-      await Store.i.putEntry(Entry(id: 'e$d', at: now.subtract(Duration(days: d)),
-          meal: Meal.lunch, title: 'Roti', text: '2 rotis', items: const [roti]));
+      await Store.i.putEntry(
+        Entry(
+          id: 'e$d',
+          at: now.subtract(Duration(days: d)),
+          meal: Meal.lunch,
+          title: 'Roti',
+          text: '2 rotis',
+          items: const [roti],
+        ),
+      );
     }
     expect(Store.i.totalOn(now).kcal, 240);
     expect(Store.i.streak, 3);

@@ -60,14 +60,8 @@ class Nutrients {
     micros: micros.map((k, v) => MapEntry(k, v * f)),
   );
 
-  Nutrients withMicros(Map<Micro, double> m) => Nutrients(
-    kcal: kcal,
-    protein: protein,
-    carbs: carbs,
-    fat: fat,
-    fiber: fiber,
-    micros: m,
-  );
+  Nutrients withMicros(Map<Micro, double> m) =>
+      Nutrients(kcal: kcal, protein: protein, carbs: carbs, fat: fat, fiber: fiber, micros: m);
 
   List<Object> toJson() => [
     ...[kcal, protein, carbs, fat, fiber].map(_r),
@@ -122,6 +116,7 @@ enum Meal {
 enum Source {
   usda('USDA'),
   dish('Dish table'),
+  off('Open Food Facts'),
   ai('AI estimate'),
   manual('Manual');
 

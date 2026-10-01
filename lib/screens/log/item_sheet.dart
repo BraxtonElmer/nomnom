@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -5,6 +7,7 @@ import '../../ai/meal_parser.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../nutrition/food_db.dart';
+import '../../nutrition/open_food_facts.dart';
 import '../../theme/tokens.dart';
 import '../../ui/buttons.dart';
 import '../../ui/controls.dart';
@@ -40,6 +43,9 @@ class _ItemSheetState extends State<_ItemSheet> {
   late final _grams = TextEditingController();
   final _query = TextEditingController();
   List<DbFood> _results = [];
+  List<DbFood> _packaged = [];
+  bool _packagedLoading = false;
+  Timer? _debounce;
   bool _more = false;
 
   bool get _adding => widget.parsed == null;
@@ -59,6 +65,7 @@ class _ItemSheetState extends State<_ItemSheet> {
   void dispose() {
     _grams.dispose();
     _query.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -67,11 +74,24 @@ class _ItemSheetState extends State<_ItemSheet> {
   }
 
   void _search(String q) {
-    setState(
-      () => _results = q.trim().isEmpty
+    final country = Store.i.profile.country;
+    setState(() {
+      _results = q.trim().isEmpty
           ? (widget.parsed?.candidates ?? const [])
-          : FoodDb.i.search(q, country: Store.i.profile.country),
-    );
+          : FoodDb.i.search(q, country: country);
+      _packaged = [];
+      _packagedLoading = q.trim().length >= 3;
+    });
+    _debounce?.cancel();
+    if (q.trim().length < 3) return;
+    _debounce = Timer(const Duration(milliseconds: 450), () async {
+      final hits = await OpenFoodFacts.search(q, country: country);
+      if (!mounted || _query.text != q) return;
+      setState(() {
+        _packaged = hits;
+        _packagedLoading = false;
+      });
+    });
   }
 
   void _choose(DbFood food) {
@@ -231,10 +251,30 @@ class _ItemSheetState extends State<_ItemSheet> {
                     selected: f.id == item?.ref,
                     onTap: () => _choose(f),
                   ),
-                if (_results.isEmpty && _query.text.isNotEmpty)
+                if (_packagedLoading || _packaged.isNotEmpty) ...[
+                  const SizedBox(height: 22),
+                  Row(
+                    children: [
+                      const Text('PACKAGED PRODUCTS', style: T.caps),
+                      const SizedBox(width: 10),
+                      if (_packagedLoading) const Dots(size: 4),
+                    ],
+                  ),
+                  for (final f in _packaged)
+                    _option(
+                      title: f.name,
+                      sub: 'Open Food Facts · ${f.per100.kcal.round()} kcal per 100 g',
+                      selected: f.id == item?.ref,
+                      onTap: () => _choose(f),
+                    ),
+                ],
+                if (_results.isEmpty &&
+                    _packaged.isEmpty &&
+                    !_packagedLoading &&
+                    _query.text.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 16),
-                    child: Text('Nothing in the tables for that.', style: T.small),
+                    child: Text('Nothing found for that.', style: T.small),
                   ),
               ],
             ),

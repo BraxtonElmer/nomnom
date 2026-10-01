@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 
+import 'models.dart';
 import 'pantry.dart';
 import 'reminders.dart';
 import 'store.dart';
@@ -59,12 +60,7 @@ class StockAlerts {
   static Future<void> _show(int id, String title, String body) async {
     if (!Reminders.ready) return;
     try {
-      await Reminders.plugin.show(
-        id: id,
-        title: title,
-        body: body,
-        notificationDetails: _details,
-      );
+      await Reminders.plugin.show(id: id, title: title, body: body, notificationDetails: _details);
     } catch (e) {
       debugPrint('Pantry alert not shown: $e');
     }
@@ -82,14 +78,21 @@ class StockAlerts {
       for (final s in Store.i.stock) {
         final by = s.useBy;
         if (by == null || s.isOut || i >= 100) continue;
-        // 9 in the morning the day before; or the day itself if that's past.
-        var at = tz.TZDateTime(tz.local, by.year, by.month, by.day - 1, 9);
+        // 9 in the morning, the chosen number of days before; or the day
+        // itself if that's already past.
+        final days = Store.i.useByDays;
+        var at = tz.TZDateTime(tz.local, by.year, by.month, by.day - days, 9);
         if (at.isBefore(now)) at = tz.TZDateTime(tz.local, by.year, by.month, by.day, 9);
         if (at.isBefore(now)) continue;
-        final tomorrow = at.day != by.day;
+        final left = daysBetween(at, by);
         await Reminders.plugin.zonedSchedule(
           id: _base + i++,
-          title: '${s.name}: use ${tomorrow ? 'by tomorrow' : 'today'}',
+          title:
+              '${s.name}: use ${switch (left) {
+                0 => 'today',
+                1 => 'by tomorrow',
+                _ => 'within $left days',
+              }}',
           body: '${s.amount()} left. Worth planning a meal around it.',
           scheduledDate: at,
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,

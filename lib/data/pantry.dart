@@ -55,8 +55,13 @@ class StockItem {
   final Set<String> links;
   final Set<String> unlinks;
 
+  /// App-wide warning points, set from the user's settings: pieces left
+  /// for counted things, percent of the last restock for weighed ones.
+  static double lowPieces = 2;
+  static double lowPercent = 20;
+
   bool get counted => unit == 'piece';
-  double get lowMark => lowAt ?? (counted ? math.min(2, full / 2) : full * 0.2);
+  double get lowMark => lowAt ?? (counted ? lowPieces : full * lowPercent / 100);
   bool get isLow => left > 0 && left <= lowMark;
   bool get isOut => left <= 0;
 

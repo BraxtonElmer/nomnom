@@ -210,4 +210,16 @@ void main() {
     expect(readStock('a dozen eggs', db)!.single.amount, 12);
     expect(readStock('some chicken', db), isNull); // no amount, no guess
   });
+
+  test('warning points: app defaults, overridden per item', () {
+    expect(eggs.copyWith(left: 2).isLow, isTrue);
+    expect(chicken.copyWith(left: 90).isLow, isTrue); // 20% of 450
+    StockItem.lowPieces = 4;
+    StockItem.lowPercent = 10;
+    expect(eggs.copyWith(left: 4).isLow, isTrue);
+    expect(chicken.copyWith(left: 90).isLow, isFalse);
+    expect(eggs.copyWith(left: 4, lowAt: () => 1).isLow, isFalse);
+    StockItem.lowPieces = 2;
+    StockItem.lowPercent = 20;
+  });
 }

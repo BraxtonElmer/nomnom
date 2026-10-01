@@ -78,6 +78,54 @@ class PantryScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (s.stockAlerts) ...[
+                  const SizedBox(height: 8),
+                  RuledRow(
+                    label: 'Low for counted things',
+                    value: '${formatNum(StockItem.lowPieces)} left',
+                    onTap: () async {
+                      final v = await _askNumber(
+                        context,
+                        'Warn when down to',
+                        StockItem.lowPieces,
+                        'left',
+                      );
+                      if (v != null) await s.setLowDefaults(pieces: v);
+                    },
+                  ),
+                  RuledRow(
+                    label: 'Low for weighed things',
+                    value: '${formatNum(StockItem.lowPercent)}% left',
+                    onTap: () async {
+                      final v = await _askNumber(
+                        context,
+                        'Warn at this much of the last restock',
+                        StockItem.lowPercent,
+                        '%',
+                      );
+                      if (v != null && v <= 100) await s.setLowDefaults(percent: v);
+                    },
+                  ),
+                  RuledRow(
+                    label: 'Use-by alert',
+                    value: switch (s.useByDays) {
+                      0 => 'On the day',
+                      1 => '1 day before',
+                      final d => '$d days before',
+                    },
+                    last: true,
+                    onTap: () async {
+                      final v = await _askNumber(
+                        context,
+                        'Days before the use-by date',
+                        s.useByDays.toDouble(),
+                        'days',
+                      );
+                      if (v != null && v <= 14) await s.setLowDefaults(useBy: v.round());
+                    },
+                  ),
+                  Text('Each item can have its own warning point too.', style: T.small),
+                ],
               ],
             ],
           ),
@@ -483,13 +531,25 @@ class _StockSheetState extends State<_StockSheet> {
             ),
           RuledRow(
             label: 'Warn when down to',
-            value: s.amount(s.lowMark),
+            value: '${s.amount(s.lowMark)}${s.lowAt == null ? ' · default' : ''}',
             onTap: () async {
               final v = await _askNumber(context, 'Warn when down to', s.lowMark, unit);
               if (v != null) await Store.i.putStock(s.copyWith(lowAt: () => v));
               setState(() {});
             },
           ),
+          if (s.lowAt != null)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextLink(
+                label: 'Use the default',
+                color: C.ink2,
+                onTap: () async {
+                  await Store.i.putStock(s.copyWith(lowAt: () => null));
+                  setState(() {});
+                },
+              ),
+            ),
           if (!s.counted)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 10),

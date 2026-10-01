@@ -38,6 +38,9 @@ class Store extends ChangeNotifier {
   /// Pantry notifications: low, out and use-by.
   bool stockAlerts = true;
 
+  /// Days before a use-by date to send its alert (0 is the morning of).
+  int useByDays = 1;
+
   /// Use AI estimates for everything instead of the food tables.
   bool aiOnly = false;
 
@@ -92,6 +95,9 @@ class Store extends ChangeNotifier {
     eatBack = _settings.get('eatBack') == 'true';
     remindersOn = _settings.get('reminders') == 'true';
     stockAlerts = _settings.get('stockAlerts') != 'false';
+    StockItem.lowPieces = double.tryParse(_settings.get('lowPieces') ?? '') ?? 2;
+    StockItem.lowPercent = double.tryParse(_settings.get('lowPercent') ?? '') ?? 20;
+    useByDays = int.tryParse(_settings.get('useByDays') ?? '') ?? 1;
     aiOnly = _settings.get('aiOnly') == 'true';
     theme = _settings.get('theme') ?? 'system';
     final quiet = int.tryParse(_settings.get('checkInQuiet') ?? '');
@@ -214,6 +220,17 @@ class Store extends ChangeNotifier {
 
   static String _ymd(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  /// Default warning points for pantry items without their own.
+  Future<void> setLowDefaults({double? pieces, double? percent, int? useBy}) async {
+    if (pieces != null) StockItem.lowPieces = pieces;
+    if (percent != null) StockItem.lowPercent = percent;
+    if (useBy != null) useByDays = useBy;
+    notifyListeners();
+    if (pieces != null) await _settings.put('lowPieces', '$pieces');
+    if (percent != null) await _settings.put('lowPercent', '$percent');
+    if (useBy != null) await _settings.put('useByDays', '$useBy');
+  }
 
   Future<void> setStockAlerts(bool v) async {
     stockAlerts = v;

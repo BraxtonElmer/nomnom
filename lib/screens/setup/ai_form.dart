@@ -68,8 +68,7 @@ class _AiFormState extends State<AiForm> {
     _loadKey();
   }
 
-  AiConfig get _config =>
-      AiConfig(provider: _provider, model: _model, baseUrl: _base.text.trim());
+  AiConfig get _config => AiConfig(provider: _provider, model: _model, baseUrl: _base.text.trim());
 
   Future<void> _verify() async {
     FocusScope.of(context).unfocus();
@@ -129,8 +128,10 @@ class _AiFormState extends State<AiForm> {
           children: [
             const Text('Model', style: T.heading),
             const SizedBox(height: 4),
-            Text('Bigger models read meals more accurately; smaller ones reply faster.',
-                style: T.small),
+            Text(
+              'Bigger models read meals more accurately; smaller ones reply faster.',
+              style: T.small,
+            ),
             const SizedBox(height: 8),
             for (final (i, id) in _models.indexed)
               RadioRow(
@@ -156,89 +157,116 @@ class _AiFormState extends State<AiForm> {
       Provider.gemini => ('Get a free Gemini key', 'https://aistudio.google.com/apikey'),
       Provider.custom => ('About Ollama', 'https://ollama.com'),
     };
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      for (final (i, p) in Provider.values.indexed)
-        RadioRow(
-          title: p.label,
-          trailing: p.blurb,
-          selected: p == _provider,
-          last: i == Provider.values.length - 1,
-          onTap: () => _switch(p),
-        ),
-      const SizedBox(height: 20),
-      if (_provider == Provider.custom) ...[
-        PaperField(
-          label: 'Endpoint',
-          controller: _base,
-          hint: 'http://192.168.1.20:11434/v1',
-          keyboard: TextInputType.url,
-          onChanged: (_) => setState(() => _check = _Check.idle),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Any OpenAI-compatible server. For Ollama on your computer, start it with '
-          'OLLAMA_HOST=0.0.0.0 and use your computer’s Wi-Fi address.',
-          style: T.small,
-        ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final (i, p) in Provider.values.indexed)
+          RadioRow(
+            title: p.label,
+            trailing: p.blurb,
+            selected: p == _provider,
+            last: i == Provider.values.length - 1,
+            onTap: () => _switch(p),
+          ),
         const SizedBox(height: 20),
+        if (_provider == Provider.custom) ...[
+          PaperField(
+            label: 'Endpoint',
+            controller: _base,
+            hint: 'http://192.168.1.20:11434/v1',
+            keyboard: TextInputType.url,
+            onChanged: (_) => setState(() => _check = _Check.idle),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Any OpenAI-compatible server. For Ollama on your computer, start it with '
+            'OLLAMA_HOST=0.0.0.0 and use your computer’s Wi-Fi address.',
+            style: T.small,
+          ),
+          const SizedBox(height: 20),
+        ],
+        Stack(
+          alignment: Alignment.centerRight,
+          children: [
+            PaperField(
+              label: _provider == Provider.custom ? 'API key (optional)' : 'API key',
+              controller: _key,
+              obscure: !_showKey,
+              hint: _provider == Provider.gemini
+                  ? 'AIza…'
+                  : (_provider == Provider.groq ? 'gsk_…' : ''),
+              onChanged: (_) => setState(() => _check = _Check.idle),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 14),
+              child: IconButton(
+                tooltip: _showKey ? 'Hide key' : 'Show key',
+                onPressed: () => setState(() => _showKey = !_showKey),
+                icon: Icon(
+                  _showKey ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  color: C.ink2,
+                  size: 20,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: Motion.fast,
+                layoutBuilder: (current, previous) =>
+                    Stack(alignment: Alignment.centerLeft, children: [...previous, ?current]),
+                child: switch (_check) {
+                  _Check.checking => const Align(
+                    key: ValueKey('c'),
+                    alignment: Alignment.centerLeft,
+                    child: Dots(size: 5),
+                  ),
+                  _Check.ok => Row(
+                    key: const ValueKey('ok'),
+                    children: [
+                      const Icon(Icons.check_rounded, size: 16, color: C.good),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(_message, style: T.small.copyWith(color: C.good)),
+                      ),
+                    ],
+                  ),
+                  _Check.failed => Text(
+                    _message,
+                    key: const ValueKey('f'),
+                    style: T.small.copyWith(color: C.tomato),
+                  ),
+                  _Check.idle => Text(
+                    'Stored only on this phone.',
+                    key: const ValueKey('i'),
+                    style: T.small,
+                  ),
+                },
+              ),
+            ),
+            TextLink(label: link.$1, onTap: () => launchUrl(Uri.parse(link.$2))),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (_check == _Check.ok && _models.isNotEmpty)
+          RuledRow(label: 'Model', value: _model, onTap: _pickModel, last: true),
+        if (_check == _Check.ok && _models.isEmpty && _provider == Provider.custom)
+          PaperField(
+            label: 'Model name',
+            controller: _manualModel,
+            hint: 'llama3.1:8b',
+            onChanged: (v) => _save(_key.text.trim(), v.trim()),
+          ),
+        if (_check != _Check.ok)
+          OutlineButton(
+            label: _check == _Check.checking ? 'Checking…' : 'Check connection',
+            onTap: _check == _Check.checking ? null : _verify,
+          ),
       ],
-      Stack(alignment: Alignment.centerRight, children: [
-        PaperField(
-          label: _provider == Provider.custom ? 'API key (optional)' : 'API key',
-          controller: _key,
-          obscure: !_showKey,
-          hint: _provider == Provider.gemini ? 'AIza…' : (_provider == Provider.groq ? 'gsk_…' : ''),
-          onChanged: (_) => setState(() => _check = _Check.idle),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: 14),
-          child: IconButton(
-            tooltip: _showKey ? 'Hide key' : 'Show key',
-            onPressed: () => setState(() => _showKey = !_showKey),
-            icon: Icon(_showKey ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                color: C.ink2, size: 20),
-          ),
-        ),
-      ]),
-      const SizedBox(height: 10),
-      Row(children: [
-        Expanded(
-          child: AnimatedSwitcher(
-            duration: Motion.fast,
-            layoutBuilder: (current, previous) => Stack(
-                alignment: Alignment.centerLeft, children: [...previous, ?current]),
-            child: switch (_check) {
-              _Check.checking => const Align(
-                  key: ValueKey('c'), alignment: Alignment.centerLeft, child: Dots(size: 5)),
-              _Check.ok => Row(key: const ValueKey('ok'), children: [
-                  const Icon(Icons.check_rounded, size: 16, color: C.good),
-                  const SizedBox(width: 4),
-                  Flexible(child: Text(_message, style: T.small.copyWith(color: C.good))),
-                ]),
-              _Check.failed => Text(_message,
-                  key: const ValueKey('f'), style: T.small.copyWith(color: C.tomato)),
-              _Check.idle => Text('Stored only on this phone.',
-                  key: const ValueKey('i'), style: T.small),
-            },
-          ),
-        ),
-        TextLink(label: link.$1, onTap: () => launchUrl(Uri.parse(link.$2))),
-      ]),
-      const SizedBox(height: 16),
-      if (_check == _Check.ok && _models.isNotEmpty)
-        RuledRow(label: 'Model', value: _model, onTap: _pickModel, last: true),
-      if (_check == _Check.ok && _models.isEmpty && _provider == Provider.custom)
-        PaperField(
-          label: 'Model name',
-          controller: _manualModel,
-          hint: 'llama3.1:8b',
-          onChanged: (v) => _save(_key.text.trim(), v.trim()),
-        ),
-      if (_check != _Check.ok)
-        OutlineButton(
-          label: _check == _Check.checking ? 'Checking…' : 'Check connection',
-          onTap: _check == _Check.checking ? null : _verify,
-        ),
-    ]);
+    );
   }
 }

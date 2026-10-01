@@ -11,15 +11,27 @@ void main() {
     await shoot(tester, 'onboarding_0_welcome', const Onboarding());
     await tester.tap(find.text('Get started'));
     await tester.pumpAndSettle();
-    await expectLater(find.byType(MaterialApp), matchesGoldenFile('../../build/shots/onboarding_1_about.png'));
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../build/shots/onboarding_1_about.png'),
+    );
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
-    await expectLater(find.byType(MaterialApp), matchesGoldenFile('../../build/shots/onboarding_2_goal.png'));
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../build/shots/onboarding_2_goal.png'),
+    );
     await tester.tap(find.text('Set my own'));
     await tester.pumpAndSettle();
-    await expectLater(find.byType(MaterialApp), matchesGoldenFile('../../build/shots/onboarding_2b_custom.png'));
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../build/shots/onboarding_2b_custom.png'),
+    );
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
-    await expectLater(find.byType(MaterialApp), matchesGoldenFile('../../build/shots/onboarding_3_ai.png'));
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../build/shots/onboarding_3_ai.png'),
+    );
   });
 }

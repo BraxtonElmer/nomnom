@@ -6,8 +6,7 @@ final _int = NumberFormat.decimalPattern();
 
 String kcal(num v) => _int.format(v.round());
 
-String macros(Nutrients n) =>
-    '${n.protein.round()}p · ${n.carbs.round()}c · ${n.fat.round()}f';
+String macros(Nutrients n) => '${n.protein.round()}p · ${n.carbs.round()}c · ${n.fat.round()}f';
 
 String time(DateTime t) => DateFormat.jm().format(t).replaceAll(' ', '').toLowerCase();
 

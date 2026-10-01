@@ -37,36 +37,53 @@ class MenuCard extends StatelessWidget {
           BoxShadow(color: Color(0x161A1916), blurRadius: 30, offset: Offset(0, 12)),
         ],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-          Expanded(child: Text(title, style: T.heading.copyWith(fontSize: 28))),
-          const Text('KCAL', style: T.caps),
-        ]),
-        const SizedBox(height: 6),
-        for (final meal in Meal.values) _section(meal),
-        const SizedBox(height: 14),
-        Container(height: 1, color: C.ink),
-        const SizedBox(height: 12),
-        Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-          Text('Total ', style: T.body),
-          Text('of ${kcal(goal)}', style: T.small),
-          const Spacer(),
-          TweenAnimationBuilder<double>(
-            tween: Tween(end: total),
-            duration: Motion.slow,
-            curve: Motion.curve,
-            builder: (context, v, _) => Text(kcal(v), style: T.heading.copyWith(fontSize: 28)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Expanded(child: Text(title, style: T.heading.copyWith(fontSize: 28))),
+              const Text('KCAL', style: T.caps),
+            ],
           ),
-        ]),
-        const SizedBox(height: 2),
-        Row(children: [
-          Text(left >= 0 ? 'Remaining' : 'Over', style: T.small),
-          const Spacer(),
-          Text(kcal(left.abs()),
-              style: T.small.copyWith(
-                  color: left >= 0 ? C.tomato : C.tomato, fontWeight: FontWeight.w600)),
-        ]),
-      ]),
+          const SizedBox(height: 6),
+          for (final meal in Meal.values) _section(meal),
+          const SizedBox(height: 14),
+          Container(height: 1, color: C.ink),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text('Total ', style: T.body),
+              Text('of ${kcal(goal)}', style: T.small),
+              const Spacer(),
+              TweenAnimationBuilder<double>(
+                tween: Tween(end: total),
+                duration: Motion.slow,
+                curve: Motion.curve,
+                builder: (context, v, _) => Text(kcal(v), style: T.heading.copyWith(fontSize: 28)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Row(
+            children: [
+              Text(left >= 0 ? 'Remaining' : 'Over', style: T.small),
+              const Spacer(),
+              Text(
+                kcal(left.abs()),
+                style: T.small.copyWith(
+                  color: left >= 0 ? C.tomato : C.tomato,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -75,38 +92,51 @@ class MenuCard extends StatelessWidget {
     final heading = list.isEmpty ? meal.label : '${meal.label} · ${time(list.first.at)}';
     return Padding(
       padding: const EdgeInsets.only(top: 12),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Text(heading.toUpperCase(),
-            style: T.caps.copyWith(
-                color: list.isEmpty ? C.ink3 : C.tomato, letterSpacing: 1.3)),
-        const SizedBox(height: 3),
-        if (list.isEmpty)
-          Text(isToday ? 'Not yet' : '—',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            heading.toUpperCase(),
+            style: T.caps.copyWith(color: list.isEmpty ? C.ink3 : C.tomato, letterSpacing: 1.3),
+          ),
+          const SizedBox(height: 3),
+          if (list.isEmpty)
+            Text(
+              isToday ? 'Not yet' : '—',
               style: const TextStyle(
-                  fontFamily: F.serif, fontStyle: FontStyle.italic, fontSize: 18, color: C.ink3))
-        else
-          for (final e in list) _line(e),
-      ]),
+                fontFamily: F.serif,
+                fontStyle: FontStyle.italic,
+                fontSize: 18,
+                color: C.ink3,
+              ),
+            )
+          else
+            for (final e in list) _line(e),
+        ],
+      ),
     );
   }
 
   Widget _line(Entry e) => Pressable(
-        onTap: () => onTap(e),
-        scale: 0.985,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 3),
-          child: LayoutBuilder(
-            builder: (context, box) => Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: box.maxWidth * 0.76),
-                child: Text(e.title, style: T.body, maxLines: 2, overflow: TextOverflow.ellipsis),
-              ),
-              const Expanded(child: _Leader()),
-              Text(kcal(e.total.kcal), style: T.bodyStrong),
-            ]),
-          ),
+    onTap: () => onTap(e),
+    scale: 0.985,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: LayoutBuilder(
+        builder: (context, box) => Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: box.maxWidth * 0.76),
+              child: Text(e.title, style: T.body, maxLines: 2, overflow: TextOverflow.ellipsis),
+            ),
+            const Expanded(child: _Leader()),
+            Text(kcal(e.total.kcal), style: T.bodyStrong),
+          ],
         ),
-      );
+      ),
+    ),
+  );
 }
 
 /// Dotted leader line between a dish and its price, er, calories.
@@ -115,11 +145,11 @@ class _Leader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        height: 6,
-        constraints: const BoxConstraints(minWidth: 16),
-        margin: const EdgeInsets.fromLTRB(8, 0, 8, 5),
-        child: CustomPaint(painter: _DotsPainter()),
-      );
+    height: 6,
+    constraints: const BoxConstraints(minWidth: 16),
+    margin: const EdgeInsets.fromLTRB(8, 0, 8, 5),
+    child: CustomPaint(painter: _DotsPainter()),
+  );
 }
 
 class _DotsPainter extends CustomPainter {

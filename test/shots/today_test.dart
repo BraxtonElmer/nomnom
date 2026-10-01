@@ -16,7 +16,10 @@ void main() {
     await shoot(tester, 'today', const Shell());
     await tester.tap(find.text('What did you eat?'));
     await tester.pumpAndSettle();
-    await expectLater(find.byType(MaterialApp), matchesGoldenFile('../../build/shots/today_quick.png'));
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../build/shots/today_quick.png'),
+    );
   });
 
   testWidgets('review', (tester) async {
@@ -24,6 +27,9 @@ void main() {
     await shoot(tester, 'review', ReviewScreen.edit(entry: e));
     await tester.tap(find.text('Roti'));
     await tester.pumpAndSettle();
-    await expectLater(find.byType(MaterialApp), matchesGoldenFile('../../build/shots/item_sheet.png'));
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../build/shots/item_sheet.png'),
+    );
   });
 }

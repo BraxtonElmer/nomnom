@@ -42,27 +42,29 @@ class _ShellState extends State<Shell> {
               decoration: const BoxDecoration(
                 border: Border(top: BorderSide(color: C.line)),
               ),
-              child: Row(children: [
-                for (var i = 0; i < _labels.length; i++)
-                  Expanded(
-                    child: Pressable(
-                      onTap: () => Shell.tab.value = i,
-                      scale: 0.92,
-                      child: Center(
-                        child: AnimatedDefaultTextStyle(
-                          duration: Motion.fast,
-                          style: T.small.copyWith(
-                            color: i == tab ? C.ink : C.ink2,
-                            fontWeight: i == tab ? FontWeight.w600 : FontWeight.w400,
-                            decoration: i == tab ? TextDecoration.underline : null,
-                            decorationThickness: 1.6,
+              child: Row(
+                children: [
+                  for (var i = 0; i < _labels.length; i++)
+                    Expanded(
+                      child: Pressable(
+                        onTap: () => Shell.tab.value = i,
+                        scale: 0.92,
+                        child: Center(
+                          child: AnimatedDefaultTextStyle(
+                            duration: Motion.fast,
+                            style: T.small.copyWith(
+                              color: i == tab ? C.ink : C.ink2,
+                              fontWeight: i == tab ? FontWeight.w600 : FontWeight.w400,
+                              decoration: i == tab ? TextDecoration.underline : null,
+                              decorationThickness: 1.6,
+                            ),
+                            child: Text(_labels[i]),
                           ),
-                          child: Text(_labels[i]),
                         ),
                       ),
                     ),
-                  ),
-              ]),
+                ],
+              ),
             ),
           ),
         ),

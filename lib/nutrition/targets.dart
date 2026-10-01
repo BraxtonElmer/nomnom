@@ -65,9 +65,8 @@ const activityLevels = <(double, String, String)>[
   (1.9, 'Athlete', 'Physical job or twice-a-day training'),
 ];
 
-String activityLabel(double f) => activityLevels
-    .reduce((a, b) => (a.$1 - f).abs() < (b.$1 - f).abs() ? a : b)
-    .$2;
+String activityLabel(double f) =>
+    activityLevels.reduce((a, b) => (a.$1 - f).abs() < (b.$1 - f).abs() ? a : b).$2;
 
 String kg(double v, bool metric) =>
     metric ? '${formatNum(_round1(v))} kg' : '${formatNum(_round1(v * 2.20462))} lb';

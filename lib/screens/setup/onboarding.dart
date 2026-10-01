@@ -29,13 +29,14 @@ class _OnboardingState extends State<Onboarding> {
   ];
 
   bool get _valid => switch (_step) {
-        1 => _profile.age >= 13 &&
-            _profile.heightCm >= 100 &&
-            _profile.heightCm <= 250 &&
-            _profile.weightKg >= 30 &&
-            _profile.weightKg <= 300,
-        _ => true,
-      };
+    1 =>
+      _profile.age >= 13 &&
+          _profile.heightCm >= 100 &&
+          _profile.heightCm <= 250 &&
+          _profile.weightKg >= 30 &&
+          _profile.weightKg <= 300,
+    _ => true,
+  };
 
   void _go(int step) {
     FocusScope.of(context).unfocus();
@@ -80,73 +81,86 @@ class _OnboardingState extends State<Onboarding> {
 
   Widget _frame({required int step, required Widget child, required Widget footer}) {
     final (eyebrow, title) = _titles[step - 1];
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, S.gutter, 0),
-        child: Row(children: [
-          CircleIconButton(
-              icon: Icons.arrow_back_rounded, label: 'Back', onTap: () => _go(step - 1)),
-          const SizedBox(width: 8),
-          for (var i = 1; i <= 3; i++)
-            Expanded(
-              child: AnimatedContainer(
-                duration: Motion.base,
-                height: 3,
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                decoration: BoxDecoration(
-                  color: i <= step ? C.ink : C.line,
-                  borderRadius: BorderRadius.circular(3),
-                ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, S.gutter, 0),
+          child: Row(
+            children: [
+              CircleIconButton(
+                icon: Icons.arrow_back_rounded,
+                label: 'Back',
+                onTap: () => _go(step - 1),
               ),
-            ),
-        ]),
-      ),
-      Expanded(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(S.gutter, 20, S.gutter, 24),
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          children: [
-            Text(eyebrow.toUpperCase(), style: T.caps),
-            const SizedBox(height: 10),
-            Text(title, style: T.display),
-            const SizedBox(height: 28),
-            child,
-          ],
+              const SizedBox(width: 8),
+              for (var i = 1; i <= 3; i++)
+                Expanded(
+                  child: AnimatedContainer(
+                    duration: Motion.base,
+                    height: 3,
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    decoration: BoxDecoration(
+                      color: i <= step ? C.ink : C.line,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
-      ),
-      Padding(padding: const EdgeInsets.fromLTRB(S.gutter, 0, S.gutter, 16), child: footer),
-    ]);
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(S.gutter, 20, S.gutter, 24),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            children: [
+              Text(eyebrow.toUpperCase(), style: T.caps),
+              const SizedBox(height: 10),
+              Text(title, style: T.display),
+              const SizedBox(height: 28),
+              child,
+            ],
+          ),
+        ),
+        Padding(padding: const EdgeInsets.fromLTRB(S.gutter, 0, S.gutter, 16), child: footer),
+      ],
+    );
   }
 
   Widget _step1() => _frame(
-        step: 1,
-        child: AboutForm(profile: _profile, onChanged: (p) => setState(() => _profile = p)),
-        footer: PrimaryButton(label: 'Continue', onTap: _valid ? () => _go(2) : null),
-      );
+    step: 1,
+    child: AboutForm(profile: _profile, onChanged: (p) => setState(() => _profile = p)),
+    footer: PrimaryButton(label: 'Continue', onTap: _valid ? () => _go(2) : null),
+  );
 
   Widget _step2() => _frame(
-        step: 2,
-        child: GoalForm(profile: _profile, onChanged: (p) => setState(() => _profile = p)),
-        footer: PrimaryButton(label: 'Continue', onTap: () => _go(3)),
-      );
+    step: 2,
+    child: GoalForm(profile: _profile, onChanged: (p) => setState(() => _profile = p)),
+    footer: PrimaryButton(label: 'Continue', onTap: () => _go(3)),
+  );
 
   Widget _step3() => _frame(
-        step: 3,
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Text(
-            'nomnom talks to the AI straight from your phone. No servers, no accounts. '
-            'Your key never leaves this device.',
-            style: T.body.copyWith(color: C.ink2),
-          ),
-          const SizedBox(height: 18),
-          AiForm(onConnected: () => setState(() => _connected = true)),
-        ]),
-        footer: Column(mainAxisSize: MainAxisSize.min, children: [
-          PrimaryButton(label: 'Start logging', onTap: _connected ? _finish : null),
-          if (!_connected)
-            TextLink(label: 'Skip for now', color: C.ink2, onTap: _finish),
-        ]),
-      );
+    step: 3,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'nomnom talks to the AI straight from your phone. No servers, no accounts. '
+          'Your key never leaves this device.',
+          style: T.body.copyWith(color: C.ink2),
+        ),
+        const SizedBox(height: 18),
+        AiForm(onConnected: () => setState(() => _connected = true)),
+      ],
+    ),
+    footer: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        PrimaryButton(label: 'Start logging', onTap: _connected ? _finish : null),
+        if (!_connected) TextLink(label: 'Skip for now', color: C.ink2, onTap: _finish),
+      ],
+    ),
+  );
 }
 
 class _Welcome extends StatelessWidget {
@@ -158,26 +172,31 @@ class _Welcome extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(S.gutter, 24, S.gutter, 16),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Text('nomnom', style: T.brand.copyWith(fontSize: 34)),
-        const Spacer(),
-        Text('Type what you ate.', style: T.display.copyWith(fontSize: 52)),
-        Text('Get the macros.',
-            style: T.display.copyWith(fontSize: 52, fontStyle: FontStyle.italic, color: C.tomato)),
-        const SizedBox(height: 28),
-        const _Line('“2 rotis, dal and a bowl of curd”', 'becomes items, grams and macros'),
-        const _Line('Numbers from real food tables', 'USDA plus regional dishes, not guesses'),
-        const _Line('Runs on your phone', 'your own free AI key, no account'),
-        const Spacer(),
-        PrimaryButton(label: 'Get started', onTap: onStart),
-        Center(
-          child: TextLink(
-            label: 'Restore from a backup',
-            color: C.ink2,
-            onTap: () => restoreBackup(context),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('nomnom', style: T.brand.copyWith(fontSize: 34)),
+          const Spacer(),
+          Text('Type what you ate.', style: T.display.copyWith(fontSize: 52)),
+          Text(
+            'Get the macros.',
+            style: T.display.copyWith(fontSize: 52, fontStyle: FontStyle.italic, color: C.tomato),
           ),
-        ),
-      ]),
+          const SizedBox(height: 28),
+          const _Line('“2 rotis, dal and a bowl of curd”', 'becomes items, grams and macros'),
+          const _Line('Numbers from real food tables', 'USDA plus regional dishes, not guesses'),
+          const _Line('Runs on your phone', 'your own free AI key, no account'),
+          const Spacer(),
+          PrimaryButton(label: 'Get started', onTap: onStart),
+          Center(
+            child: TextLink(
+              label: 'Restore from a backup',
+              color: C.ink2,
+              onTap: () => restoreBackup(context),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -190,12 +209,17 @@ class _Line extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: const BoxDecoration(border: Border(top: BorderSide(color: C.line))),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: T.body),
-          const SizedBox(height: 2),
-          Text(sub, style: T.small),
-        ]),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 12),
+    decoration: const BoxDecoration(
+      border: Border(top: BorderSide(color: C.line)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: T.body),
+        const SizedBox(height: 2),
+        Text(sub, style: T.small),
+      ],
+    ),
+  );
 }

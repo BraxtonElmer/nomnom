@@ -2,13 +2,7 @@ import 'dart:math' as math;
 
 /// kcal + macros. Used both per 100 g and as absolute totals.
 class Nutrients {
-  const Nutrients({
-    this.kcal = 0,
-    this.protein = 0,
-    this.carbs = 0,
-    this.fat = 0,
-    this.fiber = 0,
-  });
+  const Nutrients({this.kcal = 0, this.protein = 0, this.carbs = 0, this.fat = 0, this.fiber = 0});
 
   final double kcal;
   final double protein;
@@ -19,30 +13,30 @@ class Nutrients {
   static const zero = Nutrients();
 
   Nutrients operator +(Nutrients o) => Nutrients(
-        kcal: kcal + o.kcal,
-        protein: protein + o.protein,
-        carbs: carbs + o.carbs,
-        fat: fat + o.fat,
-        fiber: fiber + o.fiber,
-      );
+    kcal: kcal + o.kcal,
+    protein: protein + o.protein,
+    carbs: carbs + o.carbs,
+    fat: fat + o.fat,
+    fiber: fiber + o.fiber,
+  );
 
   Nutrients scale(double f) => Nutrients(
-        kcal: kcal * f,
-        protein: protein * f,
-        carbs: carbs * f,
-        fat: fat * f,
-        fiber: fiber * f,
-      );
+    kcal: kcal * f,
+    protein: protein * f,
+    carbs: carbs * f,
+    fat: fat * f,
+    fiber: fiber * f,
+  );
 
   List<double> toJson() => [kcal, protein, carbs, fat, fiber].map(_r).toList();
 
   factory Nutrients.fromJson(List<dynamic> j) => Nutrients(
-        kcal: _d(j[0]),
-        protein: _d(j[1]),
-        carbs: _d(j[2]),
-        fat: _d(j[3]),
-        fiber: j.length > 4 ? _d(j[4]) : 0,
-      );
+    kcal: _d(j[0]),
+    protein: _d(j[1]),
+    carbs: _d(j[2]),
+    fat: _d(j[3]),
+    fiber: j.length > 4 ? _d(j[4]) : 0,
+  );
 }
 
 DateTime dayOf(DateTime d) => DateTime(d.year, d.month, d.day);
@@ -132,18 +126,17 @@ class FoodItem {
     String? ref,
     String? refName,
     bool? flagged,
-  }) =>
-      FoodItem(
-        name: name ?? this.name,
-        qty: qty ?? this.qty,
-        unit: unit ?? this.unit,
-        unitGrams: unitGrams ?? this.unitGrams,
-        per100: per100 ?? this.per100,
-        source: source ?? this.source,
-        ref: ref ?? this.ref,
-        refName: refName ?? this.refName,
-        flagged: flagged ?? this.flagged,
-      );
+  }) => FoodItem(
+    name: name ?? this.name,
+    qty: qty ?? this.qty,
+    unit: unit ?? this.unit,
+    unitGrams: unitGrams ?? this.unitGrams,
+    per100: per100 ?? this.per100,
+    source: source ?? this.source,
+    ref: ref ?? this.ref,
+    refName: refName ?? this.refName,
+    flagged: flagged ?? this.flagged,
+  );
 
   /// One stepper notch. Small for single pieces, 10% for weights.
   FoodItem step(int dir) {
@@ -158,28 +151,28 @@ class FoodItem {
   }
 
   Map<String, dynamic> toJson() => {
-        'n': name,
-        'q': qty,
-        'u': unit,
-        'ug': unitGrams,
-        'p': per100.toJson(),
-        's': source.name,
-        if (ref != null) 'r': ref,
-        if (refName != null) 'rn': refName,
-        if (flagged) 'f': true,
-      };
+    'n': name,
+    'q': qty,
+    'u': unit,
+    'ug': unitGrams,
+    'p': per100.toJson(),
+    's': source.name,
+    if (ref != null) 'r': ref,
+    if (refName != null) 'rn': refName,
+    if (flagged) 'f': true,
+  };
 
   factory FoodItem.fromJson(Map<String, dynamic> j) => FoodItem(
-        name: j['n'] as String,
-        qty: _d(j['q']),
-        unit: j['u'] as String,
-        unitGrams: _d(j['ug']),
-        per100: Nutrients.fromJson(j['p'] as List),
-        source: Source.parse(j['s']),
-        ref: j['r'] as String?,
-        refName: j['rn'] as String?,
-        flagged: j['f'] == true,
-      );
+    name: j['n'] as String,
+    qty: _d(j['q']),
+    unit: j['u'] as String,
+    unitGrams: _d(j['ug']),
+    per100: Nutrients.fromJson(j['p'] as List),
+    source: Source.parse(j['s']),
+    ref: j['r'] as String?,
+    refName: j['rn'] as String?,
+    flagged: j['f'] == true,
+  );
 }
 
 String formatNum(double v) {
@@ -224,31 +217,31 @@ class Entry {
   Nutrients get total => items.fold(Nutrients.zero, (s, i) => s + i.total);
 
   Entry copyWith({DateTime? at, Meal? meal, String? title, List<FoodItem>? items}) => Entry(
-        id: id,
-        at: at ?? this.at,
-        meal: meal ?? this.meal,
-        title: title ?? this.title,
-        text: text,
-        items: items ?? this.items,
-      );
+    id: id,
+    at: at ?? this.at,
+    meal: meal ?? this.meal,
+    title: title ?? this.title,
+    text: text,
+    items: items ?? this.items,
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'at': at.millisecondsSinceEpoch,
-        'm': meal.name,
-        't': title,
-        'x': text,
-        'i': items.map((e) => e.toJson()).toList(),
-      };
+    'id': id,
+    'at': at.millisecondsSinceEpoch,
+    'm': meal.name,
+    't': title,
+    'x': text,
+    'i': items.map((e) => e.toJson()).toList(),
+  };
 
   factory Entry.fromJson(Map<String, dynamic> j) => Entry(
-        id: j['id'] as String,
-        at: DateTime.fromMillisecondsSinceEpoch(j['at'] as int),
-        meal: Meal.parse(j['m']),
-        title: j['t'] as String,
-        text: (j['x'] as String?) ?? '',
-        items: (j['i'] as List).map((e) => FoodItem.fromJson(Map<String, dynamic>.from(e))).toList(),
-      );
+    id: j['id'] as String,
+    at: DateTime.fromMillisecondsSinceEpoch(j['at'] as int),
+    meal: Meal.parse(j['m']),
+    title: j['t'] as String,
+    text: (j['x'] as String?) ?? '',
+    items: (j['i'] as List).map((e) => FoodItem.fromJson(Map<String, dynamic>.from(e))).toList(),
+  );
 }
 
 /// A saved plate you can re-log in one tap.
@@ -263,18 +256,18 @@ class Favourite {
   Nutrients get total => items.fold(Nutrients.zero, (s, i) => s + i.total);
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        't': title,
-        'm': meal?.name,
-        'i': items.map((e) => e.toJson()).toList(),
-      };
+    'id': id,
+    't': title,
+    'm': meal?.name,
+    'i': items.map((e) => e.toJson()).toList(),
+  };
 
   factory Favourite.fromJson(Map<String, dynamic> j) => Favourite(
-        id: j['id'] as String,
-        title: j['t'] as String,
-        meal: j['m'] == null ? null : Meal.parse(j['m']),
-        items: (j['i'] as List).map((e) => FoodItem.fromJson(Map<String, dynamic>.from(e))).toList(),
-      );
+    id: j['id'] as String,
+    title: j['t'] as String,
+    meal: j['m'] == null ? null : Meal.parse(j['m']),
+    items: (j['i'] as List).map((e) => FoodItem.fromJson(Map<String, dynamic>.from(e))).toList(),
+  );
 }
 
 class WeightEntry {
@@ -285,10 +278,8 @@ class WeightEntry {
 
   Map<String, dynamic> toJson() => {'d': day.millisecondsSinceEpoch, 'kg': kg};
 
-  factory WeightEntry.fromJson(Map<String, dynamic> j) => WeightEntry(
-        day: DateTime.fromMillisecondsSinceEpoch(j['d'] as int),
-        kg: _d(j['kg']),
-      );
+  factory WeightEntry.fromJson(Map<String, dynamic> j) =>
+      WeightEntry(day: DateTime.fromMillisecondsSinceEpoch(j['d'] as int), kg: _d(j['kg']));
 }
 
 enum Sex { male, female }
@@ -357,49 +348,50 @@ class Profile {
     double? paceKg,
     int? Function()? customKcal,
     MacroPreset? macros,
-  }) =>
-      Profile(
-        country: country ?? this.country,
-        metric: metric ?? this.metric,
-        sex: sex ?? this.sex,
-        age: age ?? this.age,
-        heightCm: heightCm ?? this.heightCm,
-        weightKg: weightKg ?? this.weightKg,
-        activity: activity ?? this.activity,
-        goal: goal ?? this.goal,
-        paceKg: paceKg ?? this.paceKg,
-        customKcal: customKcal != null ? customKcal() : this.customKcal,
-        macros: macros ?? this.macros,
-      );
+  }) => Profile(
+    country: country ?? this.country,
+    metric: metric ?? this.metric,
+    sex: sex ?? this.sex,
+    age: age ?? this.age,
+    heightCm: heightCm ?? this.heightCm,
+    weightKg: weightKg ?? this.weightKg,
+    activity: activity ?? this.activity,
+    goal: goal ?? this.goal,
+    paceKg: paceKg ?? this.paceKg,
+    customKcal: customKcal != null ? customKcal() : this.customKcal,
+    macros: macros ?? this.macros,
+  );
 
   Map<String, dynamic> toJson() => {
-        'country': country,
-        'metric': metric,
-        'sex': sex.name,
-        'age': age,
-        'h': heightCm,
-        'w': weightKg,
-        'act': activity,
-        'goal': goal.name,
-        'pace': paceKg,
-        'kcal': customKcal,
-        'macros': macros.name,
-      };
+    'country': country,
+    'metric': metric,
+    'sex': sex.name,
+    'age': age,
+    'h': heightCm,
+    'w': weightKg,
+    'act': activity,
+    'goal': goal.name,
+    'pace': paceKg,
+    'kcal': customKcal,
+    'macros': macros.name,
+  };
 
   factory Profile.fromJson(Map<String, dynamic> j) => Profile(
-        country: j['country'] as String? ?? 'IN',
-        metric: j['metric'] as bool? ?? true,
-        sex: j['sex'] == 'female' ? Sex.female : Sex.male,
-        age: j['age'] as int? ?? 25,
-        heightCm: _d(j['h']),
-        weightKg: _d(j['w']),
-        activity: _d(j['act']),
-        goal: Goal.values.firstWhere((g) => g.name == j['goal'], orElse: () => Goal.maintain),
-        paceKg: _d(j['pace']),
-        customKcal: j['kcal'] as int?,
-        macros: MacroPreset.values
-            .firstWhere((m) => m.name == j['macros'], orElse: () => MacroPreset.balanced),
-      );
+    country: j['country'] as String? ?? 'IN',
+    metric: j['metric'] as bool? ?? true,
+    sex: j['sex'] == 'female' ? Sex.female : Sex.male,
+    age: j['age'] as int? ?? 25,
+    heightCm: _d(j['h']),
+    weightKg: _d(j['w']),
+    activity: _d(j['act']),
+    goal: Goal.values.firstWhere((g) => g.name == j['goal'], orElse: () => Goal.maintain),
+    paceKg: _d(j['pace']),
+    customKcal: j['kcal'] as int?,
+    macros: MacroPreset.values.firstWhere(
+      (m) => m.name == j['macros'],
+      orElse: () => MacroPreset.balanced,
+    ),
+  );
 }
 
 enum Provider {
@@ -424,16 +416,16 @@ class AiConfig {
   bool get ready => model.isNotEmpty && (provider != Provider.custom || baseUrl.isNotEmpty);
 
   AiConfig copyWith({Provider? provider, String? model, String? baseUrl}) => AiConfig(
-        provider: provider ?? this.provider,
-        model: model ?? this.model,
-        baseUrl: baseUrl ?? this.baseUrl,
-      );
+    provider: provider ?? this.provider,
+    model: model ?? this.model,
+    baseUrl: baseUrl ?? this.baseUrl,
+  );
 
   Map<String, dynamic> toJson() => {'p': provider.name, 'm': model, 'b': baseUrl};
 
   factory AiConfig.fromJson(Map<String, dynamic> j) => AiConfig(
-        provider: Provider.values.firstWhere((p) => p.name == j['p'], orElse: () => Provider.groq),
-        model: j['m'] as String? ?? '',
-        baseUrl: j['b'] as String? ?? '',
-      );
+    provider: Provider.values.firstWhere((p) => p.name == j['p'], orElse: () => Provider.groq),
+    model: j['m'] as String? ?? '',
+    baseUrl: j['b'] as String? ?? '',
+  );
 }

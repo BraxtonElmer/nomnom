@@ -104,8 +104,7 @@ class Store extends ChangeNotifier {
 
   List<Entry> entriesOn(DateTime day) => _byDay[dayOf(day)] ?? const [];
 
-  Nutrients totalOn(DateTime day) =>
-      entriesOn(day).fold(Nutrients.zero, (s, e) => s + e.total);
+  Nutrients totalOn(DateTime day) => entriesOn(day).fold(Nutrients.zero, (s, e) => s + e.total);
 
   bool hasLog(DateTime day) => _byDay.containsKey(dayOf(day));
 
@@ -194,8 +193,10 @@ class Store extends ChangeNotifier {
       await _settings.put('profile', jsonEncode(profile.toJson()));
     }
     notifyListeners();
-    await _weights.put(d.millisecondsSinceEpoch.toString(),
-        jsonEncode(WeightEntry(day: d, kg: kgValue).toJson()));
+    await _weights.put(
+      d.millisecondsSinceEpoch.toString(),
+      jsonEncode(WeightEntry(day: d, kg: kgValue).toJson()),
+    );
   }
 
   Future<void> deleteWeight(DateTime day) async {
@@ -222,16 +223,16 @@ class Store extends ChangeNotifier {
   // Backup
 
   String exportJson() => const JsonEncoder.withIndent(' ').convert({
-        'app': 'nomnom',
-        'version': 1,
-        'exportedAt': DateTime.now().toIso8601String(),
-        'profile': profile.toJson(),
-        'ai': ai.toJson(),
-        'entries': _all.map((e) => e.toJson()).toList(),
-        'favourites': _favList.map((e) => e.toJson()).toList(),
-        'weights': _weightList.map((e) => e.toJson()).toList(),
-        'memory': {for (final k in _memory.keys) k: jsonDecode(_memory.get(k)!)},
-      });
+    'app': 'nomnom',
+    'version': 1,
+    'exportedAt': DateTime.now().toIso8601String(),
+    'profile': profile.toJson(),
+    'ai': ai.toJson(),
+    'entries': _all.map((e) => e.toJson()).toList(),
+    'favourites': _favList.map((e) => e.toJson()).toList(),
+    'weights': _weightList.map((e) => e.toJson()).toList(),
+    'memory': {for (final k in _memory.keys) k: jsonDecode(_memory.get(k)!)},
+  });
 
   /// Replaces everything with a backup. Throws [FormatException] on junk.
   Future<int> importJson(String raw) async {

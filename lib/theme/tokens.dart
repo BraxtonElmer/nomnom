@@ -30,26 +30,58 @@ class F {
 /// sans carries everything you read quickly.
 class T {
   static const display = TextStyle(
-      fontFamily: F.serif, fontSize: 44, height: 1.0, color: C.ink, letterSpacing: -0.4);
-  static const title = TextStyle(
-      fontFamily: F.serif, fontSize: 30, height: 1.05, color: C.ink);
-  static const heading = TextStyle(
-      fontFamily: F.serif, fontSize: 24, height: 1.1, color: C.ink);
+    fontFamily: F.serif,
+    fontSize: 44,
+    height: 1.0,
+    color: C.ink,
+    letterSpacing: -0.4,
+  );
+  static const title = TextStyle(fontFamily: F.serif, fontSize: 30, height: 1.05, color: C.ink);
+  static const heading = TextStyle(fontFamily: F.serif, fontSize: 24, height: 1.1, color: C.ink);
   static const brand = TextStyle(
-      fontFamily: F.serif, fontSize: 30, fontStyle: FontStyle.italic, height: 1, color: C.ink);
+    fontFamily: F.serif,
+    fontSize: 30,
+    fontStyle: FontStyle.italic,
+    height: 1,
+    color: C.ink,
+  );
 
   static const body = TextStyle(
-      fontFamily: F.sans, fontSize: 15, height: 1.35, color: C.ink, fontFeatures: F.tnum);
+    fontFamily: F.sans,
+    fontSize: 15,
+    height: 1.35,
+    color: C.ink,
+    fontFeatures: F.tnum,
+  );
   static const bodyStrong = TextStyle(
-      fontFamily: F.sans, fontSize: 15, height: 1.35, fontWeight: FontWeight.w500,
-      color: C.ink, fontFeatures: F.tnum);
+    fontFamily: F.sans,
+    fontSize: 15,
+    height: 1.35,
+    fontWeight: FontWeight.w500,
+    color: C.ink,
+    fontFeatures: F.tnum,
+  );
   static const small = TextStyle(
-      fontFamily: F.sans, fontSize: 13, height: 1.35, color: C.ink2, fontFeatures: F.tnum);
+    fontFamily: F.sans,
+    fontSize: 13,
+    height: 1.35,
+    color: C.ink2,
+    fontFeatures: F.tnum,
+  );
   static const caps = TextStyle(
-      fontFamily: F.sans, fontSize: 11, height: 1.2, letterSpacing: 1.1,
-      color: C.ink2, fontWeight: FontWeight.w500);
+    fontFamily: F.sans,
+    fontSize: 11,
+    height: 1.2,
+    letterSpacing: 1.1,
+    color: C.ink2,
+    fontWeight: FontWeight.w500,
+  );
   static const button = TextStyle(
-      fontFamily: F.sans, fontSize: 16, fontWeight: FontWeight.w500, color: C.paper);
+    fontFamily: F.sans,
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+    color: C.paper,
+  );
 }
 
 class S {

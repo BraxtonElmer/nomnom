@@ -31,7 +31,10 @@ class PrimaryButton extends StatelessWidget {
         child: AnimatedSwitcher(
           duration: Motion.fast,
           child: busy
-              ? const Center(key: ValueKey('busy'), child: Dots(color: C.paper))
+              ? const Center(
+                  key: ValueKey('busy'),
+                  child: Dots(color: C.paper),
+                )
               : Row(
                   key: const ValueKey('label'),
                   mainAxisAlignment: trailing == null
@@ -40,9 +43,14 @@ class PrimaryButton extends StatelessWidget {
                   children: [
                     Text(label, style: T.button),
                     if (trailing != null)
-                      Text(trailing!,
-                          style: T.button.copyWith(
-                              fontFamily: F.serif, fontSize: 24, fontWeight: FontWeight.w400)),
+                      Text(
+                        trailing!,
+                        style: T.button.copyWith(
+                          fontFamily: F.serif,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
                   ],
                 ),
         ),
@@ -130,8 +138,10 @@ class TextLink extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Text(label,
-            style: T.small.copyWith(color: color, fontWeight: FontWeight.w500)),
+        child: Text(
+          label,
+          style: T.small.copyWith(color: color, fontWeight: FontWeight.w500),
+        ),
       ),
     );
   }

@@ -29,7 +29,7 @@ class ParsedMeal {
 /// from the bundled tables whenever there's a match.
 class MealParser {
   MealParser(this.client, {required this.country, FoodItem? Function(String name)? recall})
-      : recall = recall ?? Store.i.recall;
+    : recall = recall ?? Store.i.recall;
 
   final AiClient client;
   final String country;
@@ -55,7 +55,9 @@ class MealParser {
         .where((m) => (m['name'] as String?)?.trim().isNotEmpty ?? false)
         .toList();
     if (rawItems.isEmpty) {
-      throw const AiException("Didn't catch any food in that. Try something like “2 eggs and toast”.");
+      throw const AiException(
+        "Didn't catch any food in that. Try something like “2 eggs and toast”.",
+      );
     }
 
     final parsed = <ParsedItem>[];
@@ -64,17 +66,16 @@ class MealParser {
       final estimate = _estimate(r);
       final remembered = recall(estimate.name);
       if (remembered != null) {
-        parsed.add(ParsedItem(
-          item: _adopt(remembered, estimate),
-          estimate: estimate,
-          candidates: const [],
-        ));
+        parsed.add(
+          ParsedItem(item: _adopt(remembered, estimate), estimate: estimate, candidates: const []),
+        );
         continue;
       }
       final query = (r['search'] as String?)?.trim();
       final candidates = FoodDb.i.search(
-          (query == null || query.isEmpty) ? estimate.name : query,
-          country: country);
+        (query == null || query.isEmpty) ? estimate.name : query,
+        country: country,
+      );
       parsed.add(ParsedItem(item: estimate, estimate: estimate, candidates: candidates));
       if (candidates.isNotEmpty) unresolved.add(parsed.length - 1);
     }
@@ -90,17 +91,24 @@ class MealParser {
     final title = (raw['title'] as String?)?.trim();
     return ParsedMeal(
       title: (title == null || title.isEmpty) ? _fallbackTitle(parsed) : title,
-      meal: raw['meal'] == null ? null : Meal.values.where((m) => m.name == raw['meal']).firstOrNull,
+      meal: raw['meal'] == null
+          ? null
+          : Meal.values.where((m) => m.name == raw['meal']).firstOrNull,
       items: parsed,
     );
   }
 
   Future<Map<int, String?>> _resolve(
-      List<ParsedItem> parsed, List<int> which, List<Map<String, dynamic>> raw) async {
+    List<ParsedItem> parsed,
+    List<int> which,
+    List<Map<String, dynamic>> raw,
+  ) async {
     final b = StringBuffer();
     for (final i in which) {
       final p = parsed[i];
-      b.writeln('$i. ${p.estimate.name} (${p.estimate.qtyLabel}; search: ${raw[i]['search'] ?? ''})');
+      b.writeln(
+        '$i. ${p.estimate.name} (${p.estimate.qtyLabel}; search: ${raw[i]['search'] ?? ''})',
+      );
       for (final c in p.candidates) {
         b.writeln('   - ${c.id} | ${c.name} | ${c.per100.kcal.round()} kcal/100g');
       }
@@ -174,7 +182,10 @@ class MealParser {
       return remembered.copyWith(qty: estimate.qty, unit: estimate.unit, unitGrams: 1);
     }
     return remembered.copyWith(
-        qty: estimate.qty, unit: estimate.unit, unitGrams: estimate.unitGrams);
+      qty: estimate.qty,
+      unit: estimate.unit,
+      unitGrams: estimate.unitGrams,
+    );
   }
 
   static double? _portionFor(DbFood food, String unit) {
@@ -208,12 +219,31 @@ class MealParser {
   static String _unit(String? u) {
     final s = (u ?? '').toLowerCase().trim();
     const alias = {
-      'gram': 'g', 'grams': 'g', 'gm': 'g', 'gms': 'g',
-      'milliliter': 'ml', 'millilitre': 'ml', 'mls': 'ml',
-      'pc': 'piece', 'pcs': 'piece', 'pieces': 'piece', 'nos': 'piece', 'whole': 'piece',
-      'slices': 'slice', 'cups': 'cup', 'bowls': 'bowl', 'plates': 'plate',
-      'glasses': 'glass', 'tablespoon': 'tbsp', 'teaspoon': 'tsp', 'servings': 'serving',
-      'kg': 'g', 'l': 'ml', 'litre': 'ml', 'liter': 'ml', '': 'serving',
+      'gram': 'g',
+      'grams': 'g',
+      'gm': 'g',
+      'gms': 'g',
+      'milliliter': 'ml',
+      'millilitre': 'ml',
+      'mls': 'ml',
+      'pc': 'piece',
+      'pcs': 'piece',
+      'pieces': 'piece',
+      'nos': 'piece',
+      'whole': 'piece',
+      'slices': 'slice',
+      'cups': 'cup',
+      'bowls': 'bowl',
+      'plates': 'plate',
+      'glasses': 'glass',
+      'tablespoon': 'tbsp',
+      'teaspoon': 'tsp',
+      'servings': 'serving',
+      'kg': 'g',
+      'l': 'ml',
+      'litre': 'ml',
+      'liter': 'ml',
+      '': 'serving',
     };
     return alias[s] ?? s;
   }
@@ -224,7 +254,8 @@ class MealParser {
       items.map((p) => p.item.name).take(3).join(', ');
 }
 
-String _parseSystem(String country) => '''
+String _parseSystem(String country) =>
+    '''
 You turn a food diary line into structured data for a calorie tracker.
 The user lives in $country. Assume dishes, recipes and portion sizes typical there unless the text says otherwise.
 

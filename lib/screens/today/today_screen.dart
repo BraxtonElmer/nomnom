@@ -32,11 +32,14 @@ class _TodayScreenState extends State<TodayScreen> {
     return DateTime(_day.year, _day.month, _day.day, now.hour, now.minute);
   }
 
-  void _open(Entry e) => Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => ReviewScreen.edit(entry: e)));
+  void _open(Entry e) =>
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => ReviewScreen.edit(entry: e)));
 
   void _log(String text) => Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => ReviewScreen.parse(text: text, at: _logTime)));
+    MaterialPageRoute(
+      builder: (_) => ReviewScreen.parse(text: text, at: _logTime),
+    ),
+  );
 
   Future<void> _quick(String title, List<FoodItem> items) async {
     final at = _logTime;
@@ -50,8 +53,12 @@ class _TodayScreenState extends State<TodayScreen> {
     );
     await Store.i.putEntry(e);
     if (!mounted) return;
-    showToast(context, 'Logged $title · ${kcal(e.total.kcal)} kcal',
-        action: 'Undo', onAction: () => Store.i.deleteEntry(e.id));
+    showToast(
+      context,
+      'Logged $title · ${kcal(e.total.kcal)} kcal',
+      action: 'Undo',
+      onAction: () => Store.i.deleteEntry(e.id),
+    );
   }
 
   @override
@@ -68,72 +75,89 @@ class _TodayScreenState extends State<TodayScreen> {
 
         return SafeArea(
           bottom: false,
-          child: Column(children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: () => FocusScope.of(context).unfocus(),
-                behavior: HitTestBehavior.translucent,
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(S.gutter, 12, S.gutter, 24),
-                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                  children: [
-                    Row(children: [
-                      const Text('nomnom', style: T.brand),
-                      const Spacer(),
-                      if (streak > 0) _StreakPill(streak),
-                    ]),
-                    const SizedBox(height: 16),
-                    WeekStrip(
-                      selected: _day,
-                      hasLog: s.hasLog,
-                      onSelect: (d) => TodayScreen.day.value = d,
-                    ),
-                    const SizedBox(height: 24),
-                    Row(children: [
-                      CalorieRing(
-                        value: total.kcal,
-                        goal: targets.kcal,
-                        child: Column(mainAxisSize: MainAxisSize.min, children: [
-                          TweenAnimationBuilder<double>(
-                            tween: Tween(end: left.abs()),
-                            duration: Motion.slow,
-                            curve: Motion.curve,
-                            builder: (context, v, _) =>
-                                Text(kcal(v), style: T.title.copyWith(fontSize: 40, height: 1)),
+          child: Column(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => FocusScope.of(context).unfocus(),
+                  behavior: HitTestBehavior.translucent,
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(S.gutter, 12, S.gutter, 24),
+                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                    children: [
+                      Row(
+                        children: [
+                          const Text('nomnom', style: T.brand),
+                          const Spacer(),
+                          if (streak > 0) _StreakPill(streak),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      WeekStrip(
+                        selected: _day,
+                        hasLog: s.hasLog,
+                        onSelect: (d) => TodayScreen.day.value = d,
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          CalorieRing(
+                            value: total.kcal,
+                            goal: targets.kcal,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                TweenAnimationBuilder<double>(
+                                  tween: Tween(end: left.abs()),
+                                  duration: Motion.slow,
+                                  curve: Motion.curve,
+                                  builder: (context, v, _) => Text(
+                                    kcal(v),
+                                    style: T.title.copyWith(fontSize: 40, height: 1),
+                                  ),
+                                ),
+                                Text(
+                                  left >= 0 ? 'LEFT' : 'OVER',
+                                  style: T.caps.copyWith(color: left >= 0 ? C.ink2 : C.tomato),
+                                ),
+                              ],
+                            ),
                           ),
-                          Text(left >= 0 ? 'LEFT' : 'OVER',
-                              style: T.caps.copyWith(color: left >= 0 ? C.ink2 : C.tomato)),
-                        ]),
+                          const SizedBox(width: 22),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                _Stat('Eaten', kcal(total.kcal)),
+                                _Stat('Goal', kcal(targets.kcal)),
+                                _Stat('Fibre', '${total.fiber.round()} g', last: true),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 22),
-                      Expanded(
-                        child: Column(children: [
-                          _Stat('Eaten', kcal(total.kcal)),
-                          _Stat('Goal', kcal(targets.kcal)),
-                          _Stat('Fibre', '${total.fiber.round()} g', last: true),
-                        ]),
+                      const SizedBox(height: 22),
+                      MacroSplit(
+                        values: [
+                          MacroValue('Protein', total.protein, targets.protein, C.protein),
+                          MacroValue('Carbs', total.carbs, targets.carbs, C.carbs),
+                          MacroValue('Fat', total.fat, targets.fat, C.fat),
+                        ],
                       ),
-                    ]),
-                    const SizedBox(height: 22),
-                    MacroSplit(values: [
-                      MacroValue('Protein', total.protein, targets.protein, C.protein),
-                      MacroValue('Carbs', total.carbs, targets.carbs, C.carbs),
-                      MacroValue('Fat', total.fat, targets.fat, C.fat),
-                    ]),
-                    const SizedBox(height: 24),
-                    MenuCard(
-                      title: _isToday ? "Today's menu" : "${dayLabel(_day)}'s menu",
-                      entries: entries,
-                      goal: targets.kcal,
-                      isToday: _isToday,
-                      onTap: _open,
-                    ),
-                  ],
+                      const SizedBox(height: 24),
+                      MenuCard(
+                        title: _isToday ? "Today's menu" : "${dayLabel(_day)}'s menu",
+                        entries: entries,
+                        goal: targets.kcal,
+                        isToday: _isToday,
+                        onTap: _open,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            Composer(onSubmit: _log, onQuick: _quick),
-          ]),
+              Composer(onSubmit: _log, onQuick: _quick),
+            ],
+          ),
         );
       },
     );
@@ -149,16 +173,18 @@ class _Stat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 9),
-        decoration: BoxDecoration(
-          border: last ? null : const Border(bottom: BorderSide(color: C.line)),
-        ),
-        child: Row(children: [
-          Text(label, style: T.small),
-          const Spacer(),
-          Text(value, style: T.bodyStrong),
-        ]),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 9),
+    decoration: BoxDecoration(
+      border: last ? null : const Border(bottom: BorderSide(color: C.line)),
+    ),
+    child: Row(
+      children: [
+        Text(label, style: T.small),
+        const Spacer(),
+        Text(value, style: T.bodyStrong),
+      ],
+    ),
+  );
 }
 
 class _StreakPill extends StatelessWidget {
@@ -168,15 +194,18 @@ class _StreakPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          border: Border.all(color: C.ink),
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.local_fire_department_outlined, size: 15, color: C.tomato),
-          const SizedBox(width: 4),
-          Text(days == 1 ? '1 day' : '$days days', style: T.small.copyWith(color: C.ink)),
-        ]),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    decoration: BoxDecoration(
+      border: Border.all(color: C.ink),
+      borderRadius: BorderRadius.circular(999),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.local_fire_department_outlined, size: 15, color: C.tomato),
+        const SizedBox(width: 4),
+        Text(days == 1 ? '1 day' : '$days days', style: T.small.copyWith(color: C.ink)),
+      ],
+    ),
+  );
 }

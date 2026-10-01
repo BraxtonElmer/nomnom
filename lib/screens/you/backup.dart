@@ -14,11 +14,13 @@ Future<void> exportBackup(BuildContext context) async {
   final name = 'nomnom-${DateFormat('yyyy-MM-dd').format(DateTime.now())}.json';
   final bytes = utf8.encode(Store.i.exportJson());
   try {
-    await SharePlus.instance.share(ShareParams(
-      files: [XFile.fromData(bytes, mimeType: 'application/json', name: name)],
-      fileNameOverrides: [name],
-      subject: 'nomnom backup',
-    ));
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile.fromData(bytes, mimeType: 'application/json', name: name)],
+        fileNameOverrides: [name],
+        subject: 'nomnom backup',
+      ),
+    );
   } catch (_) {
     if (context.mounted) showToast(context, "Couldn't open the share sheet.");
   }
@@ -35,10 +37,12 @@ Future<void> restoreBackup(BuildContext context) async {
   if (file == null || !context.mounted) return;
 
   if (Store.i.onboarded) {
-    final ok = await confirm(context,
-        title: 'Replace everything?',
-        body: 'Your current log, weights and favourites will be replaced by the backup.',
-        action: 'Restore');
+    final ok = await confirm(
+      context,
+      title: 'Replace everything?',
+      body: 'Your current log, weights and favourites will be replaced by the backup.',
+      action: 'Restore',
+    );
     if (!ok) return;
   }
   try {

@@ -127,32 +127,36 @@ List<DbFood> _parse((String, String) raw) {
   final out = <DbFood>[];
   for (final r in jsonDecode(raw.$2) as List) {
     final name = r[1] as String;
-    out.add(DbFood(
-      id: r[0] as String,
-      name: name,
-      source: Source.dish,
-      country: 'IN',
-      per100: Nutrients.fromJson([r[3], r[4], r[5], r[6], r[7]]),
-      portions: [for (final p in r[8] as List) (p[0] as String, (p[1] as num).toDouble())],
-      tokens: tokenize('$name ${r[2]}'),
-      head: tokenize(name),
-      first: _first(name),
-      length: tokenize(name).length,
-    ));
+    out.add(
+      DbFood(
+        id: r[0] as String,
+        name: name,
+        source: Source.dish,
+        country: 'IN',
+        per100: Nutrients.fromJson([r[3], r[4], r[5], r[6], r[7]]),
+        portions: [for (final p in r[8] as List) (p[0] as String, (p[1] as num).toDouble())],
+        tokens: tokenize('$name ${r[2]}'),
+        head: tokenize(name),
+        first: _first(name),
+        length: tokenize(name).length,
+      ),
+    );
   }
   for (final r in jsonDecode(raw.$1) as List) {
     final name = r[1] as String;
-    out.add(DbFood(
-      id: 'usda:${r[0]}',
-      name: name,
-      source: Source.usda,
-      per100: Nutrients.fromJson([r[2], r[3], r[4], r[5], r[6]]),
-      portions: [for (final p in r[7] as List) (p[0] as String, (p[1] as num).toDouble())],
-      tokens: tokenize(name),
-      head: tokenize(name.split(',').first),
-      first: _first(name),
-      length: tokenize(name.replaceAll(RegExp(r'\(.*?\)'), '')).length,
-    ));
+    out.add(
+      DbFood(
+        id: 'usda:${r[0]}',
+        name: name,
+        source: Source.usda,
+        per100: Nutrients.fromJson([r[2], r[3], r[4], r[5], r[6]]),
+        portions: [for (final p in r[7] as List) (p[0] as String, (p[1] as num).toDouble())],
+        tokens: tokenize(name),
+        head: tokenize(name.split(',').first),
+        first: _first(name),
+        length: tokenize(name.replaceAll(RegExp(r'\(.*?\)'), '')).length,
+      ),
+    );
   }
   return out;
 }

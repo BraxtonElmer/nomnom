@@ -13,8 +13,11 @@ void main() {
     final hits = db.search(q, country: country);
     // ignore: avoid_print
     print('$q -> ${hits.take(3).map((h) => h.name).join(' | ')}');
-    expect(hits.take(5).map((h) => h.name.toLowerCase()).any((n) => n.contains(want)), isTrue,
-        reason: '"$q" should surface "$want"');
+    expect(
+      hits.take(5).map((h) => h.name.toLowerCase()).any((n) => n.contains(want)),
+      isTrue,
+      reason: '"$q" should surface "$want"',
+    );
   }
 
   test('loads both tables', () => expect(db.size, greaterThan(7000)));

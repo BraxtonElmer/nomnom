@@ -24,32 +24,43 @@ Future<void> setUpShots() async {
 
   await font('Clash', [
     for (final w in ['Light', 'Regular', 'Medium', 'Semibold', 'Bold'])
-      'assets/fonts/ClashGrotesk-$w.ttf'
+      'assets/fonts/ClashGrotesk-$w.ttf',
   ]);
-  await font('Instrument Serif',
-      ['assets/fonts/InstrumentSerif-Regular.ttf', 'assets/fonts/InstrumentSerif-Italic.ttf']);
+  await font('Instrument Serif', [
+    'assets/fonts/InstrumentSerif-Regular.ttf',
+    'assets/fonts/InstrumentSerif-Italic.ttf',
+  ]);
   final sdk = Platform.environment['FLUTTER_ROOT'] ?? 'C:/flutter';
-  await font('MaterialIcons', ['$sdk/bin/cache/artifacts/material_fonts/materialicons-regular.otf']);
+  await font('MaterialIcons', [
+    '$sdk/bin/cache/artifacts/material_fonts/materialicons-regular.otf',
+  ]);
 
   final dir = Directory.systemTemp.createTempSync('nomnom_shots');
   await Store.i.init(path: dir.path);
-  FoodDb.use(FoodDb.fromRaw(
-    File('assets/data/usda.json').readAsStringSync(),
-    File('assets/data/dishes_in.json').readAsStringSync(),
-  ));
+  FoodDb.use(
+    FoodDb.fromRaw(
+      File('assets/data/usda.json').readAsStringSync(),
+      File('assets/data/dishes_in.json').readAsStringSync(),
+    ),
+  );
 }
 
-Future<void> shoot(WidgetTester tester, String name, Widget screen,
-    {Future<void> Function(WidgetTester)? act}) async {
+Future<void> shoot(
+  WidgetTester tester,
+  String name,
+  Widget screen, {
+  Future<void> Function(WidgetTester)? act,
+}) async {
   tester.view.physicalSize = const Size(390 * 2, 844 * 2);
   tester.view.devicePixelRatio = 2;
-  await tester.pumpWidget(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    theme: buildTheme(),
-    home: screen,
-  ));
-  await tester.pumpAndSettle(const Duration(milliseconds: 100), EnginePhase.sendSemanticsUpdate,
-      const Duration(seconds: 5));
+  await tester.pumpWidget(
+    MaterialApp(debugShowCheckedModeBanner: false, theme: buildTheme(), home: screen),
+  );
+  await tester.pumpAndSettle(
+    const Duration(milliseconds: 100),
+    EnginePhase.sendSemanticsUpdate,
+    const Duration(seconds: 5),
+  );
   if (act != null) await act(tester);
   await expectLater(find.byType(MaterialApp), matchesGoldenFile('../../build/shots/$name.png'));
 }
@@ -57,44 +68,96 @@ Future<void> shoot(WidgetTester tester, String name, Widget screen,
 FoodItem dbItem(String id, String name, double qty, String unit, double unitGrams) {
   final f = FoodDb.i.get(id)!;
   return FoodItem(
-      name: name, qty: qty, unit: unit, unitGrams: unitGrams,
-      per100: f.per100, source: f.source, ref: f.id, refName: f.name);
+    name: name,
+    qty: qty,
+    unit: unit,
+    unitGrams: unitGrams,
+    per100: f.per100,
+    source: f.source,
+    ref: f.id,
+    refName: f.name,
+  );
 }
 
 /// A believable few days of logging.
 Future<void> seed() async {
   final s = Store.i;
-  await s.saveProfile(const Profile(
-      country: 'IN', sex: Sex.male, age: 27, heightCm: 176, weightKg: 74,
-      activity: 1.55, goal: Goal.lose, paceKg: 0.5));
+  await s.saveProfile(
+    const Profile(
+      country: 'IN',
+      sex: Sex.male,
+      age: 27,
+      heightCm: 176,
+      weightKg: 74,
+      activity: 1.55,
+      goal: Goal.lose,
+      paceKg: 0.5,
+    ),
+  );
   await s.finishOnboarding();
   final today = dayOf(DateTime.now());
   DateTime at(int daysAgo, int h, int m) =>
       today.subtract(Duration(days: daysAgo)).add(Duration(hours: h, minutes: m));
 
-  final oats = [dbItem('in-masala-oats', 'Masala oats', 1, 'bowl', 250),
-      dbItem('usda:171890', 'Black coffee', 240, 'ml', 1)];
+  final oats = [
+    dbItem('in-masala-oats', 'Masala oats', 1, 'bowl', 250),
+    dbItem('usda:171890', 'Black coffee', 240, 'ml', 1),
+  ];
   final lunch = [
     dbItem('usda:171477', 'Grilled chicken breast', 120, 'g', 1),
     dbItem('in-roti', 'Roti', 2, 'piece', 40),
     dbItem('in-dal-tadka', 'Dal tadka', 1, 'bowl', 200),
   ];
-  final snack = [dbItem('usda:173944', 'Banana', 1, 'piece', 118),
-      dbItem('usda:170567', 'Almonds', 20, 'g', 1)];
+  final snack = [
+    dbItem('usda:173944', 'Banana', 1, 'piece', 118),
+    dbItem('usda:170567', 'Almonds', 20, 'g', 1),
+  ];
   for (var d = 0; d < 9; d++) {
     if (d == 4) continue;
-    await s.putEntry(Entry(id: 'b$d', at: at(d, 8, 40), meal: Meal.breakfast,
-        title: 'Masala oats, black coffee', text: 'masala oats and black coffee', items: oats));
-    await s.putEntry(Entry(id: 'l$d', at: at(d, 13, 15), meal: Meal.lunch,
+    await s.putEntry(
+      Entry(
+        id: 'b$d',
+        at: at(d, 8, 40),
+        meal: Meal.breakfast,
+        title: 'Masala oats, black coffee',
+        text: 'masala oats and black coffee',
+        items: oats,
+      ),
+    );
+    await s.putEntry(
+      Entry(
+        id: 'l$d',
+        at: at(d, 13, 15),
+        meal: Meal.lunch,
         title: 'Grilled chicken, 2 rotis, dal',
-        text: '120g grilled chicken, 2 rotis and a bowl of dal', items: lunch));
-    await s.putEntry(Entry(id: 's$d', at: at(d, 17, 5), meal: Meal.snack,
-        title: 'Banana, handful of almonds', text: 'banana and a handful of almonds', items: snack));
+        text: '120g grilled chicken, 2 rotis and a bowl of dal',
+        items: lunch,
+      ),
+    );
+    await s.putEntry(
+      Entry(
+        id: 's$d',
+        at: at(d, 17, 5),
+        meal: Meal.snack,
+        title: 'Banana, handful of almonds',
+        text: 'banana and a handful of almonds',
+        items: snack,
+      ),
+    );
     if (d > 0) {
-      await s.putEntry(Entry(id: 'd$d', at: at(d, 20, 30), meal: Meal.dinner,
-          title: 'Paneer butter masala, 2 roti', text: '',
-          items: [dbItem('in-paneer-butter-masala', 'Paneer butter masala', 1, 'katori', 150),
-              dbItem('in-roti', 'Roti', 2, 'piece', 40)]));
+      await s.putEntry(
+        Entry(
+          id: 'd$d',
+          at: at(d, 20, 30),
+          meal: Meal.dinner,
+          title: 'Paneer butter masala, 2 roti',
+          text: '',
+          items: [
+            dbItem('in-paneer-butter-masala', 'Paneer butter masala', 1, 'katori', 150),
+            dbItem('in-roti', 'Roti', 2, 'piece', 40),
+          ],
+        ),
+      );
     }
   }
   for (var d = 30; d >= 0; d -= 3) {

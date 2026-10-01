@@ -17,11 +17,9 @@ import 'item_sheet.dart';
 /// Also the editor for entries already in the log.
 class ReviewScreen extends StatefulWidget {
   const ReviewScreen.parse({super.key, required String this.text, required DateTime this.at})
-      : entry = null;
+    : entry = null;
 
-  const ReviewScreen.edit({super.key, required Entry this.entry})
-      : text = null,
-        at = null;
+  const ReviewScreen.edit({super.key, required Entry this.entry}) : text = null, at = null;
 
   final String? text;
   final DateTime? at;
@@ -50,9 +48,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
       _at = e.at;
       _meal = e.meal;
       _title = e.title;
-      _items = [
-        for (final i in e.items) ParsedItem(item: i, estimate: i, candidates: const [])
-      ];
+      _items = [for (final i in e.items) ParsedItem(item: i, estimate: i, candidates: const [])];
     } else {
       _at = widget.at!;
       _meal = Meal.forTime(DateTime.now());
@@ -81,8 +77,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
     }
   }
 
-  Nutrients get _total =>
-      (_items ?? const []).fold(Nutrients.zero, (s, p) => s + p.item.total);
+  Nutrients get _total => (_items ?? const []).fold(Nutrients.zero, (s, p) => s + p.item.total);
 
   Future<void> _save() async {
     final items = _items!;
@@ -127,8 +122,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
   Future<void> _addItem() async {
     final res = await showItemSheet(context, null);
     if (res?.item != null && mounted) {
-      setState(() => _items!.add(
-          ParsedItem(item: res!.item!, estimate: res.item!, candidates: const [])));
+      setState(
+        () => _items!.add(ParsedItem(item: res!.item!, estimate: res.item!, candidates: const [])),
+      );
     }
   }
 
@@ -154,113 +150,130 @@ class _ReviewScreenState extends State<ReviewScreen> {
     final fav = _editing && Store.i.isFavourite(_title);
     return Scaffold(
       body: SafeArea(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-            child: Row(children: [
-              CircleIconButton(
-                  icon: Icons.arrow_back_rounded,
-                  label: 'Back',
-                  onTap: () => Navigator.pop(context)),
-              const SizedBox(width: 4),
-              Text((_editing ? 'Edit entry' : 'Review entry').toUpperCase(), style: T.caps),
-              const Spacer(),
-              if (_editing) ...[
-                CircleIconButton(
-                  icon: fav ? Icons.star_rounded : Icons.star_outline_rounded,
-                  label: fav ? 'Remove from favourites' : 'Add to favourites',
-                  onTap: () async {
-                    if (fav) {
-                      await Store.i.removeFavourite(_title);
-                    } else {
-                      await Store.i.addFavourite(widget.entry!.copyWith(
-                          items: [for (final p in _items!) p.item], title: _title));
-                    }
-                    setState(() {});
-                  },
-                ),
-                CircleIconButton(
-                    icon: Icons.delete_outline_rounded, label: 'Delete entry', onTap: _delete),
-              ],
-            ]),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(S.gutter, 14, S.gutter, 16),
-              children: [
-                if (_text.isNotEmpty)
-                  Text('“$_text”',
-                      style: T.title.copyWith(fontStyle: FontStyle.italic, fontSize: 32))
-                else
-                  Text(_title, style: T.title.copyWith(fontSize: 32)),
-                const SizedBox(height: 10),
-                Text(
-                  items == null && _error == null
-                      ? 'Reading your plate…'
-                      : 'Estimated for ${countryName(Store.i.profile.country)} · tap an item to adjust',
-                  style: T.small,
-                ),
-                const SizedBox(height: 18),
-                const Hairline(strong: true),
-                AnimatedSwitcher(
-                  duration: Motion.base,
-                  child: _error != null
-                      ? _ErrorBlock(message: _error!, onRetry: _run)
-                      : items == null
-                          ? const _Skeleton()
-                          : Column(
-                              key: const ValueKey('items'),
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                for (var i = 0; i < items.length; i++)
-                                  _ItemRow(
-                                    item: items[i].item,
-                                    onTap: () => _editItem(i),
-                                    onStep: (d) =>
-                                        setState(() => items[i].item = items[i].item.step(d)),
-                                  ),
-                                Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: TextLink(label: '+ Add an item', onTap: _addItem),
-                                ),
-                              ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              child: Row(
+                children: [
+                  CircleIconButton(
+                    icon: Icons.arrow_back_rounded,
+                    label: 'Back',
+                    onTap: () => Navigator.pop(context),
+                  ),
+                  const SizedBox(width: 4),
+                  Text((_editing ? 'Edit entry' : 'Review entry').toUpperCase(), style: T.caps),
+                  const Spacer(),
+                  if (_editing) ...[
+                    CircleIconButton(
+                      icon: fav ? Icons.star_rounded : Icons.star_outline_rounded,
+                      label: fav ? 'Remove from favourites' : 'Add to favourites',
+                      onTap: () async {
+                        if (fav) {
+                          await Store.i.removeFavourite(_title);
+                        } else {
+                          await Store.i.addFavourite(
+                            widget.entry!.copyWith(
+                              items: [for (final p in _items!) p.item],
+                              title: _title,
                             ),
-                ),
-              ],
-            ),
-          ),
-          if (items != null) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: S.gutter),
-              child: Row(children: [
-                Expanded(
-                  child: TextTabs<Meal>(
-                    values: Meal.values,
-                    labels: Meal.values.map((m) => m.label).toList(),
-                    value: _meal,
-                    onChanged: (m) => setState(() => _meal = m),
-                  ),
-                ),
-                Pressable(
-                  onTap: _pickTime,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Text(time(_at), style: T.small.copyWith(color: C.ink)),
-                  ),
-                ),
-              ]),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-              child: PrimaryButton(
-                label: _editing ? 'Save changes' : 'Add to ${_meal.label.toLowerCase()}',
-                trailing: '${kcal(_total.kcal)} kcal',
-                busy: _saving,
-                onTap: items.isEmpty ? null : _save,
+                          );
+                        }
+                        setState(() {});
+                      },
+                    ),
+                    CircleIconButton(
+                      icon: Icons.delete_outline_rounded,
+                      label: 'Delete entry',
+                      onTap: _delete,
+                    ),
+                  ],
+                ],
               ),
             ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(S.gutter, 14, S.gutter, 16),
+                children: [
+                  if (_text.isNotEmpty)
+                    Text(
+                      '“$_text”',
+                      style: T.title.copyWith(fontStyle: FontStyle.italic, fontSize: 32),
+                    )
+                  else
+                    Text(_title, style: T.title.copyWith(fontSize: 32)),
+                  const SizedBox(height: 10),
+                  Text(
+                    items == null && _error == null
+                        ? 'Reading your plate…'
+                        : 'Estimated for ${countryName(Store.i.profile.country)} · tap an item to adjust',
+                    style: T.small,
+                  ),
+                  const SizedBox(height: 18),
+                  const Hairline(strong: true),
+                  AnimatedSwitcher(
+                    duration: Motion.base,
+                    child: _error != null
+                        ? _ErrorBlock(message: _error!, onRetry: _run)
+                        : items == null
+                        ? const _Skeleton()
+                        : Column(
+                            key: const ValueKey('items'),
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              for (var i = 0; i < items.length; i++)
+                                _ItemRow(
+                                  item: items[i].item,
+                                  onTap: () => _editItem(i),
+                                  onStep: (d) =>
+                                      setState(() => items[i].item = items[i].item.step(d)),
+                                ),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: TextLink(label: '+ Add an item', onTap: _addItem),
+                              ),
+                            ],
+                          ),
+                  ),
+                ],
+              ),
+            ),
+            if (items != null) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: S.gutter),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextTabs<Meal>(
+                        values: Meal.values,
+                        labels: Meal.values.map((m) => m.label).toList(),
+                        value: _meal,
+                        onChanged: (m) => setState(() => _meal = m),
+                      ),
+                    ),
+                    Pressable(
+                      onTap: _pickTime,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Text(time(_at), style: T.small.copyWith(color: C.ink)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                child: PrimaryButton(
+                  label: _editing ? 'Save changes' : 'Add to ${_meal.label.toLowerCase()}',
+                  trailing: '${kcal(_total.kcal)} kcal',
+                  busy: _saving,
+                  onTap: items.isEmpty ? null : _save,
+                ),
+              ),
+            ],
           ],
-        ]),
+        ),
       ),
     );
   }
@@ -281,27 +294,38 @@ class _ItemRow extends StatelessWidget {
       scale: 0.99,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: C.line))),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-            Expanded(child: Text(item.name, style: T.body.copyWith(fontSize: 17))),
-            Text(kcal(t.kcal), style: T.heading.copyWith(fontSize: 26)),
-          ]),
-          const SizedBox(height: 10),
-          Row(children: [
-            QtyStepper(
-              label: item.qtyLabel,
-              onMinus: () => onStep(-1),
-              onPlus: () => onStep(1),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: C.line)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Expanded(child: Text(item.name, style: T.body.copyWith(fontSize: 17))),
+                Text(kcal(t.kcal), style: T.heading.copyWith(fontSize: 26)),
+              ],
             ),
-            const SizedBox(width: 10),
-            if (!item.byWeight) Text('≈ ${item.grams.round()} g', style: T.small),
-            const Spacer(),
-            Text(macros(t), style: T.small),
-          ]),
-          const SizedBox(height: 8),
-          SourceTag(item: item),
-        ]),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                QtyStepper(
+                  label: item.qtyLabel,
+                  onMinus: () => onStep(-1),
+                  onPlus: () => onStep(1),
+                ),
+                const SizedBox(width: 10),
+                if (!item.byWeight) Text('≈ ${item.grams.round()} g', style: T.small),
+                const Spacer(),
+                Text(macros(t), style: T.small),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SourceTag(item: item),
+          ],
+        ),
       ),
     );
   }
@@ -319,25 +343,29 @@ class SourceTag extends StatelessWidget {
     final label = item.flagged
         ? 'Check this one · ${item.source.label}'
         : item.source == Source.ai
-            ? 'AI estimate · no table match'
-            : item.source.label;
-    return Row(children: [
-      Icon(
-        item.flagged
-            ? Icons.error_outline_rounded
-            : item.source == Source.ai
-                ? Icons.auto_awesome_outlined
-                : Icons.menu_book_outlined,
-        size: 14,
-        color: color,
-      ),
-      const SizedBox(width: 6),
-      Flexible(
-        child: Text(label,
+        ? 'AI estimate · no table match'
+        : item.source.label;
+    return Row(
+      children: [
+        Icon(
+          item.flagged
+              ? Icons.error_outline_rounded
+              : item.source == Source.ai
+              ? Icons.auto_awesome_outlined
+              : Icons.menu_book_outlined,
+          size: 14,
+          color: color,
+        ),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            label,
             style: T.small.copyWith(color: color, fontSize: 12),
-            overflow: TextOverflow.ellipsis),
-      ),
-    ]);
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -361,24 +389,31 @@ class _SkeletonState extends State<_Skeleton> with SingleTickerProviderStateMixi
   @override
   Widget build(BuildContext context) {
     Widget bar(double w, double h) => Container(
-          width: w,
-          height: h,
-          decoration: BoxDecoration(color: C.paperDeep, borderRadius: BorderRadius.circular(6)),
-        );
+      width: w,
+      height: h,
+      decoration: BoxDecoration(color: C.paperDeep, borderRadius: BorderRadius.circular(6)),
+    );
     return FadeTransition(
       opacity: Tween(begin: 0.45, end: 1.0).animate(_c),
-      child: Column(children: [
-        for (var i = 0; i < 3; i++)
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: C.line))),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [bar(140.0 + i * 30, 16), const Spacer(), bar(44, 22)]),
-              const SizedBox(height: 14),
-              Row(children: [bar(120, 34), const Spacer(), bar(80, 12)]),
-            ]),
-          ),
-      ]),
+      child: Column(
+        children: [
+          for (var i = 0; i < 3; i++)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: C.line)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [bar(140.0 + i * 30, 16), const Spacer(), bar(44, 22)]),
+                  const SizedBox(height: 14),
+                  Row(children: [bar(120, 34), const Spacer(), bar(80, 12)]),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -394,23 +429,28 @@ class _ErrorBlock extends StatelessWidget {
     final needsKey = message.contains('Connect an AI') || message.contains('rejected');
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 28),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(message, style: T.body),
-        const SizedBox(height: 18),
-        Row(children: [
-          OutlineButton(label: 'Try again', icon: Icons.refresh_rounded, onTap: onRetry),
-          if (needsKey) ...[
-            const SizedBox(width: 10),
-            OutlineButton(
-              label: 'Open settings',
-              onTap: () {
-                Navigator.popUntil(context, (r) => r.isFirst);
-                Shell.tab.value = 3;
-              },
-            ),
-          ],
-        ]),
-      ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(message, style: T.body),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              OutlineButton(label: 'Try again', icon: Icons.refresh_rounded, onTap: onRetry),
+              if (needsKey) ...[
+                const SizedBox(width: 10),
+                OutlineButton(
+                  label: 'Open settings',
+                  onTap: () {
+                    Navigator.popUntil(context, (r) => r.isFirst);
+                    Shell.tab.value = 3;
+                  },
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

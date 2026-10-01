@@ -24,10 +24,12 @@ ThemeData buildTheme() {
       selectionColor: C.tomatoSoft,
       selectionHandleColor: C.tomato,
     ),
-    pageTransitionsTheme: const PageTransitionsTheme(builders: {
-      TargetPlatform.android: _FadeRise(),
-      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-    }),
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: _FadeRise(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      },
+    ),
     appBarTheme: const AppBarTheme(
       backgroundColor: C.paper,
       elevation: 0,
@@ -45,8 +47,13 @@ class _FadeRise extends PageTransitionsBuilder {
   const _FadeRise();
 
   @override
-  Widget buildTransitions<R>(PageRoute<R> route, BuildContext context,
-      Animation<double> animation, Animation<double> secondary, Widget child) {
+  Widget buildTransitions<R>(
+    PageRoute<R> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondary,
+    Widget child,
+  ) {
     final curved = CurvedAnimation(parent: animation, curve: Motion.curve);
     return FadeTransition(
       opacity: curved,

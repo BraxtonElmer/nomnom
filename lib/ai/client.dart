@@ -18,10 +18,10 @@ abstract class AiClient {
   static const timeout = Duration(seconds: 45);
 
   static AiClient of(AiConfig c, String key) => switch (c.provider) {
-        Provider.groq => OpenAiCompatible('https://api.groq.com/openai/v1', key, c.model),
-        Provider.gemini => Gemini(key, c.model),
-        Provider.custom => OpenAiCompatible(_trimSlash(c.baseUrl), key, c.model),
-      };
+    Provider.groq => OpenAiCompatible('https://api.groq.com/openai/v1', key, c.model),
+    Provider.gemini => Gemini(key, c.model),
+    Provider.custom => OpenAiCompatible(_trimSlash(c.baseUrl), key, c.model),
+  };
 
   /// Sends a system + user prompt and returns the parsed JSON object.
   Future<Map<String, dynamic>> json(String system, String user);
@@ -42,9 +42,9 @@ class OpenAiCompatible extends AiClient {
   bool _jsonMode = true;
 
   Map<String, String> get _headers => {
-        'Content-Type': 'application/json',
-        if (key.isNotEmpty) 'Authorization': 'Bearer $key',
-      };
+    'Content-Type': 'application/json',
+    if (key.isNotEmpty) 'Authorization': 'Bearer $key',
+  };
 
   @override
   Future<Map<String, dynamic>> json(String system, String user) async {
@@ -57,8 +57,10 @@ class OpenAiCompatible extends AiClient {
       ],
       if (_jsonMode) 'response_format': {'type': 'json_object'},
     };
-    final res = await _send(() => http.post(Uri.parse('$base/chat/completions'),
-        headers: _headers, body: jsonEncode(body)));
+    final res = await _send(
+      () =>
+          http.post(Uri.parse('$base/chat/completions'), headers: _headers, body: jsonEncode(body)),
+    );
     // Some local servers reject response_format; retry once without it.
     if (res.statusCode == 400 && _jsonMode && res.body.contains('response_format')) {
       _jsonMode = false;
@@ -85,24 +87,23 @@ class Gemini extends AiClient {
   final String key;
   final String model;
 
-  Map<String, String> get _headers =>
-      {'Content-Type': 'application/json', 'x-goog-api-key': key};
+  Map<String, String> get _headers => {'Content-Type': 'application/json', 'x-goog-api-key': key};
 
   @override
   Future<Map<String, dynamic>> json(String system, String user) async {
     final body = {
       'systemInstruction': {
         'parts': [
-          {'text': system}
-        ]
+          {'text': system},
+        ],
       },
       'contents': [
         {
           'role': 'user',
           'parts': [
-            {'text': user}
-          ]
-        }
+            {'text': user},
+          ],
+        },
       ],
       'generationConfig': {
         'temperature': 0,
@@ -111,10 +112,13 @@ class Gemini extends AiClient {
         if (model.contains('2.5-flash')) 'thinkingConfig': {'thinkingBudget': 0},
       },
     };
-    final res = await _send(() => http.post(
+    final res = await _send(
+      () => http.post(
         Uri.parse('$_base/models/$model:generateContent'),
         headers: _headers,
-        body: jsonEncode(body)));
+        body: jsonEncode(body),
+      ),
+    );
     final data = _decode(res);
     final parts = (data['candidates'] as List?)?.firstOrNull?['content']?['parts'] as List?;
     final text = parts?.map((p) => p['text'] ?? '').join();
@@ -124,7 +128,8 @@ class Gemini extends AiClient {
   @override
   Future<List<String>> models() async {
     final res = await _send(
-        () => http.get(Uri.parse('$_base/models?pageSize=200'), headers: _headers));
+      () => http.get(Uri.parse('$_base/models?pageSize=200'), headers: _headers),
+    );
     final data = _decode(res);
     final out = <String>[];
     for (final m in (data['models'] as List? ?? [])) {
@@ -139,8 +144,21 @@ class Gemini extends AiClient {
 }
 
 bool _isChatModel(String id) {
-  const skip = ['whisper', 'tts', 'guard', 'embed', 'playai', 'orpheus', 'image', 'live',
-      'audio', 'vision-preview', 'aqa', 'compound', 'distil'];
+  const skip = [
+    'whisper',
+    'tts',
+    'guard',
+    'embed',
+    'playai',
+    'orpheus',
+    'image',
+    'live',
+    'audio',
+    'vision-preview',
+    'aqa',
+    'compound',
+    'distil',
+  ];
   final l = id.toLowerCase();
   return !skip.any(l.contains);
 }

@@ -22,16 +22,29 @@ void main() {
   });
 
   test('never suggests below the floor', () {
-    final tiny = Targets.of(const Profile(
-        sex: Sex.female, age: 60, heightCm: 150, weightKg: 45, activity: 1.2,
-        goal: Goal.lose, paceKg: 1));
+    final tiny = Targets.of(
+      const Profile(
+        sex: Sex.female,
+        age: 60,
+        heightCm: 150,
+        weightKg: 45,
+        activity: 1.2,
+        goal: Goal.lose,
+        paceKg: 1,
+      ),
+    );
     expect(tiny.kcal, 1200);
   });
 
   test('item scaling is exact', () {
     const roti = FoodItem(
-        name: 'Roti', qty: 2, unit: 'piece', unitGrams: 40,
-        per100: Nutrients(kcal: 300, protein: 9.6), source: Source.dish);
+      name: 'Roti',
+      qty: 2,
+      unit: 'piece',
+      unitGrams: 40,
+      per100: Nutrients(kcal: 300, protein: 9.6),
+      source: Source.dish,
+    );
     expect(roti.total.kcal, 240);
     expect(roti.step(1).qty, 3);
     expect(roti.qtyLabel, '2 pcs');

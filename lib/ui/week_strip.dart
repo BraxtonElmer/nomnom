@@ -96,18 +96,22 @@ class _WeekStripState extends State<WeekStrip> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(letter,
-                style: T.caps.copyWith(
-                  letterSpacing: 0,
-                  color: selected ? C.tomato : (future ? C.ink3 : C.ink2),
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                )),
+            Text(
+              letter,
+              style: T.caps.copyWith(
+                letterSpacing: 0,
+                color: selected ? C.tomato : (future ? C.ink3 : C.ink2),
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
             const SizedBox(height: 2),
-            Text('${day.day}',
-                style: T.bodyStrong.copyWith(
-                  color: future ? C.ink3 : C.ink,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                )),
+            Text(
+              '${day.day}',
+              style: T.bodyStrong.copyWith(
+                color: future ? C.ink3 : C.ink,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
             const SizedBox(height: 3),
             AnimatedOpacity(
               opacity: logged && !selected ? 1 : 0,

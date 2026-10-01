@@ -23,10 +23,12 @@ class FakeAi extends AiClient {
 }
 
 void main() {
-  FoodDb.use(FoodDb.fromRaw(
-    File('assets/data/usda.json').readAsStringSync(),
-    File('assets/data/dishes_in.json').readAsStringSync(),
-  ));
+  FoodDb.use(
+    FoodDb.fromRaw(
+      File('assets/data/usda.json').readAsStringSync(),
+      File('assets/data/dishes_in.json').readAsStringSync(),
+    ),
+  );
 
   test('chicken, rotis and dal resolve to table numbers', () async {
     final ai = FakeAi([
@@ -34,15 +36,54 @@ void main() {
         'title': 'Grilled chicken, 2 rotis, dal',
         'meal': null,
         'items': [
-          {'name': 'grilled chicken breast', 'qty': 120, 'unit': 'g', 'grams': 120,
-           'search': 'chicken breast meat only cooked roasted',
-           'kcal': 200, 'protein': 37, 'carbs': 0, 'fat': 4, 'fiber': 0},
-          {'name': 'Roti', 'qty': 2, 'unit': 'pieces', 'grams': 70, 'search': 'roti',
-           'kcal': 210, 'protein': 6, 'carbs': 40, 'fat': 3, 'fiber': 4},
-          {'name': 'Dal tadka', 'qty': 1, 'unit': 'bowl', 'grams': 180, 'search': 'dal tadka',
-           'kcal': 200, 'protein': 10, 'carbs': 25, 'fat': 6, 'fiber': 4},
-          {'name': 'Mystery chutney', 'qty': 1, 'unit': 'tbsp', 'grams': 15, 'search': 'zzqx',
-           'kcal': 20, 'protein': 0, 'carbs': 4, 'fat': 0.5, 'fiber': 0.5},
+          {
+            'name': 'grilled chicken breast',
+            'qty': 120,
+            'unit': 'g',
+            'grams': 120,
+            'search': 'chicken breast meat only cooked roasted',
+            'kcal': 200,
+            'protein': 37,
+            'carbs': 0,
+            'fat': 4,
+            'fiber': 0,
+          },
+          {
+            'name': 'Roti',
+            'qty': 2,
+            'unit': 'pieces',
+            'grams': 70,
+            'search': 'roti',
+            'kcal': 210,
+            'protein': 6,
+            'carbs': 40,
+            'fat': 3,
+            'fiber': 4,
+          },
+          {
+            'name': 'Dal tadka',
+            'qty': 1,
+            'unit': 'bowl',
+            'grams': 180,
+            'search': 'dal tadka',
+            'kcal': 200,
+            'protein': 10,
+            'carbs': 25,
+            'fat': 6,
+            'fiber': 4,
+          },
+          {
+            'name': 'Mystery chutney',
+            'qty': 1,
+            'unit': 'tbsp',
+            'grams': 15,
+            'search': 'zzqx',
+            'kcal': 20,
+            'protein': 0,
+            'carbs': 4,
+            'fat': 0.5,
+            'fiber': 0.5,
+          },
         ],
       },
       {
@@ -50,11 +91,14 @@ void main() {
           {'item': 0, 'id': 'usda:171477'},
           {'item': 1, 'id': 'in-roti'},
           {'item': 2, 'id': 'in-dal-tadka'},
-        ]
+        ],
       },
     ]);
-    final meal = await MealParser(ai, country: 'IN', recall: (_) => null)
-        .parse('120g grilled chicken, 2 rotis, a bowl of dal and some chutney');
+    final meal = await MealParser(
+      ai,
+      country: 'IN',
+      recall: (_) => null,
+    ).parse('120g grilled chicken, 2 rotis, a bowl of dal and some chutney');
 
     expect(meal.title, 'Grilled chicken, 2 rotis, dal');
     final items = meal.items.map((p) => p.item).toList();
@@ -80,12 +124,31 @@ void main() {
 
   test('remembered foods skip matching', () async {
     final ai = FakeAi([
-      {'title': 'Roti', 'items': [
-        {'name': 'Roti', 'qty': 3, 'unit': 'piece', 'grams': 120, 'search': 'roti',
-         'kcal': 300, 'protein': 9, 'carbs': 60, 'fat': 4}]},
+      {
+        'title': 'Roti',
+        'items': [
+          {
+            'name': 'Roti',
+            'qty': 3,
+            'unit': 'piece',
+            'grams': 120,
+            'search': 'roti',
+            'kcal': 300,
+            'protein': 9,
+            'carbs': 60,
+            'fat': 4,
+          },
+        ],
+      },
     ]);
-    const mine = FoodItem(name: 'Roti', qty: 1, unit: 'piece', unitGrams: 35,
-        per100: Nutrients(kcal: 280), source: Source.manual);
+    const mine = FoodItem(
+      name: 'Roti',
+      qty: 1,
+      unit: 'piece',
+      unitGrams: 35,
+      per100: Nutrients(kcal: 280),
+      source: Source.manual,
+    );
     final meal = await MealParser(ai, country: 'IN', recall: (_) => mine).parse('3 rotis');
     expect(meal.items.single.item.total.kcal, closeTo(3 * 35 * 2.8, 0.01));
     expect(ai.prompts, hasLength(1));
@@ -93,10 +156,27 @@ void main() {
 
   test('model disagreeing wildly with the table gets flagged', () async {
     final ai = FakeAi([
-      {'title': 'Samosa', 'items': [
-        {'name': 'Samosa', 'qty': 1, 'unit': 'piece', 'grams': 80, 'search': 'samosa',
-         'kcal': 900, 'protein': 5, 'carbs': 30, 'fat': 15}]},
-      {'matches': [{'item': 0, 'id': 'in-samosa'}]},
+      {
+        'title': 'Samosa',
+        'items': [
+          {
+            'name': 'Samosa',
+            'qty': 1,
+            'unit': 'piece',
+            'grams': 80,
+            'search': 'samosa',
+            'kcal': 900,
+            'protein': 5,
+            'carbs': 30,
+            'fat': 15,
+          },
+        ],
+      },
+      {
+        'matches': [
+          {'item': 0, 'id': 'in-samosa'},
+        ],
+      },
     ]);
     final meal = await MealParser(ai, country: 'IN', recall: (_) => null).parse('samosa');
     expect(meal.items.single.item.flagged, isTrue);

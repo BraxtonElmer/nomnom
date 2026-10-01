@@ -125,7 +125,9 @@ class YouScreen extends StatelessWidget {
               Text('AI MODEL', style: T.caps),
               RuledRow(
                 label: s.ai.provider.label,
-                value: s.ai.ready ? s.ai.model : 'Not connected',
+                value: s.keyMissing
+                    ? 'Add your key again'
+                    : (s.ai.ready ? s.ai.model : 'Not connected'),
                 onTap: () => _push(context, const _AiEdit()),
               ),
               RuledRow(
@@ -221,6 +223,12 @@ class YouScreen extends StatelessWidget {
               ),
               const SizedBox(height: 28),
               Text('YOUR DATA', style: T.caps),
+              const SizedBox(height: 6),
+              Text(
+                'Backed up automatically with your Google account’s Android backup. API keys '
+                'are never included; add yours again after restoring.',
+                style: T.small,
+              ),
               RuledRow(label: 'Export a backup', onTap: () => exportBackup(context)),
               RuledRow(label: 'Restore from a backup', onTap: () => restoreBackup(context)),
               RuledRow(

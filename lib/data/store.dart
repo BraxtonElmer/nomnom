@@ -39,6 +39,9 @@ class Store extends ChangeNotifier {
   String theme = 'system';
 
   DateTime? _checkInQuietUntil;
+
+  /// AI is configured but its key isn't on this phone (e.g. after a restore).
+  bool keyMissing = false;
   final Map<Meal, int> _reminderMinutes = {};
 
   static const _defaultReminders = {
@@ -131,8 +134,15 @@ class Store extends ChangeNotifier {
     await _settings.put('profile', jsonEncode(p.toJson()));
   }
 
+  Future<void> checkKey() async {
+    keyMissing =
+        ai.ready && ai.provider != Provider.custom && (await KeyVault.read(ai.provider)).isEmpty;
+    notifyListeners();
+  }
+
   Future<void> saveAi(AiConfig c) async {
     ai = c;
+    keyMissing = false;
     notifyListeners();
     await _settings.put('ai', jsonEncode(c.toJson()));
   }

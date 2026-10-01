@@ -12,6 +12,7 @@ import 'theme/tokens.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Store.i.init();
+  await Store.i.checkKey();
   // Food tables parse in the background; the first parse awaits them.
   FoodDb.load();
   runApp(const NomnomApp());

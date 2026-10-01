@@ -1,3 +1,114 @@
 # nomnom
 
-A new Flutter project.
+Type what you ate, get the macros.
+
+nomnom is a calorie and macro tracker that runs entirely on your phone. You write meals the way you'd say them, "120g grilled chicken, 2 rotis and a bowl of dal", and nomnom turns that into items, grams, calories, protein, carbs and fat, estimated for the country you live in.
+
+There is no backend and no account. The app calls the AI directly with your own key.
+
+## How it works
+
+```
+"2 rotis and a bowl of dal"
+        │
+        ▼
+  AI reads the sentence ──► items, amounts, grams, search terms
+        │
+        ▼
+  bundled food tables ────► nutrition per 100 g (USDA + regional dishes)
+        │
+        ▼
+  app does the maths ─────► totals you can adjust with exact arithmetic
+```
+
+The AI is good at understanding language and unreliable at remembering numbers, so it is only trusted with the first step. Calories and macros come from real nutrition tables bundled in the app:
+
+- **USDA FoodData Central, SR Legacy**: about 7,300 generic foods with household portion weights. Public domain.
+- **Dish table (India)**: about 95 common dishes with per-100 g values and typical serving weights.
+
+When nothing in the tables matches, the item keeps the AI's own estimate and is labelled **AI estimate**. If a table value and the AI's estimate disagree wildly, the item is marked **Check this one**. Every item shows its source, and you can rematch it to another food in one tap.
+
+Foods you confirm are remembered, so repeat meals come out the same every time and don't need a lookup.
+
+## Features
+
+- Onboarding: country and units, body stats, goal and pace, macro split, and a daily target that is either suggested (Mifflin–St Jeor) or set by you
+- Typed logging with a review screen: steppers per item, gram overrides, rematching, add or remove items, meal and time
+- Today: week strip, calorie ring, macro split, and the day laid out as a menu
+- One-tap re-logging of favourites and recent plates, with no AI call
+- History: month calendar shaded by how close each day was to goal, with day detail
+- Progress: weight log with a smoothed trend, calorie bars against goal, 7-day macro averages, streak
+- Backup: export everything to a JSON file and restore it on any phone (API keys are never included)
+
+## AI providers
+
+Pick one during setup, or later under **You → AI model**.
+
+| Provider | Key | Notes |
+| --- | --- | --- |
+| Groq | Free at [console.groq.com/keys](https://console.groq.com/keys) | Fastest. Defaults to `llama-3.3-70b-versatile`. |
+| Gemini | Free at [aistudio.google.com/apikey](https://aistudio.google.com/apikey) | Defaults to `gemini-2.5-flash`. |
+| Custom | Optional | Any OpenAI-compatible server: Ollama, LM Studio, OpenRouter, vLLM… |
+
+The app lists the models your key can use, and you can switch at any time. Bigger models read meals more accurately.
+
+### Running a local model
+
+Local servers already speak the OpenAI API, so no extra backend is needed. For Ollama on your computer:
+
+```bash
+OLLAMA_HOST=0.0.0.0 ollama serve
+```
+
+Then choose **Custom** in nomnom and use `http://<your-computer's-wifi-ip>:11434/v1` as the endpoint. Phone and computer need to be on the same network.
+
+## Privacy
+
+- Your log, weights, favourites and goals are stored only on the device (Hive).
+- API keys are kept in the platform keystore (`flutter_secure_storage`) and never written to backups.
+- Only the text you type is sent, and only to the provider you chose.
+
+## Development
+
+```bash
+flutter pub get
+flutter run
+```
+
+Tests:
+
+```bash
+flutter test
+```
+
+Screenshots of every screen at phone size, rendered with the real fonts into `build/shots/`:
+
+```bash
+flutter test tool/shots --update-goldens
+```
+
+Rebuild the USDA table from the [SR Legacy CSV download](https://fdc.nal.usda.gov/download-datasets):
+
+```bash
+python tool/build_usda.py path/to/FoodData_Central_sr_legacy_food_csv_2018-04
+```
+
+### Layout
+
+```
+lib/
+├── ai/            provider clients (OpenAI-compatible, Gemini) and the meal parser
+├── data/          models, the in-memory store over Hive, key vault
+├── nutrition/     food table search, targets, countries
+├── screens/       setup, today, log, history, progress, you
+├── theme/         Paper design tokens and theme
+└── ui/            shared widgets: ring, week strip, charts, controls
+assets/data/       usda.json, dishes_in.json
+tool/              data build script, screenshot harness
+```
+
+## Credits
+
+Typography: Clash Grotesk (Indian Type Foundry, Fontshare licence) and Instrument Serif (SIL Open Font Licence). Nutrition data: USDA FoodData Central.
+
+Estimates, not medical advice.

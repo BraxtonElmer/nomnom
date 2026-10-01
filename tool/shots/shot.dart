@@ -10,7 +10,7 @@ import 'package:nomnom/nutrition/food_db.dart';
 import 'package:nomnom/theme/theme.dart';
 
 /// Renders screens to build/shots/*.png at phone size with the real fonts.
-/// Run: flutter test test/shots --update-goldens
+/// Run: flutter test tool/shots --update-goldens
 Future<void> setUpShots() async {
   TestWidgetsFlutterBinding.ensureInitialized();
   FlutterSecureStorage.setMockInitialValues({});

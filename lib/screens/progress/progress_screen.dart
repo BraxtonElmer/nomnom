@@ -12,6 +12,7 @@ import '../../ui/charts.dart';
 import '../../ui/controls.dart';
 import '../../ui/format.dart';
 import '../../ui/macro_bar.dart';
+import 'week_card.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
@@ -34,6 +35,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
           children: [
             Text('Progress', style: T.title),
             const SizedBox(height: 22),
+            const WeekCard(),
+            const SizedBox(height: 30),
             _weight(),
             const SizedBox(height: 34),
             _calories(),

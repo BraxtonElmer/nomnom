@@ -193,6 +193,15 @@ class Store extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// A cached weekly recap for the week starting [monday], as JSON.
+  String? weekRecap(DateTime monday) => _settings.get('week_${_ymd(monday)}');
+
+  Future<void> putWeekRecap(DateTime monday, String json) =>
+      _settings.put('week_${_ymd(monday)}', json);
+
+  static String _ymd(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
   Future<void> setTheme(String v) async {
     theme = v;
     notifyListeners();

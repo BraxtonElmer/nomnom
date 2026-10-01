@@ -29,7 +29,9 @@ The AI is good at understanding language and unreliable at remembering numbers, 
 - **Dish tables by cuisine**: about 300 dishes across Indian, Chinese and Indo-Chinese, Japanese, Korean, Thai, Vietnamese, Southeast Asian, Italian, European, British, American, Mexican, Latin American, Middle Eastern, African and South Asian food, with per-100 g values and typical serving weights. Every table is searched for every user, so takeaway from another cuisine matches properly; your own country's food only gets a small nudge. Values are estimates for typical recipes (`tool/build_dishes.py`).
 - **Open Food Facts**: packaged products, searched live when you name a brand ("a glass of Amul lassi") or search in the item sheet.
 
-Exact dish names ("poha", "2 idli with sambar") are matched on the phone without a second AI request, which matters on small free tiers.
+Simple meals ("2 rotis and dal", "banana and 200 ml milk", "poha") are read entirely on the phone, with no AI request and no internet: only when every part is a confident match against foods you've confirmed before, a dish table, or a short list of plain foods. Anything unclear goes to the AI. Exact dish names in longer sentences also skip the second matching request, which matters on small free tiers.
+
+Home-style dishes are averages of typical recipes and say so ("Typical recipe (average)"). Home cooking mostly varies in oil and ghee, so each dish item has a Light / Typical / Rich setting that moves its fat and calories, and nomnom remembers your choice.
 
 Prefer the AI's numbers? **You → Nutrition numbers → AI estimates** uses the model for everything (one request per log). Either way, each item keeps the AI's estimate for comparison ("Dish table · AI says 360") and can be switched in the item sheet. Amounts can always be given in grams ("250g dal") or set per item.
 
@@ -47,13 +49,14 @@ Foods you confirm are remembered, so repeat meals come out the same every time a
 - One-tap re-logging of favourites and recent plates, with no AI call
 - Follow-up questions: when a missing amount would swing the numbers ("rice and rajma"), one tap-to-answer question instead of a guess
 - Save for later: if the AI can't be reached, the text is kept and logged automatically once it can be
-- Meal reminders for breakfast, lunch and dinner, skipped for meals you've already logged
+- Meal reminders for breakfast, lunch and dinner, skipped for meals you've already logged. Reply straight from the notification ("Log it") without opening the app
+- Goal check-in: after a few weeks of logging and weigh-ins, nomnom measures your real maintenance from intake and weight trend and proposes a corrected target. Nothing changes until you accept
 - History: month calendar shaded by how close each day was to goal, with day detail
 - Progress: weight log with a smoothed trend and BMI, calorie bars against goal, 7-day macro averages, streak
 - Health Connect (Android): steps, active calories and sleep, with an option to add exercise to the day's budget
 - BMI with WHO bands, using the lower Asian cut-offs for countries where they apply
 - Dark mode: a night version of the Paper look, following the system or set by hand
-- Backup: export everything to a JSON file and restore it on any phone (API keys are never included)
+- Backup: automatic Android backup to your Google account, plus export and restore as a JSON file. API keys are never included in either
 
 ## AI providers
 

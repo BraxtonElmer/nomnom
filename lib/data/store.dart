@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 
+import '../nutrition/check_in.dart';
 import '../nutrition/targets.dart';
 import 'keys.dart';
 import 'models.dart';
@@ -36,6 +37,8 @@ class Store extends ChangeNotifier {
 
   /// 'system', 'light' or 'dark'.
   String theme = 'system';
+
+  DateTime? _checkInQuietUntil;
   final Map<Meal, int> _reminderMinutes = {};
 
   static const _defaultReminders = {
@@ -79,6 +82,8 @@ class Store extends ChangeNotifier {
     remindersOn = _settings.get('reminders') == 'true';
     aiOnly = _settings.get('aiOnly') == 'true';
     theme = _settings.get('theme') ?? 'system';
+    final quiet = int.tryParse(_settings.get('checkInQuiet') ?? '');
+    _checkInQuietUntil = quiet == null ? null : DateTime.fromMillisecondsSinceEpoch(quiet);
     _reminderMinutes.clear();
     for (final m in Meal.values) {
       final v = int.tryParse(_settings.get('remind_${m.name}') ?? '');
@@ -146,6 +151,36 @@ class Store extends ChangeNotifier {
     notifyListeners();
     await _settings.put('reminders', '$remindersOn');
     if (meal != null && minutes != null) await _settings.put('remind_${meal.name}', '$minutes');
+  }
+
+  /// A suggested goal update from the user's own data, unless snoozed.
+  CheckIn? get checkIn {
+    final now = DateTime.now();
+    if (_checkInQuietUntil != null && now.isBefore(_checkInQuietUntil!)) return null;
+    return CheckIn.compute(
+      profile: profile,
+      kcalByDay: {for (final d in loggedDays) d: totalOn(d).kcal},
+      weights: weights,
+      today: now,
+    );
+  }
+
+  Future<void> _quietCheckIn(Duration d) async {
+    _checkInQuietUntil = DateTime.now().add(d);
+    await _settings.put('checkInQuiet', '${_checkInQuietUntil!.millisecondsSinceEpoch}');
+  }
+
+  /// Use the measured maintenance from now on. Re-checks in two weeks.
+  Future<void> acceptCheckIn(CheckIn c) async {
+    await _quietCheckIn(const Duration(days: 14));
+    await saveProfile(
+      profile.copyWith(learnedMaintenance: () => c.measured, customKcal: () => null),
+    );
+  }
+
+  Future<void> snoozeCheckIn() async {
+    await _quietCheckIn(const Duration(days: 7));
+    notifyListeners();
   }
 
   Future<void> setTheme(String v) async {

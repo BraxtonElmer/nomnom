@@ -16,14 +16,14 @@ class Targets {
   final double carbs;
   final double fat;
 
-  /// Mifflin–St Jeor BMR × activity.
+  /// Measured from logs when accepted, else Mifflin–St Jeor BMR × activity.
   final double maintenance;
 
   /// What we'd recommend before any custom override.
   final double suggested;
 
   static Targets of(Profile p) {
-    final maintenance = tdee(p);
+    final maintenance = p.learnedMaintenance ?? tdee(p);
     final suggested = suggestedKcal(p, maintenance);
     final kcal = (p.customKcal ?? suggested).toDouble();
     return Targets(

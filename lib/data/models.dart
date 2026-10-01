@@ -405,6 +405,7 @@ class Profile {
     this.paceKg = 0.5,
     this.customKcal,
     this.macros = MacroPreset.balanced,
+    this.learnedMaintenance,
   });
 
   final String country;
@@ -423,6 +424,10 @@ class Profile {
   final int? customKcal;
   final MacroPreset macros;
 
+  /// Maintenance kcal measured from the user's own logs and weight trend,
+  /// once they accept a goal check-in. Replaces the formula's guess.
+  final double? learnedMaintenance;
+
   Profile copyWith({
     String? country,
     bool? metric,
@@ -435,6 +440,7 @@ class Profile {
     double? paceKg,
     int? Function()? customKcal,
     MacroPreset? macros,
+    double? Function()? learnedMaintenance,
   }) => Profile(
     country: country ?? this.country,
     metric: metric ?? this.metric,
@@ -447,6 +453,7 @@ class Profile {
     paceKg: paceKg ?? this.paceKg,
     customKcal: customKcal != null ? customKcal() : this.customKcal,
     macros: macros ?? this.macros,
+    learnedMaintenance: learnedMaintenance != null ? learnedMaintenance() : this.learnedMaintenance,
   );
 
   Map<String, dynamic> toJson() => {
@@ -461,6 +468,7 @@ class Profile {
     'pace': paceKg,
     'kcal': customKcal,
     'macros': macros.name,
+    if (learnedMaintenance != null) 'lm': learnedMaintenance,
   };
 
   factory Profile.fromJson(Map<String, dynamic> j) => Profile(
@@ -478,6 +486,7 @@ class Profile {
       (m) => m.name == j['macros'],
       orElse: () => MacroPreset.balanced,
     ),
+    learnedMaintenance: (j['lm'] as num?)?.toDouble(),
   );
 }
 

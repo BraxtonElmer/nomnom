@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../data/models.dart';
 import '../../nutrition/targets.dart';
 import '../../theme/tokens.dart';
+import '../../ui/buttons.dart';
 import '../../ui/controls.dart';
 import '../../ui/macro_bar.dart';
 import '../../ui/pressable.dart';
@@ -181,10 +182,19 @@ class _GoalFormState extends State<GoalForm> {
               Text(
                 custom
                     ? 'Suggested for you: ${_fmt.format(t.suggested.round())} kcal'
-                    : 'Maintenance is about ${_fmt.format(t.maintenance.round())} kcal. '
+                    : 'Maintenance is about ${_fmt.format(t.maintenance.round())} kcal'
+                          '${p.learnedMaintenance != null ? ', measured from your logs' : ''}. '
                           '${p.goal == Goal.maintain ? '' : 'This sets a steady ${p.goal == Goal.lose ? 'deficit' : 'surplus'}.'}',
                 style: T.small,
               ),
+              if (p.learnedMaintenance != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextLink(
+                    label: 'Use the formula estimate instead',
+                    onTap: () => widget.onChanged(p.copyWith(learnedMaintenance: () => null)),
+                  ),
+                ),
               const SizedBox(height: 14),
               const Hairline(),
               const SizedBox(height: 12),

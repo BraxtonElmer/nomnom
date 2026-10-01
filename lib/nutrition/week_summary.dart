@@ -5,7 +5,8 @@ import '../data/models.dart';
 import 'targets.dart';
 
 /// Monday of the week [d] falls in.
-DateTime weekStart(DateTime d) => dayOf(d).subtract(Duration(days: d.weekday - 1));
+DateTime weekStart(DateTime d) =>
+    dayOf(d).subtract(Duration(days: d.weekday - 1));
 
 /// The numbers behind a weekly recap. Everything the recap says comes from
 /// here; the AI only gets to word it.
@@ -75,13 +76,16 @@ class WeekStats {
 
     double? mean(DateTime from) {
       final to = from.add(const Duration(days: 7));
-      final ws = weights.where((w) => !w.day.isBefore(from) && w.day.isBefore(to)).toList();
+      final ws = weights
+          .where((w) => !w.day.isBefore(from) && w.day.isBefore(to))
+          .toList();
       return ws.isEmpty ? null : ws.fold(0.0, (s, w) => s + w.kg) / ws.length;
     }
 
     final now = mean(start);
     final before = mean(start.subtract(const Duration(days: 7)));
-    final top = counts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final top = counts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
     return WeekStats(
       start: start,
       logged: logged,
@@ -103,14 +107,20 @@ class WeekStats {
     'protein_target_g': targets.protein.round(),
     'days_protein_hit': proteinDays,
     'avg_fibre_g': avg.fiber.round(),
-    if (avg.micros[Micro.sodium] != null) 'avg_sodium_mg': avg.micros[Micro.sodium]!.round(),
-    if (weightChange != null) 'weight_change_kg_vs_last_week': (weightChange! * 10).round() / 10,
+    if (avg.micros[Micro.sodium] != null)
+      'avg_sodium_mg': avg.micros[Micro.sodium]!.round(),
+    if (weightChange != null)
+      'weight_change_kg_vs_last_week': (weightChange! * 10).round() / 10,
     'most_logged_foods': top,
   };
 }
 
 class WeekSummary {
-  const WeekSummary({required this.headline, required this.points, this.byAi = false});
+  const WeekSummary({
+    required this.headline,
+    required this.points,
+    this.byAi = false,
+  });
 
   final String headline;
   final List<String> points;
@@ -127,7 +137,11 @@ class WeekSummary {
         if (x is String && x.trim().isNotEmpty) x.trim(),
     ];
     if (points.isEmpty) return null;
-    return WeekSummary(headline: h.trim(), points: points.take(4).toList(), byAi: true);
+    return WeekSummary(
+      headline: h.trim(),
+      points: points.take(4).toList(),
+      byAi: true,
+    );
   }
 
   /// Written from the numbers alone, no AI.
@@ -135,7 +149,9 @@ class WeekSummary {
     String n(double v) => v.round().toString();
     String k(double v) {
       final t = v.round().abs().toString();
-      return t.length > 3 ? '${t.substring(0, t.length - 3)},${t.substring(t.length - 3)}' : t;
+      return t.length > 3
+          ? '${t.substring(0, t.length - 3)},${t.substring(t.length - 3)}'
+          : t;
     }
 
     final t = s.targets;
@@ -147,14 +163,19 @@ class WeekSummary {
         : 'Below goal on average';
     final points = [
       'Logged ${s.logged} of 7 days, averaging ${k(s.avg.kcal)} kcal against a ${k(t.kcal)} goal. '
-          '${s.onTarget} ${s.onTarget == 1 ? 'day was' : 'days were'} within 10%.',
+          '${switch (s.onTarget) {
+            0 => 'No day was',
+            1 => 'One day was',
+            final n => '$n days were',
+          }} within 10%.',
       'Protein averaged ${n(s.avg.protein)} g of ${n(t.protein)} g, '
-          'reached on ${s.proteinDays} ${s.proteinDays == 1 ? 'day' : 'days'}.',
+          '${s.proteinDays == 0 ? 'short of target every day' : 'reached on ${s.proteinDays} ${s.proteinDays == 1 ? 'day' : 'days'}'}.',
       if (s.weightChange != null)
         'Weight ${s.weightChange! <= 0 ? 'down' : 'up'} '
             '${metric ? '${s.weightChange!.abs().toStringAsFixed(1)} kg' : '${(s.weightChange!.abs() * 2.20462).toStringAsFixed(1)} lb'} '
             'on the week before.',
-      if (s.avg.fiber < 20) 'Fibre averaged ${n(s.avg.fiber)} g a day; 28 g is the daily value.',
+      if (s.avg.fiber < 20)
+        'Fibre averaged ${n(s.avg.fiber)} g a day; 28 g is the daily value.',
     ];
     return WeekSummary(headline: headline, points: points);
   }
@@ -170,7 +191,11 @@ Return JSON: {"headline": string, "points": [string]}
 - points: 3 items, each one sentence of at most 24 words. The first two say how the week went; the last is one concrete idea for next week.''';
 
   /// Words the recap with [client]; throws [AiException] on failure.
-  static Future<WeekSummary> write(AiClient client, WeekStats s, {bool metric = true}) async {
+  static Future<WeekSummary> write(
+    AiClient client,
+    WeekStats s, {
+    bool metric = true,
+  }) async {
     final j = await client.json(
       _system,
       'Units: ${metric ? 'kg' : 'lb (weights given in kg, convert)'}\nStats: ${jsonEncode(s.toJson())}',

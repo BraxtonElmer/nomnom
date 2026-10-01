@@ -26,7 +26,7 @@ There is no backend and no account. The app calls the AI directly with your own 
 The AI is good at understanding language and unreliable at remembering numbers, so it is only trusted with the first step. Calories and macros come from real nutrition tables bundled in the app:
 
 - **USDA FoodData Central, SR Legacy**: about 7,300 generic foods with household portion weights. Public domain.
-- **Dish tables by cuisine**: about 300 dishes across Indian, Chinese and Indo-Chinese, Japanese, Korean, Thai, Vietnamese, Southeast Asian, Italian, European, British, American, Mexican, Latin American, Middle Eastern, African and South Asian food, with per-100 g values and typical serving weights. Every table is searched for every user, so takeaway from another cuisine matches properly; your own country's food only gets a small nudge. Values are estimates for typical recipes (`tool/build_dishes.py`).
+- **Dish tables by cuisine**: about 300 dishes across Indian, Chinese and Indo-Chinese, Japanese, Korean, Thai, Vietnamese, Southeast Asian, Italian, European, British, American, Mexican, Latin American, Middle Eastern, African and South Asian food, with per-100 g values and typical serving weights. Every table is searched for every user, so takeaway from another cuisine matches properly; your own country's food only gets a small nudge. Values are estimates for typical recipes (`tool/build_dishes.py`), cross-checked against USDA's prepared and restaurant foods with `tool/check_dishes.py`.
 - **Open Food Facts**: packaged products, searched live when you name a brand ("a glass of Amul lassi") or search in the item sheet.
 
 Simple meals ("2 rotis and dal", "banana and 200 ml milk", "poha") are read entirely on the phone, with no AI request and no internet: only when every part is a confident match against foods you've confirmed before, a dish table, or a short list of plain foods. Anything unclear goes to the AI. Exact dish names in longer sentences also skip the second matching request, which matters on small free tiers.
@@ -45,13 +45,17 @@ Foods you confirm are remembered, so repeat meals come out the same every time a
 - Typed logging with a review screen: steppers per item, gram overrides, rematching, add or remove items, meal and time
 - Today: week strip, calorie ring, macro split, and the day laid out as a menu
 - Nutrition details: calories and macros up front; fibre, sugar, saturated fat, sodium, potassium, calcium, iron, vitamin C and B12 against daily values one tap away, per day, plate or item
-- A one-line note on each plate from the model
+- A one-line note on each plate, worked out from your own numbers and the rest of the day (salt, protein, sugar, fibre, what's left)
 - One-tap re-logging of favourites and recent plates, with no AI call
+- Same as yesterday: an empty meal offers yesterday's plate in one tap; History can copy a whole day to today, and any entry can be moved to another date
+- Photo logging: snap or pick a photo of the plate, add an optional caption, and a vision model reads it (Groq uses Llama 4 Scout; Gemini models read photos natively). The numbers still come from the food tables
 - Follow-up questions: when a missing amount would swing the numbers ("rice and rajma"), one tap-to-answer question instead of a guess
 - Save for later: if the AI can't be reached, the text is kept and logged automatically once it can be
 - Meal reminders for breakfast, lunch and dinner, skipped for meals you've already logged. Reply straight from the notification ("Log it") without opening the app
 - Goal check-in: after a few weeks of logging and weigh-ins, nomnom measures your real maintenance from intake and weight trend and proposes a corrected target. Nothing changes until you accept
 - History: month calendar shaded by how close each day was to goal, with day detail
+- Weekly recap at the top of Progress: last week's numbers in plain words, written once by your model and kept for the week, or from the numbers alone without AI
+- Home-screen widget (Android): today's ring, kcal and macros, in light or dark
 - Progress: weight log with a smoothed trend and BMI, calorie bars against goal, 7-day macro averages, streak
 - Health Connect (Android): steps, active calories and sleep, with an option to add exercise to the day's budget
 - BMI with WHO bands, using the lower Asian cut-offs for countries where they apply
@@ -84,7 +88,7 @@ Then choose **Custom** in nomnom and use `http://<your-computer's-wifi-ip>:11434
 
 - Your log, weights, favourites and goals are stored only on the device (Hive).
 - API keys are kept in the platform keystore (`flutter_secure_storage`) and never written to backups.
-- Only the text you type is sent, and only to the provider you chose.
+- Only the text you type (or a photo you choose to send) is sent, and only to the provider you chose. The weekly recap sends summary numbers and food names, nothing else.
 
 ## Development
 
@@ -109,6 +113,7 @@ Run real sentences through a live model (spends free-tier requests) and probe fo
 
 ```bash
 GEMINI_KEY=... MODEL=gemini-3.5-flash-lite flutter test tool/live/live_test.dart
+GEMINI_KEY=... flutter test tool/live/recap_test.dart
 Q='whole milk|poha' flutter test tool/live/search_probe_test.dart
 ```
 
@@ -116,6 +121,12 @@ Rebuild the USDA table from the [SR Legacy CSV download](https://fdc.nal.usda.go
 
 ```bash
 python tool/build_usda.py path/to/FoodData_Central_sr_legacy_food_csv_2018-04
+```
+
+Check the dish tables against USDA (prints dishes more than 30% off their closest match; every flag needs a human read):
+
+```bash
+python tool/check_dishes.py
 ```
 
 ### Release builds
@@ -143,8 +154,8 @@ lib/
 ├── screens/       setup, today, log, history, progress, you
 ├── theme/         Paper design tokens and theme
 └── ui/            shared widgets: ring, week strip, charts, controls
-assets/data/       usda.json, dishes_in.json
-tool/              data build script, screenshot harness
+assets/data/       usda.json, dishes/*.json by cuisine
+tool/              data build and check scripts, screenshot harness, live checks
 ```
 
 ## Credits

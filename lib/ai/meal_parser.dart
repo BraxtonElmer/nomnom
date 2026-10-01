@@ -18,11 +18,14 @@ class ParsedItem {
 }
 
 class ParsedMeal {
-  ParsedMeal({required this.title, required this.meal, required this.items});
+  ParsedMeal({required this.title, required this.meal, required this.items, this.note});
 
   final String title;
   final Meal? meal;
   final List<ParsedItem> items;
+
+  /// One helpful line about the plate, from the model.
+  final String? note;
 }
 
 /// Text → items in two steps. The model reads the sentence; the numbers come
@@ -83,7 +86,9 @@ class MealParser {
     if (unresolved.isNotEmpty) {
       final ids = await _resolve(parsed, unresolved, rawItems);
       for (final i in unresolved) {
-        final food = FoodDb.i.get(ids[i]);
+        final id = ids[i];
+        final food =
+            parsed[i].candidates.where((c) => c.id == id).firstOrNull ?? FoodDb.i.get(id);
         if (food != null) parsed[i].item = fromDb(food, parsed[i].estimate);
       }
     }
@@ -95,6 +100,7 @@ class MealParser {
           ? null
           : Meal.values.where((m) => m.name == raw['meal']).firstOrNull,
       items: parsed,
+      note: (raw['note'] as String?)?.trim().nullIfEmpty,
     );
   }
 
@@ -151,6 +157,10 @@ class MealParser {
         carbs: n('carbs') * f,
         fat: n('fat') * f,
         fiber: n('fiber') * f,
+        micros: {
+          for (final (m, key) in _microKeys)
+            if (r[key] is num) m: n(key) * f,
+        },
       ),
       source: Source.ai,
     );
@@ -166,7 +176,10 @@ class MealParser {
     }
     final item = estimate.copyWith(
       unitGrams: unitGrams,
-      per100: food.per100,
+      // Tables without micronutrients borrow the model's estimate for them.
+      per100: food.per100.micros.isEmpty
+          ? food.per100.withMicros(estimate.per100.micros)
+          : food.per100,
       source: food.source,
       ref: food.id,
       refName: food.name,
@@ -248,6 +261,17 @@ class MealParser {
     return alias[s] ?? s;
   }
 
+  static const _microKeys = [
+    (Micro.sugar, 'sugar_g'),
+    (Micro.satFat, 'sat_fat_g'),
+    (Micro.sodium, 'sodium_mg'),
+    (Micro.potassium, 'potassium_mg'),
+    (Micro.calcium, 'calcium_mg'),
+    (Micro.iron, 'iron_mg'),
+    (Micro.vitaminC, 'vitamin_c_mg'),
+    (Micro.vitaminB12, 'vitamin_b12_mcg'),
+  ];
+
   static String _cap(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
   static String _fallbackTitle(List<ParsedItem> items) =>
@@ -263,8 +287,10 @@ Reply with JSON only, shaped like:
 {"title": "Grilled chicken, 2 rotis, dal", "meal": null, "items": [
   {"name": "Grilled chicken breast", "qty": 120, "unit": "g", "grams": 120,
    "search": "chicken breast cooked roasted",
-   "kcal": 198, "protein": 37, "carbs": 0, "fat": 4.3, "fiber": 0}
-]}
+   "kcal": 198, "protein": 37, "carbs": 0, "fat": 4.3, "fiber": 0,
+   "sugar_g": 0, "sat_fat_g": 1.2, "sodium_mg": 90, "potassium_mg": 300, "calcium_mg": 18,
+   "iron_mg": 1.2, "vitamin_c_mg": 0, "vitamin_b12_mcg": 0.4}
+], "note": "Lean protein with fibre-rich dal; a balanced plate."}
 
 Fields:
 - title: short summary of the plate, at most 40 characters.
@@ -274,6 +300,8 @@ Fields:
 - grams: total edible grams for that amount (ml counts as grams for drinks).
 - search: plain generic English words to find the food in a nutrition database like USDA, including the cooking method or state (cooked, raw, fried, boiled). Use the local dish name for regional dishes.
 - kcal, protein, carbs, fat, fiber: your best estimate for the whole amount, in kcal and grams.
+- sugar_g, sat_fat_g, sodium_mg, potassium_mg, calcium_mg, iron_mg, vitamin_c_mg, vitamin_b12_mcg: estimates for the whole amount, including salt and sugar normally used in the dish.
+- note: one short, specific, friendly sentence about the plate's nutrition. No moralising.
 
 Rules:
 - One item per distinct food. Split combinations ("dal rice" is dal and rice). Keep a single named dish as one item ("chicken biryani", "masala dosa").
@@ -286,3 +314,7 @@ You match foods to nutrition database entries.
 For each numbered food, pick the candidate id that is the same food in the same state: cooked vs raw, with or without skin, sweetened or not, homemade vs restaurant. Prefer plain generic entries over branded ones.
 If no candidate is a reasonable match, use null. Never invent ids.
 Reply with JSON only: {"matches": [{"item": 0, "id": "usda:171477"}, {"item": 1, "id": null}]}''';
+
+extension on String {
+  String? get nullIfEmpty => isEmpty ? null : this;
+}

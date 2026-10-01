@@ -1,14 +1,42 @@
 import 'dart:math' as math;
 
-/// kcal + macros. Used both per 100 g and as absolute totals.
+/// The nutrients beyond the big five, shown in details. [dv] is the daily
+/// value used for % bars; [limit] marks ones you want to stay under.
+enum Micro {
+  sugar('Sugar', 'g', 50, limit: true),
+  satFat('Saturated fat', 'g', 20, limit: true),
+  sodium('Sodium', 'mg', 2300, limit: true),
+  potassium('Potassium', 'mg', 4700),
+  calcium('Calcium', 'mg', 1300),
+  iron('Iron', 'mg', 18),
+  vitaminC('Vitamin C', 'mg', 90),
+  vitaminB12('Vitamin B12', 'mcg', 2.4);
+
+  const Micro(this.label, this.unit, this.dv, {this.limit = false});
+  final String label;
+  final String unit;
+  final double dv;
+  final bool limit;
+}
+
+/// kcal + macros, plus whichever micronutrients are known. Used both per
+/// 100 g and as absolute totals. A missing micro means "unknown", not zero.
 class Nutrients {
-  const Nutrients({this.kcal = 0, this.protein = 0, this.carbs = 0, this.fat = 0, this.fiber = 0});
+  const Nutrients({
+    this.kcal = 0,
+    this.protein = 0,
+    this.carbs = 0,
+    this.fat = 0,
+    this.fiber = 0,
+    this.micros = const {},
+  });
 
   final double kcal;
   final double protein;
   final double carbs;
   final double fat;
   final double fiber;
+  final Map<Micro, double> micros;
 
   static const zero = Nutrients();
 
@@ -18,6 +46,9 @@ class Nutrients {
     carbs: carbs + o.carbs,
     fat: fat + o.fat,
     fiber: fiber + o.fiber,
+    micros: {
+      for (final m in {...micros.keys, ...o.micros.keys}) m: (micros[m] ?? 0) + (o.micros[m] ?? 0),
+    },
   );
 
   Nutrients scale(double f) => Nutrients(
@@ -26,9 +57,22 @@ class Nutrients {
     carbs: carbs * f,
     fat: fat * f,
     fiber: fiber * f,
+    micros: micros.map((k, v) => MapEntry(k, v * f)),
   );
 
-  List<double> toJson() => [kcal, protein, carbs, fat, fiber].map(_r).toList();
+  Nutrients withMicros(Map<Micro, double> m) => Nutrients(
+    kcal: kcal,
+    protein: protein,
+    carbs: carbs,
+    fat: fat,
+    fiber: fiber,
+    micros: m,
+  );
+
+  List<Object> toJson() => [
+    ...[kcal, protein, carbs, fat, fiber].map(_r),
+    if (micros.isNotEmpty) {for (final e in micros.entries) e.key.name: _r(e.value)},
+  ];
 
   factory Nutrients.fromJson(List<dynamic> j) => Nutrients(
     kcal: _d(j[0]),
@@ -36,6 +80,13 @@ class Nutrients {
     carbs: _d(j[2]),
     fat: _d(j[3]),
     fiber: j.length > 4 ? _d(j[4]) : 0,
+    micros: j.length > 5 && j[5] is Map
+        ? {
+            for (final e in (j[5] as Map).entries)
+              if (Micro.values.any((m) => m.name == e.key))
+                Micro.values.byName(e.key as String): _d(e.value),
+          }
+        : const {},
   );
 }
 
@@ -205,6 +256,7 @@ class Entry {
     required this.title,
     required this.text,
     required this.items,
+    this.note,
   });
 
   final String id;
@@ -213,6 +265,7 @@ class Entry {
   final String title;
   final String text;
   final List<FoodItem> items;
+  final String? note;
 
   Nutrients get total => items.fold(Nutrients.zero, (s, i) => s + i.total);
 
@@ -223,6 +276,7 @@ class Entry {
     title: title ?? this.title,
     text: text,
     items: items ?? this.items,
+    note: note,
   );
 
   Map<String, dynamic> toJson() => {
@@ -232,6 +286,7 @@ class Entry {
     't': title,
     'x': text,
     'i': items.map((e) => e.toJson()).toList(),
+    if (note != null) 'n': note,
   };
 
   factory Entry.fromJson(Map<String, dynamic> j) => Entry(
@@ -241,6 +296,7 @@ class Entry {
     title: j['t'] as String,
     text: (j['x'] as String?) ?? '',
     items: (j['i'] as List).map((e) => FoodItem.fromJson(Map<String, dynamic>.from(e))).toList(),
+    note: j['n'] as String?,
   );
 }
 

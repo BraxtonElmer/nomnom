@@ -9,6 +9,7 @@ import '../../theme/tokens.dart';
 import '../../ui/buttons.dart';
 import '../../ui/controls.dart';
 import '../../ui/format.dart';
+import '../../ui/nutrition_details.dart';
 import '../../ui/pressable.dart';
 import '../shell.dart';
 import 'item_sheet.dart';
@@ -32,6 +33,7 @@ class ReviewScreen extends StatefulWidget {
 class _ReviewScreenState extends State<ReviewScreen> {
   List<ParsedItem>? _items;
   String _title = '';
+  String? _note;
   late Meal _meal;
   late DateTime _at;
   String? _error;
@@ -48,6 +50,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
       _at = e.at;
       _meal = e.meal;
       _title = e.title;
+      _note = e.note;
       _items = [for (final i in e.items) ParsedItem(item: i, estimate: i, candidates: const [])];
     } else {
       _at = widget.at!;
@@ -68,6 +71,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
       setState(() {
         _items = meal.items;
         _title = meal.title;
+        _note = meal.note;
         if (meal.meal != null) _meal = meal.meal!;
       });
     } on AiException catch (e) {
@@ -90,6 +94,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
       title: _title.isEmpty ? items.map((p) => p.item.name).take(3).join(', ') : _title,
       text: _text,
       items: [for (final p in items) p.item.copyWith(flagged: false)],
+      note: _note,
     );
     await Store.i.putEntry(entry);
     if (!mounted) return;
@@ -210,6 +215,19 @@ class _ReviewScreenState extends State<ReviewScreen> {
                         : 'Estimated for ${countryName(Store.i.profile.country)} · tap an item to adjust',
                     style: T.small,
                   ),
+                  if (_note != null && items != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      _note!,
+                      style: const TextStyle(
+                        fontFamily: F.serif,
+                        fontStyle: FontStyle.italic,
+                        fontSize: 19,
+                        height: 1.25,
+                        color: C.ink2,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 18),
                   const Hairline(strong: true),
                   AnimatedSwitcher(
@@ -229,9 +247,21 @@ class _ReviewScreenState extends State<ReviewScreen> {
                                   onStep: (d) =>
                                       setState(() => items[i].item = items[i].item.step(d)),
                                 ),
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: TextLink(label: '+ Add an item', onTap: _addItem),
+                              Row(
+                                children: [
+                                  TextLink(label: '+ Add an item', onTap: _addItem),
+                                  const Spacer(),
+                                  if (items.isNotEmpty)
+                                    TextLink(
+                                      label: 'All nutrients',
+                                      color: C.ink2,
+                                      onTap: () => showNutritionDetails(
+                                        context,
+                                        _title.isEmpty ? 'This plate' : _title,
+                                        [for (final p in items) p.item],
+                                      ),
+                                    ),
+                                ],
                               ),
                             ],
                           ),

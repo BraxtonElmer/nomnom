@@ -149,7 +149,11 @@ List<DbFood> _parse((String, String) raw) {
         id: 'usda:${r[0]}',
         name: name,
         source: Source.usda,
-        per100: Nutrients.fromJson([r[2], r[3], r[4], r[5], r[6]]),
+        per100: Nutrients.fromJson([r[2], r[3], r[4], r[5], r[6]]).withMicros({
+        if (r.length > 8)
+          for (final (i, v) in (r[8] as List).indexed)
+            if (v != null) Micro.values[i]: (v as num).toDouble(),
+      }),
         portions: [for (final p in r[7] as List) (p[0] as String, (p[1] as num).toDouble())],
         tokens: tokenize(name),
         head: tokenize(name.split(',').first),

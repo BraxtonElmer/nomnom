@@ -5,7 +5,9 @@ import '../../data/store.dart';
 import '../../theme/tokens.dart';
 import '../../ui/controls.dart';
 import '../../ui/format.dart';
+import '../../ui/buttons.dart';
 import '../../ui/macro_bar.dart';
+import '../../ui/nutrition_details.dart';
 import '../../ui/ring.dart';
 import '../../ui/week_strip.dart';
 import '../log/review_screen.dart';
@@ -143,7 +145,33 @@ class _TodayScreenState extends State<TodayScreen> {
                           MacroValue('Fat', total.fat, targets.fat, C.fat),
                         ],
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              [
+                                if (total.micros[Micro.sugar] != null)
+                                  'Sugar ${total.micros[Micro.sugar]!.round()} g',
+                                if (total.micros[Micro.sodium] != null)
+                                  'Sodium ${kcal(total.micros[Micro.sodium]!)} mg',
+                              ].join(' · '),
+                              style: T.small,
+                            ),
+                          ),
+                          TextLink(
+                            label: 'All nutrients',
+                            onTap: entries.isEmpty
+                                ? null
+                                : () => showNutritionDetails(
+                                    context,
+                                    _isToday ? 'Today' : dayLabel(_day),
+                                    [for (final e in entries) ...e.items],
+                                  ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
                       MenuCard(
                         title: _isToday ? "Today's menu" : "${dayLabel(_day)}'s menu",
                         entries: entries,

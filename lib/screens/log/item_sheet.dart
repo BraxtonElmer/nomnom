@@ -9,6 +9,7 @@ import '../../theme/tokens.dart';
 import '../../ui/buttons.dart';
 import '../../ui/controls.dart';
 import '../../ui/format.dart';
+import '../../ui/nutrition_details.dart';
 import '../../ui/pressable.dart';
 import 'review_screen.dart';
 
@@ -39,6 +40,7 @@ class _ItemSheetState extends State<_ItemSheet> {
   late final _grams = TextEditingController();
   final _query = TextEditingController();
   List<DbFood> _results = [];
+  bool _more = false;
 
   bool get _adding => widget.parsed == null;
 
@@ -171,6 +173,23 @@ class _ItemSheetState extends State<_ItemSheet> {
                       _num('carbs', item.total.carbs, C.carbs),
                       _num('fat', item.total.fat, C.fat),
                     ],
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextLink(
+                      label: _more ? 'Fewer nutrients' : 'More nutrients',
+                      color: C.ink2,
+                      onTap: () => setState(() => _more = !_more),
+                    ),
+                  ),
+                  AnimatedSize(
+                    duration: Motion.base,
+                    curve: Motion.curve,
+                    alignment: Alignment.topCenter,
+                    child: _more
+                        ? NutritionDetails(items: [item], compact: true)
+                        : const SizedBox(width: double.infinity),
                   ),
                 ],
                 const SizedBox(height: 28),

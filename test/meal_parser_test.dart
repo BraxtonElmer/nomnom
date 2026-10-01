@@ -59,6 +59,7 @@ void main() {
             'carbs': 40,
             'fat': 3,
             'fiber': 4,
+            'sodium_mg': 280,
           },
           {
             'name': 'Dal tadka',
@@ -110,6 +111,12 @@ void main() {
     expect(items[1].source, Source.dish);
     expect(items[1].unitGrams, 40); // table portion, not the model's 35 g guess
     expect(items[1].total.kcal, 240);
+
+    // USDA brings real micronutrients; the dish table borrows the estimate's
+    // (280 mg sodium over the model's 70 g, applied to the table's 80 g).
+    expect(items[0].total.micros[Micro.potassium], greaterThan(200));
+    expect(items[1].total.micros[Micro.sodium], closeTo(320, 0.5));
+    expect(items[1].total.micros[Micro.iron], isNull);
 
     expect(items[2].grams, 200);
     expect(items[2].total.kcal, 230);

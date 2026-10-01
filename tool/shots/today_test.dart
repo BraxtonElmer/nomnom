@@ -22,6 +22,16 @@ void main() {
     );
   });
 
+  testWidgets('day details', (tester) async {
+    await shoot(tester, 'today_details', const Shell());
+    await tester.tap(find.text('All nutrients'));
+    await tester.pumpAndSettle();
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../build/shots/today_details.png'),
+    );
+  });
+
   testWidgets('review', (tester) async {
     final e = Store.i.entriesOn(DateTime.now()).firstWhere((e) => e.id == 'l0');
     await shoot(tester, 'review', ReviewScreen.edit(entry: e));

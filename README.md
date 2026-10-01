@@ -55,6 +55,7 @@ Foods you confirm are remembered, so repeat meals come out the same every time a
 - Goal check-in: after a few weeks of logging and weigh-ins, nomnom measures your real maintenance from intake and weight trend and proposes a corrected target. Nothing changes until you accept
 - History: month calendar shaded by how close each day was to goal, with day detail
 - Weekly recap at the top of Progress: last week's numbers in plain words, written once by your model and kept for the week, or from the numbers alone without AI
+- Pantry: add what you buy ("10 eggs, 450 g chicken breast", read on the phone) and it counts down as you log. Cooked weights of meat and fish are worked back to raw; when it can't tell (a dish that contains the food, a grain, a weight with no raw or cooked, a look-alike food, more than is left) it asks in the review screen, and remembers "always" and "never" answers. Edits, deletes, undo and copies all keep it right. Alerts when something runs low or out, and the morning before a use-by date
 - Home-screen widget (Android): today's ring, kcal and macros, in light or dark
 - Progress: weight log with a smoothed trend and BMI, calorie bars against goal, 7-day macro averages, streak
 - Health Connect (Android): steps, active calories and sleep, with an option to add exercise to the day's budget
@@ -114,6 +115,7 @@ Run real sentences through a live model (spends free-tier requests) and probe fo
 ```bash
 GEMINI_KEY=... MODEL=gemini-3.5-flash-lite flutter test tool/live/live_test.dart
 GEMINI_KEY=... flutter test tool/live/recap_test.dart
+GEMINI_KEY=... flutter test tool/live/precise_test.dart   # weighed inputs with known answers
 Q='whole milk|poha' flutter test tool/live/search_probe_test.dart
 ```
 
@@ -149,9 +151,9 @@ flutter build apk --split-per-abi  # smaller APKs to share directly
 ```
 lib/
 ├── ai/            provider clients (OpenAI-compatible, Gemini) and the meal parser
-├── data/          models, the in-memory store over Hive, key vault
+├── data/          models, the in-memory store over Hive, pantry, reminders, key vault
 ├── nutrition/     food table search, targets, countries
-├── screens/       setup, today, log, history, progress, you
+├── screens/       setup, today, log, history, progress, pantry, you
 ├── theme/         Paper design tokens and theme
 └── ui/            shared widgets: ring, week strip, charts, controls
 assets/data/       usda.json, dishes/*.json by cuisine

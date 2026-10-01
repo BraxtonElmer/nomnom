@@ -21,6 +21,9 @@ class Reminders {
 
   static const meals = [Meal.breakfast, Meal.lunch, Meal.dinner];
 
+  static FlutterLocalNotificationsPlugin get plugin => _plugin;
+  static bool get ready => _ready;
+
   static bool get supported =>
       !kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.android ||
@@ -54,6 +57,13 @@ class Reminders {
 
   /// Asks for notification permission, then turns reminders on.
   static Future<bool> enable() async {
+    if (!await askPermission()) return false;
+    await Store.i.setReminders(on: true);
+    return true;
+  }
+
+  /// Asks the system to allow notifications. True when allowed.
+  static Future<bool> askPermission() async {
     await init();
     if (!_ready) return false;
     final granted = switch (defaultTargetPlatform) {
@@ -66,9 +76,7 @@ class Reminders {
             .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
             ?.requestPermissions(alert: true, sound: true),
     };
-    if (granted != true) return false;
-    await Store.i.setReminders(on: true);
-    return true;
+    return granted == true;
   }
 
   /// A reply handled while the app is running: same path as the background
@@ -90,7 +98,12 @@ class Reminders {
   static Future<void> reschedule() async {
     if (!_ready) return;
     try {
-      await _plugin.cancelAll();
+      // Only this class's ids; pantry alerts share the plugin.
+      for (var d = 0; d < 7; d++) {
+        for (final meal in meals) {
+          await _plugin.cancel(id: d * 10 + meal.index);
+        }
+      }
       if (!Store.i.remindersOn) return;
       final now = tz.TZDateTime.now(tz.local);
       for (var d = 0; d < 7; d++) {

@@ -6,6 +6,7 @@ import '../../ai/client.dart';
 import '../../ai/meal_parser.dart';
 import '../../data/log_queue.dart';
 import '../../data/models.dart';
+import '../../data/pantry.dart';
 import '../../data/store.dart';
 import '../../nutrition/countries.dart';
 import '../../nutrition/plate_note.dart';
@@ -17,6 +18,7 @@ import '../../ui/nutrition_details.dart';
 import '../../ui/pressable.dart';
 import '../shell.dart';
 import 'item_sheet.dart';
+import 'pantry_section.dart';
 
 /// Shows what a sentence turned into and lets you fix it before saving.
 /// Also the editor for entries already in the log.
@@ -71,6 +73,21 @@ class _ReviewScreenState extends State<ReviewScreen> {
   bool _saving = false;
 
   bool get _editing => widget.entry != null;
+
+  /// Answers to pantry questions, by [stockKey].
+  final _stockChoices = <String, StockChoice>{};
+
+  /// What the entry took before an edit.
+  Map<String, double> get _stockBefore => widget.entry?.stock ?? const {};
+
+  List<StockUse> get _stockPlan => _items == null || Store.i.stock.isEmpty
+      ? const []
+      : planStock(
+          [for (final p in _items!) p.item],
+          Store.i.stock,
+          at: _at,
+          previous: _stockBefore,
+        );
 
   /// What the user typed, as shown and stored.
   String get _text => widget.entry?.text ?? widget.text!;
@@ -150,6 +167,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
     final items = _items!;
     if (items.isEmpty) return;
     setState(() => _saving = true);
+    final plan = _stockPlan;
+    final stock = resolveStock(plan, _stockChoices, previous: _stockBefore);
+    await rememberStockLinks(plan, _stockChoices, [for (final p in items) p.item]);
     final entry = Entry(
       id: widget.entry?.id ?? Store.newId(),
       at: _at,
@@ -157,6 +177,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
       title: _title.isEmpty ? items.map((p) => p.item.name).take(3).join(', ') : _title,
       text: _text,
       items: [for (final p in items) p.item.copyWith(flagged: false)],
+      stock: stock.use,
+      stockCheck: stock.open,
     );
     await Store.i.putEntry(entry);
     if (widget.pendingId != null) await Store.i.removePending(widget.pendingId!);
@@ -376,6 +398,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
                                   onStep: (d) =>
                                       setState(() => items[i].item = items[i].item.step(d)),
                                 ),
+                              PantrySection(
+                                plan: _stockPlan,
+                                items: [for (final p in items) p.item],
+                                choices: _stockChoices,
+                                previous: _stockBefore,
+                                onChanged: () => setState(() {}),
+                              ),
                               Row(
                                 children: [
                                   TextLink(label: '+ Add an item', onTap: _addItem),
@@ -621,7 +650,7 @@ class _ErrorBlock extends StatelessWidget {
                   label: 'Open settings',
                   onTap: () {
                     Navigator.popUntil(context, (r) => r.isFirst);
-                    Shell.tab.value = 3;
+                    Shell.tab.value = 4;
                   },
                 ),
             ],

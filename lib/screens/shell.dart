@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../data/store.dart';
 import '../theme/tokens.dart';
 import '../ui/pressable.dart';
 import 'history/history_screen.dart';
+import 'pantry/pantry_screen.dart';
 import 'progress/progress_screen.dart';
 import 'today/today_screen.dart';
 import 'you/you_screen.dart';
 
-/// Four tabs kept alive in an IndexedStack, so switching never rebuilds or
+/// Five tabs kept alive in an IndexedStack, so switching never rebuilds or
 /// refetches anything.
 class Shell extends StatefulWidget {
   const Shell({super.key});
@@ -19,7 +21,7 @@ class Shell extends StatefulWidget {
 }
 
 class _ShellState extends State<Shell> {
-  static const _labels = ['Today', 'History', 'Progress', 'You'];
+  static const _labels = ['Today', 'History', 'Progress', 'Pantry', 'You'];
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +35,13 @@ class _ShellState extends State<Shell> {
         child: Scaffold(
           body: IndexedStack(
             index: tab,
-            children: const [TodayScreen(), HistoryScreen(), ProgressScreen(), YouScreen()],
+            children: const [
+              TodayScreen(),
+              HistoryScreen(),
+              ProgressScreen(),
+              PantryScreen(),
+              YouScreen(),
+            ],
           ),
           bottomNavigationBar: SafeArea(
             top: false,
@@ -58,7 +66,30 @@ class _ShellState extends State<Shell> {
                               decoration: i == tab ? TextDecoration.underline : null,
                               decorationThickness: 1.6,
                             ),
-                            child: Text(_labels[i]),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(_labels[i]),
+                                // Pantry: a meal is waiting on a stock question.
+                                if (i == 3)
+                                  ListenableBuilder(
+                                    listenable: Store.i,
+                                    builder: (_, _) => Store.i.stockChecks.isEmpty
+                                        ? const SizedBox.shrink()
+                                        : Padding(
+                                            padding: const EdgeInsets.only(left: 4, bottom: 8),
+                                            child: Container(
+                                              width: 5,
+                                              height: 5,
+                                              decoration: BoxDecoration(
+                                                color: C.tomato,
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                          ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

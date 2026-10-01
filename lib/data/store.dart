@@ -9,6 +9,7 @@ import '../nutrition/targets.dart';
 import 'inbox.dart';
 import 'keys.dart';
 import 'models.dart';
+import 'pantry.dart';
 
 /// Everything the app knows, held in memory and written through to Hive.
 /// Reads are synchronous, which is what keeps every screen instant.
@@ -22,6 +23,7 @@ class Store extends ChangeNotifier {
   late Box<String> _weights;
   late Box<String> _memory;
   late Box<String> _pending;
+  late Box<String> _stock;
 
   Profile profile = const Profile();
   AiConfig ai = const AiConfig();
@@ -32,6 +34,9 @@ class Store extends ChangeNotifier {
   bool eatBack = false;
 
   bool remindersOn = false;
+
+  /// Pantry notifications: low, out and use-by.
+  bool stockAlerts = true;
 
   /// Use AI estimates for everything instead of the food tables.
   bool aiOnly = false;
@@ -59,6 +64,7 @@ class Store extends ChangeNotifier {
   final List<Favourite> _favList = [];
   final List<WeightEntry> _weightList = [];
   final List<PendingLog> _pendingList = [];
+  final List<StockItem> _stockList = [];
 
   Future<void> init({String? path}) async {
     if (path != null) {
@@ -72,6 +78,7 @@ class Store extends ChangeNotifier {
     _weights = await Hive.openBox<String>('weights');
     _memory = await Hive.openBox<String>('memory');
     _pending = await Hive.openBox<String>('pending');
+    _stock = await Hive.openBox<String>('stock');
     _load();
   }
 
@@ -84,6 +91,7 @@ class Store extends ChangeNotifier {
     healthConnected = _settings.get('health') == 'true';
     eatBack = _settings.get('eatBack') == 'true';
     remindersOn = _settings.get('reminders') == 'true';
+    stockAlerts = _settings.get('stockAlerts') != 'false';
     aiOnly = _settings.get('aiOnly') == 'true';
     theme = _settings.get('theme') ?? 'system';
     final quiet = int.tryParse(_settings.get('checkInQuiet') ?? '');
@@ -102,6 +110,10 @@ class Store extends ChangeNotifier {
       ..clear()
       ..addAll(_pending.values.map((v) => PendingLog.fromJson(_map(v))))
       ..sort((a, b) => a.at.compareTo(b.at));
+    _stockList
+      ..clear()
+      ..addAll(_stock.values.map((v) => StockItem.fromJson(_map(v))))
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     _favList
       ..clear()
       ..addAll(_favs.values.map((v) => Favourite.fromJson(_map(v))));
@@ -203,6 +215,12 @@ class Store extends ChangeNotifier {
   static String _ymd(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
+  Future<void> setStockAlerts(bool v) async {
+    stockAlerts = v;
+    notifyListeners();
+    await _settings.put('stockAlerts', '$v');
+  }
+
   Future<void> setTheme(String v) async {
     theme = v;
     notifyListeners();
@@ -247,9 +265,15 @@ class Store extends ChangeNotifier {
     return n;
   }
 
+  /// Saves [e]. Its pantry use is worked out here when it isn't set, and
+  /// stock moves by the difference from what the entry took before, so
+  /// edits, deletes, undo and copies all keep the pantry right.
   Future<void> putEntry(Entry e) async {
+    final before = entry(e.id)?.stock ?? const {};
+    e = _capStock(_planStock(e, before), before);
     _all.removeWhere((x) => x.id == e.id);
     _all.add(e);
+    await _moveStock(before, e.stock ?? const {});
     _reindex();
     for (final item in e.items) {
       remember(item);
@@ -259,7 +283,9 @@ class Store extends ChangeNotifier {
   }
 
   Future<void> deleteEntry(String id) async {
+    final before = entry(id)?.stock ?? const {};
     _all.removeWhere((x) => x.id == id);
+    await _moveStock(before, const {});
     _reindex();
     notifyListeners();
     await _entries.delete(id);
@@ -267,8 +293,9 @@ class Store extends ChangeNotifier {
 
   /// Logs [entries] again on [day], keeping each one's meal and time of day.
   Future<List<Entry>> copyTo(List<Entry> entries, DateTime day) async {
-    final copies = [
-      for (final e in entries)
+    final copies = <Entry>[];
+    for (final e in entries) {
+      final c = _planStock(
         Entry(
           id: newId(),
           at: DateTime(day.year, day.month, day.day, e.at.hour, e.at.minute),
@@ -277,7 +304,11 @@ class Store extends ChangeNotifier {
           text: e.text,
           items: e.items,
         ),
-    ];
+        const {},
+      );
+      await _moveStock(const {}, c.stock!);
+      copies.add(c);
+    }
     _all.addAll(copies);
     _reindex();
     notifyListeners();
@@ -336,6 +367,83 @@ class Store extends ChangeNotifier {
     notifyListeners();
     for (final f in gone) {
       await _favs.delete(f.id);
+    }
+  }
+
+  // Pantry
+
+  List<StockItem> get stock => List.unmodifiable(_stockList);
+
+  StockItem? stockItem(String id) => _stockList.where((s) => s.id == id).firstOrNull;
+
+  /// Entries whose pantry use needs the user.
+  List<Entry> get stockChecks =>
+      _all.where((e) => e.stockCheck).toList()..sort((a, b) => b.at.compareTo(a.at));
+
+  /// Called when an item goes low, runs out or changes use-by date; set by
+  /// the alerts so the store doesn't depend on notifications.
+  static void Function(StockItem before, StockItem after)? onStockChanged;
+
+  Future<void> putStock(StockItem s) async {
+    final before = stockItem(s.id);
+    _stockList
+      ..removeWhere((x) => x.id == s.id)
+      ..add(s)
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    notifyListeners();
+    await _stock.put(s.id, jsonEncode(s.toJson()));
+    if (before != null) onStockChanged?.call(before, s);
+  }
+
+  Future<void> deleteStock(String id) async {
+    _stockList.removeWhere((x) => x.id == id);
+    notifyListeners();
+    await _stock.delete(id);
+  }
+
+  /// Remember that a food [name] comes (or never comes) from stock [id].
+  Future<void> linkStock(String id, String name, {required bool yes}) async {
+    final s = stockItem(id);
+    if (s == null) return;
+    final n = name.toLowerCase().trim();
+    await putStock(
+      s.copyWith(
+        links: yes ? {...s.links, n} : ({...s.links}..remove(n)),
+        unlinks: yes ? ({...s.unlinks}..remove(n)) : {...s.unlinks, n},
+      ),
+    );
+  }
+
+  Entry _planStock(Entry e, Map<String, double> before) {
+    if (e.stock != null) return e;
+    if (_stockList.isEmpty) return e.copyWith(stock: () => {});
+    final plan = planStock(e.items, _stockList, at: e.at, previous: before);
+    final use = <String, double>{};
+    for (final u in plan.where((u) => u.ask == null)) {
+      use[u.stock.id] = (use[u.stock.id] ?? 0) + u.amount!;
+    }
+    return e.copyWith(stock: () => use, stockCheck: plan.any((u) => u.ask != null));
+  }
+
+  /// An entry never records taking more than was on the shelf, so deleting
+  /// it can't put back more than it took.
+  Entry _capStock(Entry e, Map<String, double> before) {
+    final use = e.stock;
+    if (use == null || use.isEmpty) return e;
+    final capped = {
+      for (final MapEntry(:key, :value) in use.entries)
+        if (stockItem(key) case final s?)
+          key: value.clamp(0, s.left + (before[key] ?? 0)).toDouble(),
+    };
+    return e.copyWith(stock: () => capped);
+  }
+
+  Future<void> _moveStock(Map<String, double> before, Map<String, double> after) async {
+    for (final id in {...before.keys, ...after.keys}) {
+      final delta = (after[id] ?? 0) - (before[id] ?? 0);
+      final s = stockItem(id);
+      if (s == null || delta.abs() < 1e-9) continue;
+      await putStock(s.copyWith(left: max(0, s.left - delta)));
     }
   }
 
@@ -402,6 +510,7 @@ class Store extends ChangeNotifier {
     'favourites': _favList.map((e) => e.toJson()).toList(),
     'weights': _weightList.map((e) => e.toJson()).toList(),
     'memory': {for (final k in _memory.keys) k: jsonDecode(_memory.get(k)!)},
+    'stock': _stockList.map((e) => e.toJson()).toList(),
   });
 
   /// Replaces everything with a backup. Throws [FormatException] on junk.
@@ -416,6 +525,7 @@ class Store extends ChangeNotifier {
     final List<Favourite> favs;
     final List<WeightEntry> weights;
     final Map<String, dynamic> mem;
+    final List<StockItem> stock;
     try {
       entries = [
         for (final e in j['entries'] as List) Entry.fromJson(Map<String, dynamic>.from(e)),
@@ -429,6 +539,10 @@ class Store extends ChangeNotifier {
           WeightEntry.fromJson(Map<String, dynamic>.from(w)),
       ];
       mem = Map<String, dynamic>.from(j['memory'] as Map? ?? {});
+      stock = [
+        for (final s in (j['stock'] as List? ?? []))
+          StockItem.fromJson(Map<String, dynamic>.from(s)),
+      ];
       if (j['profile'] != null) Profile.fromJson(Map<String, dynamic>.from(j['profile']));
     } catch (e) {
       throw FormatException('Damaged backup: $e');
@@ -438,6 +552,7 @@ class Store extends ChangeNotifier {
     await _weights.clear();
     await _memory.clear();
     await _pending.clear();
+    await _stock.clear();
     await _settings.delete('checkInQuiet');
     await _entries.putAll({for (final e in entries) e.id: jsonEncode(e.toJson())});
     await _favs.putAll({for (final f in favs) f.id: jsonEncode(f.toJson())});
@@ -446,6 +561,7 @@ class Store extends ChangeNotifier {
         dayOf(w.day).millisecondsSinceEpoch.toString(): jsonEncode(w.toJson()),
     });
     await _memory.putAll(mem.map((k, v) => MapEntry(k, jsonEncode(v))));
+    await _stock.putAll({for (final s in stock) s.id: jsonEncode(s.toJson())});
     if (j['profile'] != null) {
       await _settings.put('profile', jsonEncode(j['profile']));
     }
@@ -464,6 +580,7 @@ class Store extends ChangeNotifier {
       _weights.clear(),
       _memory.clear(),
       _pending.clear(),
+      _stock.clear(),
       KeyVault.clear(),
       Inbox.clear().catchError((_) {}),
     ]);

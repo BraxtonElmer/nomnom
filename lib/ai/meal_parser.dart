@@ -365,18 +365,7 @@ class MealParser {
     return null;
   }
 
-  /// 'raw' for raw, uncooked or dry foods, 'cooked' for prepared ones, else
-  /// null when the words don't say.
-  static String? _state(String text) {
-    final t = text.toLowerCase();
-    if (RegExp(r'\b(raw|uncooked|dry|dried|unprepared)\b').hasMatch(t)) return 'raw';
-    if (RegExp(
-      r'\b(cooked|boiled|fried|roasted|grilled|baked|steamed|stewed|prepared)\b',
-    ).hasMatch(t)) {
-      return 'cooked';
-    }
-    return null;
-  }
+  static String? _state(String text) => foodState(text);
 
   /// A remembered food fits this one unless they plainly differ in state
   /// (a remembered cooked rice for "100 g uncooked rice").

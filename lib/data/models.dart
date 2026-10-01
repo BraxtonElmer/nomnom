@@ -297,6 +297,19 @@ double sizeFactor(String? word) => switch (word?.toLowerCase().trim()) {
   _ => 1,
 };
 
+/// 'raw' for raw, uncooked or dry foods, 'cooked' for prepared ones, else
+/// null when the words don't say.
+String? foodState(String text) {
+  final t = text.toLowerCase();
+  if (RegExp(r'\b(raw|uncooked|dry|dried|unprepared)\b').hasMatch(t)) return 'raw';
+  if (RegExp(
+    r'\b(cooked|boiled|fried|roasted|grilled|baked|steamed|stewed|prepared)\b',
+  ).hasMatch(t)) {
+    return 'cooked';
+  }
+  return null;
+}
+
 /// Grams per ml for liquids that aren't water-like.
 double mlDensity(String name) {
   final n = name.toLowerCase();
@@ -337,6 +350,8 @@ class Entry {
     required this.text,
     required this.items,
     this.note,
+    this.stock,
+    this.stockCheck = false,
   });
 
   final String id;
@@ -347,9 +362,24 @@ class Entry {
   final List<FoodItem> items;
   final String? note;
 
+  /// What this meal took from the pantry: stock id → amount in that stock's
+  /// unit. Null until worked out, so the store can work it out itself.
+  final Map<String, double>? stock;
+
+  /// Something about the pantry needs the user (an unconfirmed match, a raw
+  /// amount, too little in stock); shown until they open the entry.
+  final bool stockCheck;
+
   Nutrients get total => items.fold(Nutrients.zero, (s, i) => s + i.total);
 
-  Entry copyWith({DateTime? at, Meal? meal, String? title, List<FoodItem>? items}) => Entry(
+  Entry copyWith({
+    DateTime? at,
+    Meal? meal,
+    String? title,
+    List<FoodItem>? items,
+    Map<String, double>? Function()? stock,
+    bool? stockCheck,
+  }) => Entry(
     id: id,
     at: at ?? this.at,
     meal: meal ?? this.meal,
@@ -357,6 +387,8 @@ class Entry {
     text: text,
     items: items ?? this.items,
     note: note,
+    stock: stock == null ? this.stock : stock(),
+    stockCheck: stockCheck ?? this.stockCheck,
   );
 
   Map<String, dynamic> toJson() => {
@@ -367,6 +399,8 @@ class Entry {
     'x': text,
     'i': items.map((e) => e.toJson()).toList(),
     if (note != null) 'n': note,
+    if (stock != null) 'st': stock,
+    if (stockCheck) 'sc': true,
   };
 
   factory Entry.fromJson(Map<String, dynamic> j) => Entry(
@@ -377,6 +411,10 @@ class Entry {
     text: (j['x'] as String?) ?? '',
     items: (j['i'] as List).map((e) => FoodItem.fromJson(Map<String, dynamic>.from(e))).toList(),
     note: j['n'] as String?,
+    stock: j['st'] == null
+        ? null
+        : {for (final e in (j['st'] as Map).entries) e.key as String: _d(e.value)},
+    stockCheck: j['sc'] == true,
   );
 }
 

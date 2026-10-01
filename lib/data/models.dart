@@ -140,6 +140,7 @@ class FoodItem {
     this.ref,
     this.refName,
     this.flagged = false,
+    this.ai,
   });
 
   final String name;
@@ -155,6 +156,13 @@ class FoodItem {
 
   /// Database value and AI estimate disagree a lot; worth a glance.
   final bool flagged;
+
+  /// The model's own estimate per 100 g, kept for comparison and switching.
+  final Nutrients? ai;
+
+  /// AI estimate for this amount, when it exists and the numbers came from
+  /// somewhere else.
+  Nutrients? get aiTotal => (ai == null || source == Source.ai) ? null : ai!.scale(grams / 100);
 
   double get grams => qty * unitGrams;
   Nutrients get total => per100.scale(grams / 100);
@@ -172,6 +180,7 @@ class FoodItem {
     String? ref,
     String? refName,
     bool? flagged,
+    Nutrients? ai,
   }) => FoodItem(
     name: name ?? this.name,
     qty: qty ?? this.qty,
@@ -182,6 +191,7 @@ class FoodItem {
     ref: ref ?? this.ref,
     refName: refName ?? this.refName,
     flagged: flagged ?? this.flagged,
+    ai: ai ?? this.ai,
   );
 
   /// One stepper notch. Small for single pieces, 10% for weights.
@@ -206,6 +216,7 @@ class FoodItem {
     if (ref != null) 'r': ref,
     if (refName != null) 'rn': refName,
     if (flagged) 'f': true,
+    if (ai != null && source != Source.ai) 'a': ai!.toJson(),
   };
 
   factory FoodItem.fromJson(Map<String, dynamic> j) => FoodItem(
@@ -218,6 +229,7 @@ class FoodItem {
     ref: j['r'] as String?,
     refName: j['rn'] as String?,
     flagged: j['f'] == true,
+    ai: j['a'] == null ? null : Nutrients.fromJson(j['a'] as List),
   );
 }
 

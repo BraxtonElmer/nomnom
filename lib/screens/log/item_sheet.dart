@@ -136,7 +136,6 @@ class _ItemSheetState extends State<_ItemSheet> {
   @override
   Widget build(BuildContext context) {
     final item = _item;
-    final estimate = widget.parsed?.estimate;
     return SizedBox(
       height: MediaQuery.sizeOf(context).height * 0.86,
       child: Column(
@@ -229,17 +228,20 @@ class _ItemSheetState extends State<_ItemSheet> {
                     ),
                   ),
                 ),
-                if (estimate != null && estimate.source == Source.ai && item?.source != Source.ai)
+                if (item?.aiTotal case final ai?)
                   _option(
-                    title: 'Use the AI estimate',
-                    sub: '${kcal(estimate.total.kcal)} kcal for this amount',
+                    title: 'Use the AI estimate instead',
+                    sub: '${kcal(ai.kcal)} kcal · ${macros(ai)} for this amount',
                     selected: false,
                     onTap: () => setState(() {
-                      _item = estimate.copyWith(
-                        qty: item!.qty,
+                      _item = FoodItem(
+                        name: item!.name,
+                        qty: item.qty,
                         unit: item.unit,
                         unitGrams: item.unitGrams,
-                        name: item.name,
+                        per100: item.ai!,
+                        source: Source.ai,
+                        ai: item.ai,
                       );
                       _syncGrams();
                     }),

@@ -118,7 +118,12 @@ class YouScreen extends StatelessWidget {
                 label: s.ai.provider.label,
                 value: s.ai.ready ? s.ai.model : 'Not connected',
                 onTap: () => _push(context, const _AiEdit()),
+              ),
+              RuledRow(
+                label: 'Nutrition numbers',
+                value: s.aiOnly ? 'AI estimates' : 'Food tables first',
                 last: true,
+                onTap: () => _pickNumbers(context),
               ),
               if (Activity.supported) ...[
                 const SizedBox(height: 28),
@@ -240,6 +245,47 @@ class YouScreen extends StatelessWidget {
       },
     );
   }
+
+  Future<void> _pickNumbers(BuildContext context) => showPaperSheet<void>(
+    context,
+    (context) => ListenableBuilder(
+      listenable: Store.i,
+      builder: (context, _) => Padding(
+        padding: const EdgeInsets.fromLTRB(S.gutter, 20, S.gutter, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text('Nutrition numbers', style: T.heading),
+            const SizedBox(height: 8),
+            RadioRow(
+              title: 'Food tables first',
+              subtitle:
+                  'USDA, dish tables and Open Food Facts; the AI fills gaps. '
+                  'Same food, same numbers, every time.',
+              selected: !Store.i.aiOnly,
+              onTap: () => Store.i.setAiOnly(false),
+            ),
+            RadioRow(
+              title: 'AI estimates',
+              subtitle:
+                  'The model estimates everything. One request per log instead of '
+                  'two, but numbers can drift between logs.',
+              selected: Store.i.aiOnly,
+              last: true,
+              onTap: () => Store.i.setAiOnly(true),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Either way you can switch any single item between the two from the review '
+              'screen.',
+              style: T.small,
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 
   Future<void> _connectHealth(BuildContext context) async {
     if (!await Activity.i.available()) {

@@ -47,12 +47,16 @@ class MealParser {
     this.client, {
     required this.country,
     FoodItem? Function(String name)? recall,
+    this.aiOnly = false,
     Future<List<DbFood>> Function(String terms, String country)? packaged,
   }) : recall = recall ?? Store.i.recall,
        packaged = packaged ?? ((t, c) => OpenFoodFacts.search(t, country: c));
 
   final AiClient client;
   final String country;
+
+  /// Use the model's numbers for everything; skip the food tables.
+  final bool aiOnly;
 
   /// Previously confirmed version of a food, if any.
   final FoodItem? Function(String name) recall;
@@ -67,7 +71,7 @@ class MealParser {
     if (!s.ai.ready || (key.isEmpty && s.ai.provider != Provider.custom)) {
       throw const AiException('Connect an AI model in You → AI model first.');
     }
-    return MealParser(AiClient.of(s.ai, key), country: s.profile.country);
+    return MealParser(AiClient.of(s.ai, key), country: s.profile.country, aiOnly: s.aiOnly);
   }
 
   Future<ParsedMeal> parse(String text) async {
@@ -87,6 +91,10 @@ class MealParser {
     final unresolved = <int>[];
     for (final r in rawItems) {
       final estimate = _estimate(r);
+      if (aiOnly) {
+        parsed.add(ParsedItem(item: estimate, estimate: estimate, candidates: const []));
+        continue;
+      }
       final remembered = recall(estimate.name);
       if (remembered != null) {
         parsed.add(
@@ -255,6 +263,7 @@ class MealParser {
       source: food.source,
       ref: food.id,
       refName: food.name,
+      ai: estimate.per100,
     );
     final ratio = estimate.total.kcal <= 0 ? 1 : item.total.kcal / estimate.total.kcal;
     return item.copyWith(flagged: estimate.total.kcal > 40 && (ratio > 2 || ratio < 0.5));

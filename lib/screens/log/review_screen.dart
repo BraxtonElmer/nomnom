@@ -431,11 +431,13 @@ class SourceTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = item.flagged ? C.tomato : (item.source == Source.ai ? C.carbs : C.ink3);
-    final label = item.flagged
+    final ai = item.aiTotal;
+    final base = item.flagged
         ? 'Check this one · ${item.source.label}'
         : item.source == Source.ai
-        ? 'AI estimate · no table match'
+        ? 'AI estimate'
         : item.source.label;
+    final label = ai == null ? base : '$base · AI says ${kcal(ai.kcal)}';
     return Row(
       children: [
         Icon(

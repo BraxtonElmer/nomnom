@@ -262,4 +262,43 @@ void main() {
     expect(meal.items[1].item.ref, 'usda:173424'); // not Egg curry
     expect(ai.prompts[1], isNot(contains('White rice')));
   });
+
+  test('table items keep the AI estimate for comparison; AI-only skips tables', () async {
+    Map<String, dynamic> reply() => {
+      'title': 'Poha',
+      'items': [
+        {
+          'name': 'Poha',
+          'qty': 1,
+          'unit': 'plate',
+          'grams': 200,
+          'search': 'poha',
+          'kcal': 320,
+          'protein': 6,
+          'carbs': 55,
+          'fat': 9,
+        },
+      ],
+    };
+    final tables = await MealParser(
+      FakeAi([reply()]),
+      country: 'IN',
+      recall: (_) => null,
+    ).parse('poha');
+    final item = tables.items.single.item;
+    expect(item.source, Source.dish);
+    expect(item.aiTotal!.kcal, closeTo(320 * 180 / 200, 0.5)); // AI per-100 at the table's 180 g
+    expect(FoodItem.fromJson(item.toJson()).ai!.kcal, closeTo(160, 0.01));
+
+    final ai = FakeAi([reply()]);
+    final only = await MealParser(
+      ai,
+      country: 'IN',
+      recall: (_) => null,
+      aiOnly: true,
+    ).parse('poha');
+    expect(only.items.single.item.source, Source.ai);
+    expect(only.items.single.item.total.kcal, 320);
+    expect(ai.prompts, hasLength(1));
+  });
 }

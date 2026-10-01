@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nomnom/data/activity.dart';
 import 'package:nomnom/data/models.dart';
 import 'package:nomnom/data/store.dart';
 import 'package:nomnom/nutrition/food_db.dart';
@@ -162,6 +163,14 @@ Future<void> seed() async {
       );
     }
   }
+  await s.setHealth(connected: true, eatBack: true);
+  Activity.i.seed({
+    for (var d = 0; d < 7; d++)
+      today.subtract(Duration(days: d)): DayActivity(
+        steps: [6418, 9120, 7340, 4210, 11030, 8450, 7790][d],
+        activeKcal: [212, 380, 290, 140, 460, 330, 300][d].toDouble(),
+      ),
+  }, sleep: 437);
   for (var d = 30; d >= 0; d -= 3) {
     await s.logWeight(today.subtract(Duration(days: d)), 76.2 - (30 - d) * 0.07 + (d % 2) * 0.2);
   }

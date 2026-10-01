@@ -1,5 +1,6 @@
 package app.nomnom.nomnom
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity()
+// Fragment activity so Health Connect's permission screen can launch.
+class MainActivity : FlutterFragmentActivity()

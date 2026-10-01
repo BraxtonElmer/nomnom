@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../data/activity.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../nutrition/countries.dart';
@@ -118,6 +119,49 @@ class YouScreen extends StatelessWidget {
                 onTap: () => _push(context, const _AiEdit()),
                 last: true,
               ),
+              if (Activity.supported) ...[
+                const SizedBox(height: 28),
+                const Text('HEALTH CONNECT', style: T.caps),
+                if (!s.healthConnected)
+                  RuledRow(
+                    label: 'Connect steps & activity',
+                    value: 'Off',
+                    last: true,
+                    onTap: () => _connectHealth(context),
+                  )
+                else ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: const BoxDecoration(
+                      border: Border(bottom: BorderSide(color: C.line)),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Add exercise to my budget', style: T.body),
+                              const SizedBox(height: 2),
+                              Text('Active calories burned raise the day’s goal', style: T.small),
+                            ],
+                          ),
+                        ),
+                        PaperSwitch(
+                          value: s.eatBack,
+                          label: 'Add exercise to my budget',
+                          onChanged: (v) => Store.i.setHealth(eatBack: v),
+                        ),
+                      ],
+                    ),
+                  ),
+                  RuledRow(
+                    label: 'Disconnect Health Connect',
+                    last: true,
+                    onTap: () => Activity.i.disconnect(),
+                  ),
+                ],
+              ],
               const SizedBox(height: 28),
               const Text('FAVOURITES', style: T.caps),
               RuledRow(
@@ -160,6 +204,23 @@ class YouScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _connectHealth(BuildContext context) async {
+    if (!await Activity.i.available()) {
+      if (!context.mounted) return;
+      showToast(
+        context,
+        'Health Connect isn’t installed or needs an update.',
+        action: 'Get it',
+        onAction: Activity.i.openInstall,
+      );
+      return;
+    }
+    final ok = await Activity.i.connect();
+    if (context.mounted && !ok) {
+      showToast(context, 'Permission wasn’t granted. You can allow it in Health Connect.');
+    }
   }
 
   Widget _m(String label, double g, Color c) => Text.rich(

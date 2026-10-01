@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../data/activity.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../theme/tokens.dart';
@@ -24,7 +25,25 @@ class TodayScreen extends StatefulWidget {
   State<TodayScreen> createState() => _TodayScreenState();
 }
 
-class _TodayScreenState extends State<TodayScreen> {
+class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    Activity.i.refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) Activity.i.refresh();
+  }
+
   DateTime get _day => TodayScreen.day.value;
   bool get _isToday => _day == dayOf(DateTime.now());
 
@@ -66,13 +85,16 @@ class _TodayScreenState extends State<TodayScreen> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([Store.i, TodayScreen.day]),
+      listenable: Listenable.merge([Store.i, TodayScreen.day, Activity.i]),
       builder: (context, _) {
         final s = Store.i;
         final targets = s.targets;
         final entries = s.entriesOn(_day);
         final total = s.totalOn(_day);
-        final left = targets.kcal - total.kcal;
+        final health = Activity.i.connected;
+        final burned = health ? Activity.i.on(_day).activeKcal : 0.0;
+        final budget = targets.kcal + (s.eatBack ? burned : 0);
+        final left = budget - total.kcal;
         final streak = s.streak;
 
         return SafeArea(
@@ -105,7 +127,7 @@ class _TodayScreenState extends State<TodayScreen> {
                         children: [
                           CalorieRing(
                             value: total.kcal,
-                            goal: targets.kcal,
+                            goal: budget,
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -130,8 +152,12 @@ class _TodayScreenState extends State<TodayScreen> {
                             child: Column(
                               children: [
                                 _Stat('Eaten', kcal(total.kcal)),
-                                _Stat('Goal', kcal(targets.kcal)),
-                                _Stat('Fibre', '${total.fiber.round()} g', last: true),
+                                _Stat('Goal', kcal(budget)),
+                                if (health) ...[
+                                  _Stat('Burned', kcal(burned)),
+                                  _Stat('Steps', kcal(Activity.i.on(_day).steps), last: true),
+                                ] else
+                                  _Stat('Fibre', '${total.fiber.round()} g', last: true),
                               ],
                             ),
                           ),
@@ -175,7 +201,7 @@ class _TodayScreenState extends State<TodayScreen> {
                       MenuCard(
                         title: _isToday ? "Today's menu" : "${dayLabel(_day)}'s menu",
                         entries: entries,
-                        goal: targets.kcal,
+                        goal: budget,
                         isToday: _isToday,
                         onTap: _open,
                       ),

@@ -13,6 +13,7 @@ class GoalBars extends StatelessWidget {
     required this.labels,
     this.height = 150,
     this.highlight,
+    this.overIsBad = true,
   });
 
   final List<double> values;
@@ -20,6 +21,9 @@ class GoalBars extends StatelessWidget {
   final List<String> labels;
   final double height;
   final int? highlight;
+
+  /// Calories over goal are a warning; steps over goal are not.
+  final bool overIsBad;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +37,7 @@ class GoalBars extends StatelessWidget {
             duration: Motion.slow,
             curve: Motion.curve,
             builder: (context, t, _) =>
-                CustomPaint(painter: _BarsPainter(values, goal, t, highlight)),
+                CustomPaint(painter: _BarsPainter(values, goal, t, highlight, overIsBad)),
           ),
         ),
         const SizedBox(height: 8),
@@ -55,12 +59,13 @@ class GoalBars extends StatelessWidget {
 }
 
 class _BarsPainter extends CustomPainter {
-  _BarsPainter(this.values, this.goal, this.t, this.highlight);
+  _BarsPainter(this.values, this.goal, this.t, this.highlight, this.overIsBad);
 
   final List<double> values;
   final double goal;
   final double t;
   final int? highlight;
+  final bool overIsBad;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -84,7 +89,7 @@ class _BarsPainter extends CustomPainter {
         continue;
       }
       final h = size.height * (v / maxV) * t;
-      bar.color = v > goal * 1.1
+      bar.color = overIsBad && v > goal * 1.1
           ? C.tomato
           : (i == highlight ? C.ink : C.ink.withValues(alpha: 0.78));
       canvas.drawRRect(

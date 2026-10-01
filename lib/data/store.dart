@@ -23,6 +23,10 @@ class Store extends ChangeNotifier {
   Profile profile = const Profile();
   AiConfig ai = const AiConfig();
   bool onboarded = false;
+  bool healthConnected = false;
+
+  /// Add active calories burned to the day's budget.
+  bool eatBack = false;
 
   final List<Entry> _all = [];
   final Map<DateTime, List<Entry>> _byDay = {};
@@ -49,6 +53,8 @@ class Store extends ChangeNotifier {
     profile = p == null ? const Profile() : Profile.fromJson(_map(p));
     ai = a == null ? const AiConfig() : AiConfig.fromJson(_map(a));
     onboarded = _settings.get('onboarded') == 'true';
+    healthConnected = _settings.get('health') == 'true';
+    eatBack = _settings.get('eatBack') == 'true';
 
     _all
       ..clear()
@@ -91,6 +97,14 @@ class Store extends ChangeNotifier {
     ai = c;
     notifyListeners();
     await _settings.put('ai', jsonEncode(c.toJson()));
+  }
+
+  Future<void> setHealth({bool? connected, bool? eatBack}) async {
+    if (connected != null) healthConnected = connected;
+    if (eatBack != null) this.eatBack = eatBack;
+    notifyListeners();
+    await _settings.put('health', '$healthConnected');
+    await _settings.put('eatBack', '${this.eatBack}');
   }
 
   Future<void> finishOnboarding() async {

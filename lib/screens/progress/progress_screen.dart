@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
+import '../../data/activity.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../nutrition/targets.dart';
@@ -26,7 +27,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Store.i,
+      listenable: Listenable.merge([Store.i, Activity.i]),
       builder: (context, _) => SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(S.gutter, 12, S.gutter, 32),
@@ -36,6 +37,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
             _weight(),
             const SizedBox(height: 34),
             _calories(),
+            if (Activity.i.connected) ...[const SizedBox(height: 34), _activity()],
             const SizedBox(height: 34),
             _macros(),
           ],
@@ -209,6 +211,51 @@ class _ProgressScreenState extends State<ProgressScreen> {
           labels: const ['7 days', '30 days'],
           value: _kcalDays,
           onChanged: (v) => setState(() => _kcalDays = v),
+        ),
+      ],
+    );
+  }
+
+  // Activity, from Health Connect
+
+  Widget _activity() {
+    final today = dayOf(DateTime.now());
+    final days = [for (var i = 6; i >= 0; i--) today.subtract(Duration(days: i))];
+    final steps = [for (final d in days) Activity.i.on(d).steps.toDouble()];
+    final withSteps = steps.where((v) => v > 0).toList();
+    final avg = withSteps.isEmpty ? 0.0 : withSteps.reduce((a, b) => a + b) / withSteps.length;
+    final sleep = Activity.i.sleepMinutes;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text('ACTIVITY', style: T.caps),
+        const SizedBox(height: 6),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(withSteps.isEmpty ? '—' : kcal(avg), style: T.display.copyWith(fontSize: 40)),
+            const SizedBox(width: 10),
+            Text('steps a day · goal 8,000', style: T.small),
+          ],
+        ),
+        const SizedBox(height: 18),
+        GoalBars(
+          values: steps,
+          goal: 8000,
+          labels: [for (final d in days) DateFormat.E().format(d).substring(0, 1)],
+          highlight: 6,
+          overIsBad: false,
+        ),
+        const SizedBox(height: 10),
+        RuledRow(
+          label: 'Active calories today',
+          value: '${kcal(Activity.i.on(today).activeKcal)} kcal',
+        ),
+        RuledRow(
+          label: 'Sleep last night',
+          value: sleep == null ? 'No data' : '${sleep ~/ 60}h ${sleep % 60}m',
+          last: true,
         ),
       ],
     );

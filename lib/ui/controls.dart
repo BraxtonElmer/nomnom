@@ -402,3 +402,44 @@ Future<bool> confirm(
   );
   return ok ?? false;
 }
+
+/// Ink pill switch.
+class PaperSwitch extends StatelessWidget {
+  const PaperSwitch({super.key, required this.value, required this.onChanged, required this.label});
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    toggled: value,
+    label: label,
+    child: Pressable(
+      onTap: () => onChanged(!value),
+      scale: 0.92,
+      child: AnimatedContainer(
+        duration: Motion.base,
+        curve: Motion.curve,
+        width: 46,
+        height: 28,
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          color: value ? C.ink : C.paperDeep,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: value ? C.ink : C.lineStrong),
+        ),
+        child: AnimatedAlign(
+          duration: Motion.base,
+          curve: Motion.curve,
+          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            width: 20,
+            height: 20,
+            decoration: BoxDecoration(color: value ? C.paper : C.card, shape: BoxShape.circle),
+          ),
+        ),
+      ),
+    ),
+  );
+}

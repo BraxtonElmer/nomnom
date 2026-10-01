@@ -2,6 +2,8 @@
 
 Type what you ate, get the macros.
 
+> nomnom 2 replaces FitCore AI (v1, Flutter + FastAPI with photo scanning). The backend is gone: everything now runs on the phone with your own AI key.
+
 nomnom is a calorie and macro tracker that runs entirely on your phone. You write meals the way you'd say them, "120g grilled chicken, 2 rotis and a bowl of dal", and nomnom turns that into items, grams, calories, protein, carbs and fat, estimated for the country you live in.
 
 There is no backend and no account. The app calls the AI directly with your own key.
@@ -25,6 +27,7 @@ The AI is good at understanding language and unreliable at remembering numbers, 
 
 - **USDA FoodData Central, SR Legacy**: about 7,300 generic foods with household portion weights. Public domain.
 - **Dish table (India)**: about 95 common dishes with per-100 g values and typical serving weights.
+- **Open Food Facts**: packaged products, searched live when you name a brand ("a glass of Amul lassi") or search in the item sheet.
 
 When nothing in the tables matches, the item keeps the AI's own estimate and is labelled **AI estimate**. If a table value and the AI's estimate disagree wildly, the item is marked **Check this one**. Every item shows its source, and you can rematch it to another food in one tap.
 
@@ -35,9 +38,13 @@ Foods you confirm are remembered, so repeat meals come out the same every time a
 - Onboarding: country and units, body stats, goal and pace, macro split, and a daily target that is either suggested (Mifflin–St Jeor) or set by you
 - Typed logging with a review screen: steppers per item, gram overrides, rematching, add or remove items, meal and time
 - Today: week strip, calorie ring, macro split, and the day laid out as a menu
+- Nutrition details: calories and macros up front; fibre, sugar, saturated fat, sodium, potassium, calcium, iron, vitamin C and B12 against daily values one tap away, per day, plate or item
+- A one-line note on each plate from the model
 - One-tap re-logging of favourites and recent plates, with no AI call
 - History: month calendar shaded by how close each day was to goal, with day detail
-- Progress: weight log with a smoothed trend, calorie bars against goal, 7-day macro averages, streak
+- Progress: weight log with a smoothed trend and BMI, calorie bars against goal, 7-day macro averages, streak
+- Health Connect (Android): steps, active calories and sleep, with an option to add exercise to the day's budget
+- BMI with WHO bands, using the lower Asian cut-offs for countries where they apply
 - Backup: export everything to a JSON file and restore it on any phone (API keys are never included)
 
 ## AI providers
@@ -109,6 +116,6 @@ tool/              data build script, screenshot harness
 
 ## Credits
 
-Typography: Clash Grotesk (Indian Type Foundry, Fontshare licence) and Instrument Serif (SIL Open Font Licence). Nutrition data: USDA FoodData Central.
+Typography: Clash Grotesk (Indian Type Foundry, Fontshare licence) and Instrument Serif (SIL Open Font Licence). Nutrition data: USDA FoodData Central and Open Food Facts (ODbL).
 
 Estimates, not medical advice.

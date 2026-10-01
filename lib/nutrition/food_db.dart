@@ -50,6 +50,9 @@ class FoodDb {
   static FoodDb get i => _instance!;
   static bool get loaded => _instance != null;
 
+  @visibleForTesting
+  static void use(FoodDb db) => _instance = db;
+
   static Future<FoodDb> load() async {
     if (_instance != null) return _instance!;
     final usda = await rootBundle.loadString('assets/data/usda.json');

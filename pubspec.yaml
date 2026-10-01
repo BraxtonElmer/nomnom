@@ -1,0 +1,41 @@
+name: nomnom
+description: "nomnom — type what you ate, get the macros."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_secure_storage: ^11.2.0
+  health: ^13.3.2
+  hive_ce: ^2.20.1
+  hive_ce_flutter: ^2.4.0
+  http: ^1.6.0
+  intl: ^0.20.2
+  lucide_icons_flutter: ^3.1.20
+  url_launcher: ^6.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  fonts:
+    - family: Clash
+      fonts:
+        - asset: assets/fonts/ClashGrotesk-Light.ttf
+          weight: 300
+        - asset: assets/fonts/ClashGrotesk-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/ClashGrotesk-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/ClashGrotesk-Semibold.ttf
+          weight: 600
+        - asset: assets/fonts/ClashGrotesk-Bold.ttf
+          weight: 700

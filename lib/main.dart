@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'data/inbox.dart';
 import 'data/reminders.dart';
 import 'data/store.dart';
 import 'nutrition/food_db.dart';
@@ -13,6 +14,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Store.i.init();
   await Store.i.checkKey();
+  await Inbox.drain();
   // Food tables parse in the background; the first parse awaits them.
   FoodDb.load();
   runApp(const NomnomApp());

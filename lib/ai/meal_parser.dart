@@ -78,7 +78,7 @@ class MealParser {
     final items = LocalParser(db, country: s.profile.country, recall: s.recall).parse(text);
     if (items == null) return null;
     return ParsedMeal(
-      title: items.map((i) => i.qtyLabel == '1 serving' ? i.name : _short(i)).take(3).join(', '),
+      title: _cap(items.map(_short).take(3).join(', ').toLowerCase()),
       meal: null,
       local: true,
       items: [
@@ -92,8 +92,12 @@ class MealParser {
     );
   }
 
-  static String _short(FoodItem i) =>
-      i.byWeight || i.qty == 1 ? i.name : '${formatNum(i.qty)} ${i.name.toLowerCase()}';
+  /// "2 rotis", "dal", "200 g rice": how people would write it.
+  static String _short(FoodItem i) {
+    if (i.byWeight) return '${formatNum(i.qty)} ${i.unit} ${i.name}';
+    if (i.qty == 1 || i.unit != 'piece') return i.name;
+    return '${formatNum(i.qty)} ${i.name.endsWith('s') ? i.name : '${i.name}s'}';
+  }
 
   static Future<MealParser> fromSettings() async {
     final s = Store.i;

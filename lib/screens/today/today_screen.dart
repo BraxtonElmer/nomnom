@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/activity.dart';
+import '../../data/inbox.dart';
 import '../../data/log_queue.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
@@ -38,6 +39,7 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
 
   /// Reads logs saved while offline, now that we might be online.
   Future<void> _drainQueue() async {
+    await Inbox.drain();
     final n = await LogQueue.process();
     if (n > 0 && mounted) {
       showToast(context, n == 1 ? 'Logged 1 saved meal.' : 'Logged $n saved meals.');

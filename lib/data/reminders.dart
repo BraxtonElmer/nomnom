@@ -6,6 +6,8 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
+import 'inbox.dart';
+import 'log_queue.dart';
 import 'models.dart';
 import 'store.dart';
 
@@ -31,8 +33,10 @@ class Reminders {
       final zone = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(zone.identifier));
       await _plugin.initialize(
+        onDidReceiveNotificationResponse: _foreground,
+        onDidReceiveBackgroundNotificationResponse: onReminderReply,
         settings: const InitializationSettings(
-          android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+          android: AndroidInitializationSettings('ic_stat_nomnom'),
           iOS: DarwinInitializationSettings(
             requestAlertPermission: false,
             requestBadgePermission: false,
@@ -67,6 +71,17 @@ class Reminders {
     return true;
   }
 
+  /// A reply handled while the app is running: same path as the background
+  /// one, then read straight away.
+  static Future<void> _foreground(NotificationResponse r) async {
+    final text = r.input?.trim() ?? '';
+    if (r.actionId != 'log' || text.isEmpty) return;
+    final (meal, at) = parseReminderPayload(r.payload);
+    await Inbox.add(text, meal, DateTime.now().isBefore(at) ? at : DateTime.now());
+    await Inbox.drain();
+    await LogQueue.process();
+  }
+
   static void _changed() {
     _debounce?.cancel();
     _debounce = Timer(const Duration(seconds: 1), reschedule);
@@ -98,6 +113,7 @@ class Reminders {
             title: '${meal.label} not logged yet',
             body: _nudges[(d + meal.index) % _nudges.length],
             scheduledDate: at,
+            payload: reminderPayload(meal, at),
             androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
             notificationDetails: const NotificationDetails(
               android: AndroidNotificationDetails(
@@ -105,6 +121,13 @@ class Reminders {
                 'Meal reminders',
                 channelDescription: 'A nudge when a meal hasn’t been logged',
                 importance: Importance.defaultImportance,
+                actions: [
+                  AndroidNotificationAction(
+                    'log',
+                    'Log it',
+                    inputs: [AndroidNotificationActionInput(label: 'What did you eat?')],
+                  ),
+                ],
               ),
               iOS: DarwinNotificationDetails(),
             ),

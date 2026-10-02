@@ -4,11 +4,13 @@ import '../../data/activity.dart';
 import '../../data/models.dart';
 import '../../data/reminders.dart';
 import '../../data/store.dart';
+import '../../data/updater.dart';
 import '../../nutrition/countries.dart';
 import '../../nutrition/targets.dart';
 import '../../theme/tokens.dart';
 import '../../ui/buttons.dart';
 import '../../ui/controls.dart';
+import '../update_sheet.dart';
 import '../../ui/format.dart';
 import '../../ui/macro_bar.dart';
 import '../../ui/pressable.dart';
@@ -26,7 +28,7 @@ class YouScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Store.i,
+      listenable: Listenable.merge([Store.i, Updater.i]),
       builder: (context, _) {
         final s = Store.i;
         final p = s.profile;
@@ -247,11 +249,23 @@ class YouScreen extends StatelessWidget {
                   if (ok) await Store.i.wipe();
                 },
               ),
+              if (Updater.supported) ...[
+                const SizedBox(height: 28),
+                Text('UPDATES', style: T.caps),
+                const SizedBox(height: 6),
+                RuledRow(
+                  label: 'Check for updates',
+                  value: Updater.i.current.isEmpty ? null : 'Version ${Updater.i.current}',
+                  last: true,
+                  onTap: () => checkForUpdates(context),
+                ),
+              ],
               const SizedBox(height: 36),
               Text('nomnom', style: T.brand),
               const SizedBox(height: 6),
               Text(
-                'Version 2.4.0. Everything stays on this phone; the AI is called directly '
+                '${Updater.i.current.isEmpty ? '' : 'Version ${Updater.i.current}. '}'
+                'Everything stays on this phone; the AI is called directly '
                 'with your own key. Nutrition data from USDA FoodData Central, Open Food '
                 'Facts and the nomnom dish table. Estimates, not medical advice.',
                 style: T.small,

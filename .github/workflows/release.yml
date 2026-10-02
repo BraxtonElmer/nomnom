@@ -1,0 +1,139 @@
+name: Release
+
+# Pushing a tag like v2.7.0 builds the APK, signs it with the release key and
+# creates a draft GitHub release with the notes from CHANGELOG.md. Publishing
+# the draft is what makes it public and lets the in-app updater offer it.
+#
+# Signing needs the ANDROID_KEYSTORE_BASE64 and ANDROID_KEYSTORE_PASSWORD
+# secrets. The key alias is nomnom and its password is the keystore's.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.6
+          channel: stable
+          cache: true
+
+      - name: Check the tag matches the app version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          app="$(grep '^version:' pubspec.yaml | sed -E 's/version: *//; s/\+.*//')"
+          if [ "$tag" != "$app" ]; then
+            echo "Tag v$tag doesn't match version $app in pubspec.yaml"
+            exit 1
+          fi
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '
+            /^## \[/ { if (found) exit; if (index($0, "## [" v "]") == 1) { found = 1; next } }
+            found { print }
+          ' CHANGELOG.md | sed -e '/./,$!d' > changes.md
+          if [ ! -s changes.md ]; then
+            echo "CHANGELOG.md has no section for $version"
+            exit 1
+          fi
+
+      - name: Set up release signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ] || [ -z "$ANDROID_KEYSTORE_PASSWORD" ]; then
+            echo "The signing secrets aren't set, so the APK can't be signed."
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          if ! keytool -list -keystore "$RUNNER_TEMP/release.jks" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias nomnom > /dev/null 2>&1; then
+            echo "::error::The keystore secret didn't open with the password secret, or has no key named nomnom."
+            exit 1
+          fi
+          {
+            echo "storeFile=$RUNNER_TEMP/release.jks"
+            echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
+            echo "keyPassword=$ANDROID_KEYSTORE_PASSWORD"
+            echo "keyAlias=nomnom"
+          } > android/key.properties
+
+      - name: Tests
+        run: |
+          flutter pub get
+          flutter test
+
+      - name: Build the APK
+        run: |
+          flutter build apk --release
+          apk="nomnom-${GITHUB_REF_NAME}.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "$apk"
+          sha256sum "$apk" | cut -d' ' -f1 > "$apk.sha256"
+
+      # An update only installs over an APK signed with the same key, so a
+      # debug-signed build must never be released.
+      - name: Check the APK is release-signed
+        run: |
+          apk="nomnom-${GITHUB_REF_NAME}.apk"
+          apksigner="$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)"
+          if ! certs="$("$apksigner" verify --print-certs "$apk" 2>&1)"; then
+            echo "::error::apksigner couldn't verify the APK: $(echo "$certs" | head -3 | tr '\n' ' ')"
+            exit 1
+          fi
+          dn="$(echo "$certs" | grep -m1 'certificate DN' || true)"
+          echo "::notice::$dn"
+          if [ -z "$dn" ]; then
+            echo "::error::No signing certificate found in the APK."
+            exit 1
+          fi
+          if echo "$dn" | grep -q 'Android Debug'; then
+            echo "::error::The APK is signed with the debug key, not the release key."
+            exit 1
+          fi
+
+      # Re-running a release replaces its unpublished draft instead of adding a second one.
+      - name: Remove an old draft of this release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft 2>/dev/null | grep -q true; then
+            gh release delete "$GITHUB_REF_NAME" --yes
+          fi
+
+      - name: Draft the release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          apk="nomnom-${GITHUB_REF_NAME}.apk"
+          base="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}"
+          {
+            echo '## Download'
+            echo
+            echo "**[Download the APK]($base/$apk)** and open it on your phone. Android asks once to allow installs from your browser or file manager."
+            echo
+            echo 'Already have nomnom? It finds this update by itself and installs it over the old version, keeping your log.'
+            echo
+            echo "The \`.sha256\` file is used by the in-app updater to check the download."
+            echo
+            echo "## What's new"
+            echo
+            cat changes.md
+          } > notes.md
+          gh release create "$GITHUB_REF_NAME" "$apk" "$apk.sha256" \
+            --draft \
+            --title "nomnom ${GITHUB_REF_NAME}" \
+            --notes-file notes.md

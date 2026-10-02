@@ -18,6 +18,7 @@ import '../../ui/nutrition_details.dart';
 import '../../ui/ring.dart';
 import '../../ui/week_strip.dart';
 import '../log/review_screen.dart';
+import '../update_sheet.dart';
 import 'check_in_card.dart';
 import 'composer.dart';
 import 'menu_card.dart';
@@ -201,6 +202,7 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
                           if (streak > 0) _StreakPill(streak),
                         ],
                       ),
+                      if (_isToday) const UpdateCard(),
                       if (_isToday && s.checkIn != null) ...[
                         const SizedBox(height: 16),
                         CheckInCard(checkIn: s.checkIn!),
@@ -312,13 +314,12 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
                         },
                         onTapPending: (p) => Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) =>
-                                ReviewScreen.parse(
-                                  text: p.text,
-                                  at: p.at,
-                                  meal: p.meal,
-                                  pendingId: p.id,
-                                ),
+                            builder: (_) => ReviewScreen.parse(
+                              text: p.text,
+                              at: p.at,
+                              meal: p.meal,
+                              pendingId: p.id,
+                            ),
                           ),
                         ),
                       ),

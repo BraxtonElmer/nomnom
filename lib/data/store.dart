@@ -212,6 +212,12 @@ class Store extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Small app state that isn't part of the log (update checks).
+  String? setting(String key) => _settings.get(key);
+
+  Future<void> putSetting(String key, String? value) =>
+      value == null ? _settings.delete(key) : _settings.put(key, value);
+
   /// A cached weekly recap for the week starting [monday], as JSON.
   String? weekRecap(DateTime monday) => _settings.get('week_${_ymd(monday)}');
 

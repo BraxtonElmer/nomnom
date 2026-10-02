@@ -6,6 +6,7 @@ import 'data/reminders.dart';
 import 'data/store.dart';
 import 'data/stock_alerts.dart';
 import 'data/today_widget.dart';
+import 'data/updater.dart';
 import 'nutrition/food_db.dart';
 import 'screens/setup/onboarding.dart';
 import 'screens/shell.dart';
@@ -23,6 +24,8 @@ Future<void> main() async {
   Reminders.init();
   TodayWidget.start();
   StockAlerts.start();
+  // Installs from GitHub releases look for a newer one once a day.
+  Updater.i.installed().then((_) => Updater.i.checkDaily());
 }
 
 class NomnomApp extends StatefulWidget {

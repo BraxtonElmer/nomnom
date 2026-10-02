@@ -12,12 +12,12 @@ void main() {
 
   testWidgets('local review', (tester) async {
     await shoot(tester, 'local_review',
-        ReviewScreen.parse(text: '2 rotis, a bowl of dal and a banana', at: DateTime.now()),
+        ReviewScreen.parse(text: '2 boiled eggs, 2 slices of toast and a banana', at: DateTime.now()),
         act: (t) async {
       await t.runAsync(() => Future.delayed(const Duration(milliseconds: 300)));
       await t.pumpAndSettle();
     });
-    await tester.tap(find.text('Dal'));
+    await tester.tap(find.text('Banana'));
     await tester.pumpAndSettle();
     await tester.drag(find.byType(ListView).last, const Offset(0, -260));
     await tester.pumpAndSettle();

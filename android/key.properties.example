@@ -1,5 +1,5 @@
-# Copy to android/key.properties (git-ignored) and fill in.
-storeFile=C:/Users/you/nomnom-upload.jks
+# Copy to android/key.properties (git-ignored) and point it at the release keystore.
+storeFile=C:/Users/you/.nomnom/nomnom-release.jks
 storePassword=
-keyAlias=upload
+keyAlias=nomnom
 keyPassword=

@@ -86,7 +86,7 @@ Future<void> seed() async {
   final s = Store.i;
   await s.saveProfile(
     const Profile(
-      country: 'IN',
+      country: 'GB',
       sex: Sex.male,
       age: 27,
       heightCm: 176,
@@ -101,14 +101,16 @@ Future<void> seed() async {
   DateTime at(int daysAgo, int h, int m) =>
       today.subtract(Duration(days: daysAgo)).add(Duration(hours: h, minutes: m));
 
-  final oats = [
-    dbItem('in-masala-oats', 'Masala oats', 1, 'bowl', 250),
+  final breakfast = [
+    dbItem('usda:170903', 'Greek yogurt', 170, 'g', 1),
+    dbItem('usda:171711', 'Blueberries', 75, 'g', 1),
+    dbItem('usda:169640', 'Honey', 1, 'tbsp', 21),
     dbItem('usda:171890', 'Black coffee', 240, 'ml', 1),
   ];
   final lunch = [
     dbItem('usda:171477', 'Grilled chicken breast', 120, 'g', 1),
-    dbItem('in-roti', 'Roti', 2, 'piece', 40),
-    dbItem('in-dal-tadka', 'Dal tadka', 1, 'bowl', 200),
+    dbItem('usda:168917', 'Quinoa', 1, 'cup', 185),
+    dbItem('eu-greek-salad', 'Greek salad', 1, 'bowl', 250),
   ];
   final snack = [
     dbItem('usda:173944', 'Banana', 1, 'piece', 118),
@@ -121,9 +123,9 @@ Future<void> seed() async {
         id: 'b$d',
         at: at(d, 8, 40),
         meal: Meal.breakfast,
-        title: 'Masala oats, black coffee',
-        text: 'masala oats and black coffee',
-        items: oats,
+        title: 'Greek yogurt, blueberries, coffee',
+        text: 'greek yogurt with blueberries, a spoon of honey and black coffee',
+        items: breakfast,
       ),
     );
     await s.putEntry(
@@ -131,8 +133,8 @@ Future<void> seed() async {
         id: 'l$d',
         at: at(d, 13, 15),
         meal: Meal.lunch,
-        title: 'Grilled chicken, 2 rotis, dal',
-        text: '120g grilled chicken, 2 rotis and a bowl of dal',
+        title: 'Chicken, quinoa, Greek salad',
+        text: '120g grilled chicken, a cup of quinoa and a Greek salad',
         items: lunch,
       ),
     );
@@ -152,11 +154,12 @@ Future<void> seed() async {
           id: 'd$d',
           at: at(d, 20, 30),
           meal: Meal.dinner,
-          title: 'Paneer butter masala, 2 roti',
+          title: 'Salmon, sweet potato, broccoli',
           text: '',
           items: [
-            dbItem('in-paneer-butter-masala', 'Paneer butter masala', 1, 'katori', 150),
-            dbItem('in-roti', 'Roti', 2, 'piece', 40),
+            dbItem('usda:175168', 'Salmon', 150, 'g', 1),
+            dbItem('usda:168483', 'Baked sweet potato', 150, 'g', 1),
+            dbItem('usda:169967', 'Broccoli', 100, 'g', 1),
           ],
         ),
       );
@@ -165,7 +168,7 @@ Future<void> seed() async {
   await s.setHealth(connected: true, eatBack: true);
   await s.setReminders(on: true);
   await s.addPending(
-    PendingLog(id: 'p1', at: at(0, 20, 10), meal: Meal.dinner, text: 'chicken curry with 2 rotis'),
+    PendingLog(id: 'p1', at: at(0, 20, 10), meal: Meal.dinner, text: 'chicken caesar salad'),
   );
   Activity.i.seed({
     for (var d = 0; d < 7; d++)

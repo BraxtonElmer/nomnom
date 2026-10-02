@@ -35,7 +35,7 @@ void main() {
   testWidgets('review', (tester) async {
     final e = Store.i.entriesOn(DateTime.now()).firstWhere((e) => e.id == 'l0');
     await shoot(tester, 'review', ReviewScreen.edit(entry: e));
-    await tester.tap(find.text('Roti'));
+    await tester.tap(find.text('Greek salad'));
     await tester.pumpAndSettle();
     await expectLater(
       find.byType(MaterialApp),

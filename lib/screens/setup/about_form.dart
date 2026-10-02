@@ -39,9 +39,7 @@ class _AboutFormState extends State<AboutForm> {
     final inches = (p.heightCm / 2.54).round();
     _ft.text = '${inches ~/ 12}';
     _in.text = '${inches % 12}';
-    _weight.text = p.metric
-        ? formatNum((p.weightKg * 10).round() / 10)
-        : formatNum((p.weightKg * 2.20462).roundToDouble());
+    _weight.text = weightText(p.weightKg, p.metric);
   }
 
   @override

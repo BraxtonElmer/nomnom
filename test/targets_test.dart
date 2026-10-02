@@ -73,4 +73,11 @@ void main() {
     expect(FoodItem.fromJson(rich.toJson()).richness, 1);
     expect(dal.copyWith(richness: -1).total.kcal, lessThan(220));
   });
+
+  test('body weight keeps its decimal', () {
+    expect(kg(75.5, true), '75.5 kg');
+    expect(kg(74, true), '74 kg');
+    expect(weightText(75.5, true), '75.5');
+    expect(weightText(70, false), '154.3');
+  });
 }

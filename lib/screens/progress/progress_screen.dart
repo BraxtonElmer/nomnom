@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../../data/activity.dart';
@@ -14,6 +13,7 @@ import '../../ui/controls.dart';
 import '../../ui/format.dart';
 import '../../ui/macro_bar.dart';
 import 'week_card.dart';
+import 'weight_sheet.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
@@ -77,7 +77,11 @@ class _ProgressScreenState extends State<ProgressScreen> {
         Row(
           children: [
             Expanded(child: Text('WEIGHT', style: T.caps)),
-            TextLink(label: '+ Log weight', onTap: _logWeight),
+            if (s.weights.isNotEmpty) ...[
+              TextLink(label: 'All', color: C.ink2, onTap: () => showWeighIns(context)),
+              const SizedBox(width: 16),
+            ],
+            TextLink(label: '+ Log weight', onTap: () => logWeight(context)),
           ],
         ),
         const SizedBox(height: 6),
@@ -142,45 +146,6 @@ class _ProgressScreenState extends State<ProgressScreen> {
     Goal.gain => change >= 0,
     Goal.maintain => change.abs() < 1,
   };
-
-  Future<void> _logWeight() async {
-    final metric = Store.i.profile.metric;
-    final current = Store.i.profile.weightKg * (metric ? 1 : 2.20462);
-    final c = TextEditingController(text: formatNum((current * 10).round() / 10));
-    final v = await showPaperSheet<double>(
-      context,
-      (context) => Padding(
-        padding: const EdgeInsets.fromLTRB(S.gutter, 20, S.gutter, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Today’s weight', style: T.heading),
-            const SizedBox(height: 18),
-            PaperField(
-              label: 'Weight',
-              controller: c,
-              autofocus: true,
-              keyboard: const TextInputType.numberWithOptions(decimal: true),
-              formatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
-              suffix: metric ? 'kg' : 'lb',
-            ),
-            const SizedBox(height: 24),
-            PrimaryButton(
-              label: 'Save',
-              onTap: () {
-                final n = double.tryParse(c.text.replaceAll(',', '.'));
-                if (n != null && n > 20 && n < 700) {
-                  Navigator.pop(context, metric ? n : n / 2.20462);
-                }
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-    if (v != null) await Store.i.logWeight(DateTime.now(), v);
-  }
 
   // Calories
 

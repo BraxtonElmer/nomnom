@@ -97,4 +97,16 @@ void main() {
     await Store.i.init(path: dir); // reload from disk
     expect(Store.i.entriesOn(DateTime.now()).length, before);
   });
+
+  test('a past weigh-in fills the history without changing current weight', () async {
+    final today = dayOf(DateTime.now());
+    await Store.i.logWeight(today, 80);
+    await Store.i.logWeight(today.subtract(const Duration(days: 10)), 82);
+    expect(Store.i.profile.weightKg, 80);
+    expect(Store.i.weights.map((w) => w.kg), containsAllInOrder([82.0, 80.0]));
+    await Store.i.logWeight(today.subtract(const Duration(days: 10)), 81.5); // corrected
+    expect(Store.i.weights.where((w) => w.kg == 82), isEmpty);
+    await Store.i.deleteWeight(today);
+    expect(Store.i.profile.weightKg, 81.5); // back to the latest left
+  });
 }

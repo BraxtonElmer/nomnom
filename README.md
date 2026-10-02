@@ -57,7 +57,7 @@ Foods you confirm are remembered, so repeat meals come out the same every time a
 - Weekly recap at the top of Progress: last week's numbers in plain words, written once by your model and kept for the week, or from the numbers alone without AI
 - Pantry: add what you buy ("10 eggs, 450 g chicken breast", read on the phone) and it counts down as you log. Cooked weights of meat and fish are worked back to raw; when it can't tell (a dish that contains the food, a grain, a weight with no raw or cooked, a look-alike food, more than is left) it asks in the review screen, and remembers "always" and "never" answers. Edits, deletes, undo and copies all keep it right. Alerts when something runs low or out, and the morning before a use-by date
 - Home-screen widget (Android): today's ring, kcal and macros, in light or dark
-- Progress: weight log with a smoothed trend and BMI, calorie bars against goal, 7-day macro averages, streak
+- Progress: weight log for any day (past weigh-ins can be added, corrected or deleted) with a smoothed trend and BMI, calorie bars against goal, 7-day macro averages, streak
 - Health Connect (Android): steps, active calories and sleep, with an option to add exercise to the day's budget
 - BMI with WHO bands, using the lower Asian cut-offs for countries where they apply
 - Dark mode: a night version of the Paper look, following the system or set by hand

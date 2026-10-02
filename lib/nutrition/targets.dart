@@ -68,8 +68,15 @@ const activityLevels = <(double, String, String)>[
 String activityLabel(double f) =>
     activityLevels.reduce((a, b) => (a.$1 - f).abs() < (b.$1 - f).abs() ? a : b).$2;
 
-String kg(double v, bool metric) =>
-    metric ? '${formatNum(_round1(v))} kg' : '${formatNum(_round1(v * 2.20462))} lb';
+/// Body weight keeps its decimal at any size ("75.5 kg"), unlike food
+/// amounts, which drop it above 10.
+String kg(double v, bool metric) => '${weightText(v, metric)} ${metric ? 'kg' : 'lb'}';
+
+/// A body weight as typed into a field: one decimal unless whole.
+String weightText(double kgValue, bool metric) {
+  final n = _round1(metric ? kgValue : kgValue * 2.20462);
+  return n == n.roundToDouble() ? n.toInt().toString() : n.toStringAsFixed(1);
+}
 
 String cm(double v, bool metric) {
   if (metric) return '${v.round()} cm';

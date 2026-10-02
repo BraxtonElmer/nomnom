@@ -10,17 +10,26 @@ import '../../ui/pressable.dart';
 
 /// Country, units and body stats. Edits a [Profile] in place via [onChanged].
 class AboutForm extends StatefulWidget {
-  const AboutForm({super.key, required this.profile, required this.onChanged});
+  const AboutForm({
+    super.key,
+    required this.profile,
+    required this.onChanged,
+    this.blank = false,
+  });
 
   final Profile profile;
   final ValueChanged<Profile> onChanged;
+
+  /// First setup: start the body fields empty rather than with placeholder
+  /// numbers, so nothing (BMI, targets) is worked out from made-up values.
+  final bool blank;
 
   @override
   State<AboutForm> createState() => _AboutFormState();
 }
 
 class _AboutFormState extends State<AboutForm> {
-  late final _age = TextEditingController(text: '${widget.profile.age}');
+  late final _age = TextEditingController(text: widget.blank ? '' : '${widget.profile.age}');
   late final _cm = TextEditingController();
   late final _ft = TextEditingController();
   late final _in = TextEditingController();
@@ -31,15 +40,23 @@ class _AboutFormState extends State<AboutForm> {
   @override
   void initState() {
     super.initState();
-    _fillBody(p);
+    if (widget.blank) {
+      // Empty fields mean nothing entered yet, which setup won't accept.
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => widget.onChanged(p.copyWith(age: 0, heightCm: 0, weightKg: 0)),
+      );
+    } else {
+      _fillBody(p);
+    }
   }
 
+  /// Not entered yet (0) stays empty rather than showing "0".
   void _fillBody(Profile p) {
-    _cm.text = p.heightCm.round().toString();
     final inches = (p.heightCm / 2.54).round();
-    _ft.text = '${inches ~/ 12}';
-    _in.text = '${inches % 12}';
-    _weight.text = weightText(p.weightKg, p.metric);
+    _cm.text = p.heightCm > 0 ? p.heightCm.round().toString() : '';
+    _ft.text = p.heightCm > 0 ? '${inches ~/ 12}' : '';
+    _in.text = p.heightCm > 0 ? '${inches % 12}' : '';
+    _weight.text = p.weightKg > 0 ? weightText(p.weightKg, p.metric) : '';
   }
 
   @override
@@ -129,6 +146,7 @@ class _AboutFormState extends State<AboutForm> {
               child: PaperField(
                 label: 'Age',
                 controller: _age,
+                hint: '25',
                 keyboard: TextInputType.number,
                 formatters: _digits,
                 suffix: 'yrs',
@@ -140,6 +158,7 @@ class _AboutFormState extends State<AboutForm> {
               child: PaperField(
                 label: 'Weight',
                 controller: _weight,
+                hint: p.metric ? '70' : '155',
                 keyboard: const TextInputType.numberWithOptions(decimal: true),
                 formatters: _digits,
                 suffix: p.metric ? 'kg' : 'lb',
@@ -153,6 +172,7 @@ class _AboutFormState extends State<AboutForm> {
           PaperField(
             label: 'Height',
             controller: _cm,
+            hint: '170',
             keyboard: TextInputType.number,
             formatters: _digits,
             suffix: 'cm',
@@ -165,6 +185,7 @@ class _AboutFormState extends State<AboutForm> {
                 child: PaperField(
                   label: 'Height',
                   controller: _ft,
+                  hint: '5',
                   keyboard: TextInputType.number,
                   formatters: _digits,
                   suffix: 'ft',
@@ -176,6 +197,7 @@ class _AboutFormState extends State<AboutForm> {
                 child: PaperField(
                   label: '',
                   controller: _in,
+                  hint: '7',
                   keyboard: TextInputType.number,
                   formatters: _digits,
                   suffix: 'in',

@@ -15,6 +15,17 @@ void main() {
       find.byType(MaterialApp),
       matchesGoldenFile('../../build/shots/onboarding_1_about.png'),
     );
+    // Nothing entered yet: can't continue, no BMI from placeholder numbers.
+    expect(find.textContaining('BMI'), findsNothing);
+    await tester.enterText(find.widgetWithText(TextField, '25'), '28');
+    await tester.enterText(find.widgetWithText(TextField, '170'), '172');
+    await tester.enterText(find.widgetWithText(TextField, '70'), '68');
+    await tester.pumpAndSettle();
+    expect(find.textContaining('BMI 23.0 · Overweight'), findsOneWidget);
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../build/shots/onboarding_1b_filled.png'),
+    );
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
     await expectLater(

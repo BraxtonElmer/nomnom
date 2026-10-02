@@ -92,4 +92,9 @@ void main() {
     expect(bmiBand(27.5, 'IN'), 'Obese range');
     expect(bmiLabel(p.copyWith(age: 15)), 'BMI 28.9 · adult ranges start at 18');
   });
+
+  test('the bmi band matches the number shown', () {
+    const p = Profile(country: 'IN', age: 28, heightCm: 172, weightKg: 68); // 22.99
+    expect(bmiLabel(p), 'BMI 23.0 · Overweight');
+  });
 }

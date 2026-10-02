@@ -124,7 +124,11 @@ class _OnboardingState extends State<Onboarding> {
 
   Widget _step1() => _frame(
     step: 1,
-    child: AboutForm(profile: _profile, onChanged: (p) => setState(() => _profile = p)),
+    child: AboutForm(
+      profile: _profile,
+      blank: true,
+      onChanged: (p) => setState(() => _profile = p),
+    ),
     footer: PrimaryButton(label: 'Continue', onTap: _valid ? () => _go(2) : null),
   );
 

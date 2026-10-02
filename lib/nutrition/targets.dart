@@ -116,7 +116,10 @@ String bmiBand(double bmi, String country) {
   return 'Obese range';
 }
 
-String bmiLabel(Profile p, [double? kgValue]) {
-  final b = bmiOf(kgValue ?? p.weightKg, p.heightCm);
+/// BMI from the latest weigh-in. Adult bands don't apply under 18, where
+/// BMI is read against age and sex growth charts instead.
+String bmiLabel(Profile p) {
+  final b = bmiOf(p.weightKg, p.heightCm);
+  if (p.age < 18) return 'BMI ${b.toStringAsFixed(1)} · adult ranges start at 18';
   return 'BMI ${b.toStringAsFixed(1)} · ${bmiBand(b, p.country)}';
 }

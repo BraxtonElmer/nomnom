@@ -111,7 +111,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
           ],
         ),
         Text(
-          latest == null ? 'Smoothed trend' : '${bmiLabel(s.profile, latest)} · smoothed trend',
+          // BMI from the latest weigh-in, the same everywhere in the app.
+          latest == null ? 'Smoothed trend' : '${bmiLabel(s.profile)} · smoothed trend',
           style: T.small,
         ),
         const SizedBox(height: 16),

@@ -80,4 +80,16 @@ void main() {
     expect(weightText(75.5, true), '75.5');
     expect(weightText(70, false), '154.3');
   });
+
+  test('bmi bands: WHO, Asian cut-offs, and none under 18', () {
+    const p = Profile(country: 'IN', age: 20, heightCm: 160, weightKg: 74);
+    expect(bmiLabel(p), 'BMI 28.9 · Obese range');
+    expect(bmiLabel(p.copyWith(country: 'US')), 'BMI 28.9 · Overweight');
+    expect(bmiBand(24.9, 'US'), 'Healthy range');
+    expect(bmiBand(25, 'US'), 'Overweight');
+    expect(bmiBand(30, 'US'), 'Obese range');
+    expect(bmiBand(23, 'IN'), 'Overweight');
+    expect(bmiBand(27.5, 'IN'), 'Obese range');
+    expect(bmiLabel(p.copyWith(age: 15)), 'BMI 28.9 · adult ranges start at 18');
+  });
 }
